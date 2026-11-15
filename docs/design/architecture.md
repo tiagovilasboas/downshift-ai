@@ -200,7 +200,7 @@ Editable sources: [BDI SVG](../img/downshift-bdi.svg) and
 
 ## Layered view and import graph
 
-Checked against `go list` on 2026-10-19. An arrow means "imports"; every arrow
+Checked against `go list` on 2026-11-15. An arrow means "imports"; every arrow
 points down or sideways to an inner package, and `core` never points back out.
 
 ```text
@@ -230,10 +230,9 @@ points down or sideways to an inner package, and `core` never points back out.
  │ hook providers            │   │ services over core                    │
  │ quota → LoadQuota*        │   │ catalog (Resolver) · discovery · models│
  │                           │   │ telemetry · hookport · childend       │
- │                           │   │ contextopt · sensor · server          │
- │                           │   │ outcome                               │
- │                           │   │ accounting                            │
- │                           │   │ api · cursorbridge                    │
+ │                           │   │ contextopt · sensor · mcp/*           │
+ │                           │   │ outcome · accounting · postrun        │
+ │                           │   │ cursorbridge · workers · plan         │
  │                           │   │ shellwrap · execwrap (compressor)     │
  └───────────────────────────┘   └───────────────────────────────────────┘
  leaf packages used by the layers above: classify semantic quotamodel paths
@@ -408,7 +407,7 @@ Downshift's codebase and documentation are structured strictly according to Clea
 |---|---|---|---|---|
 | **Domain 1: Subagent Model Routing & Guardrails** | Core Domain / Business Logic | Deterministic subagent routing, regex signal scoring, monotonic hash semantic boost, R1-R9 guardrails (holding unconfident moves under doubt), project tier floor (`.downshift/policy.json`), session candidate allowlists, and quota gating. Invariants: bounded reads (1 MiB), fail-open on timeout or error, zero network/LLM on hot path, zero prompt storage. | `internal/core`, `internal/classify`, `internal/fuse`, `internal/session`, `internal/quotamodel`, `internal/catalog`, `internal/semantic`, `internal/policyfile` | [../domains/subagent-routing.md](../domains/subagent-routing.md), [architecture.md](architecture.md), [router-generalization.md](router-generalization.md), [../reference/complexity-weights.md](../reference/complexity-weights.md), [../reference/session-models.md](../reference/session-models.md) |
 | **Domain 2: Output Compaction & Context Optimization** | Supporting Domain / Optimization | Native AST/JSON context compressor (`safe` mode CLI compaction), observe-only tool output sensor (PostToolUse byte measurement and hypothetical token reduction), Headroom companion detection & telemetry (`context enable headroom`), and initial session context policy (`opusplan`, plan mode). Invariants: PostToolUse hook never alters live output seen by the model (observe-only); companion tools are detected and recorded, never installed, wrapped, or launched. | `internal/contextopt`, `internal/compressor`, `internal/sensor`, `providers/headroom` | [../domains/context-optimization.md](../domains/context-optimization.md), [context-optimization.md](context-optimization.md), [../guides/companions.md](../guides/companions.md), [../../skills/downshift-tune/SKILL.md](../../skills/downshift-tune/SKILL.md) |
-| **Domain 3: Observability, Evidence & Verification** | Telemetry, Auditing & Evaluation | Prompt-free event logging (`events.jsonl`), token savings reports (`stats`, `report`; one definition in `telemetry.Summarize`), verification reports (`verification: passed|failed|none`), capability matrix, and evidence ladder (rungs A-E). Invariants: telemetry persists metadata only; child-end tokens are stored as observed counts, and no dollar is written; unobserved ports remain absent, never inferred. | `internal/telemetry`, `internal/childend`, `internal/hookport`, `internal/server`, `internal/benchmark`, `internal/outcome` | [../domains/observability-telemetry.md](../domains/observability-telemetry.md), [engineering-loop.md](engineering-loop.md), [../reference/capability-matrix.md](../reference/capability-matrix.md), [../guides/report.md](../guides/report.md), [../guides/verification.md](../guides/verification.md), [../guides/evidence.md](../guides/evidence.md) |
+| **Domain 3: Observability, Evidence & Verification** | Telemetry, Auditing & Evaluation | Prompt-free event logging (`events.jsonl`), token savings reports (`stats`, `report`; one definition in `telemetry.Summarize`), verification reports (`verification: passed|failed|none`), capability matrix, and evidence ladder (rungs A-E). Invariants: telemetry persists metadata only; child-end tokens are stored as observed counts, and no dollar is written; unobserved ports remain absent, never inferred. | `internal/telemetry`, `internal/childend`, `internal/hookport`, `internal/accounting`, `internal/mainwork`, `internal/missedsavings`, `internal/operatorexport`, `internal/benchmark`, `internal/outcome` | [../domains/observability-telemetry.md](../domains/observability-telemetry.md), [engineering-loop.md](engineering-loop.md), [../reference/capability-matrix.md](../reference/capability-matrix.md), [../guides/report.md](../guides/report.md), [../guides/verification.md](../guides/verification.md), [../guides/evidence.md](../guides/evidence.md) |
 | **Domain 4: Harness Adapters & Packaging** | Interface Adapters & Delivery | Harness-specific edge I/O (Claude Code, Cursor, Codex, OpenCode, KiroCrew, Antigravity), fail-open hook runner (`runHookAdapter`), 5 packaging layers (Memory, Skills, Hooks, Agents, Plugin), and the Claude Code plugin. Invariants: adapters embed no routing policy; adapters only parse wire format and emit core decisions; panic recovery ensures fail-open allow. | `internal/adapters/*`, `cmd/downshift`, `mods`, `hooks` | [../domains/harness-adapters-packaging.md](../domains/harness-adapters-packaging.md), [../reference/harness-matrix.md](../reference/harness-matrix.md), [../contrib/layering.md](../contrib/layering.md), [mod-router.md](mod-router.md), [../guides/claude-code.md](../guides/claude-code.md) |
 
 ---
@@ -434,6 +433,13 @@ Downshift's codebase and documentation are structured strictly according to Clea
 | `internal/semantic` | In-process hash embedder. The raise-only boost policy lives in `internal/fuse`. The semantic boost stays in-process and does not exec |
 | `internal/outcome`, `internal/benchmark` | Outcome evals and classifier KPIs. Shadow classifiers (`internal/routingv2/*`), training and decision intelligence were removed in wave A (2026-10-26); see [routing v2](../design/routing-v2.md). `internal/routecache`, `routingv2/router` and `matcher` were removed on 2026-10-19 (no production importer) |
 | `internal/setup` | The data and plan model of `downshift setup`: the harness target table (`Targets`, `Target`, `Hook`, `Mcp`, `Steering`), `Options`, `Plan`, linked-path refusal (`RefuseLinkedPlans`, `HoldLinkedTargets`), the binary-path guard, harness bridge files and backup naming. Also the hook-file merge (`MergeTarget`), the backed-up `Write`, the summary and confirmation prompt, the MCP file planners (`PlanMcpJSON`, `PlanCodexMcp`), the remaining planners (skills, mods, steering, wrappers, workers, policy init, crew registry), the side effects (MCP registration, plugin install, `Undo`, binary prune) and `Run`, the whole command after argument parsing. Imports `configfile`, `paths`, `routing/policy`, `contextopt`, `hooks`, `mods`, `skills`; never `core`, `console` or `cmd`. `cmd/downshift` keeps argument parsing, the TUI, the smoke check and model discovery, and passes the last two in as `Options` funcs ([setup-extraction.md](setup-extraction.md)) |
+| `internal/accounting`, `internal/mainwork`, `internal/missedsavings`, `internal/operatorexport` | Read-outs over the event log: token accounting (adoption, compaction detail, direct compactor use); the mechanical work the main session does itself; shell commands in a harness's own transcripts that compaction would have cut; the one allowlisted artefact an outside operator shares. Import `telemetry` (accounting, mainwork, operatorexport) |
+| `internal/execwrap`, `internal/shellwrap`, `internal/postrun`, `internal/ccr`, `internal/desktopview` | Compaction path outside any adapter. `shellwrap`: harness-agnostic domain of the opt-in exec wrapper (call shape, policy, advice). `execwrap`: `downshift compact -- <argv>`, the allowlist, balanced and search cuts. `postrun`: compacts a tool result after it ran, only where `ReplacesToolOutput` is declared. `ccr`: on-disk store of the raw output of a compacted command, with redaction and retrieval. `desktopview`: a repeat read of the same desktop window sent as a delta |
+| `internal/mcp/tools`, `internal/mcp/transport`, `internal/workers`, `internal/plan`, `internal/playbook`, `internal/gateway` | The MCP server and delegation: tools (providers, apply, status, plan, playbook, retrieve, delegate/collect), stdio transport; `workers` runs delegated work on other agent CLIs; `plan` validates a delegation plan the lead wrote; `playbook` holds the working rules a worker receives; `gateway` (with `gateway/ninerouter`) is the router-agnostic multi-provider abstraction |
+| `internal/routing/{agenttier,contract,decide,guard,headroom,hint,policy}` | Routing v2: declared agent tier, contract types, the decision of one spawn, guard (R7/R8), quota strain per provider, spawn hints, policy profiles and rules |
+| `internal/cascade`, `internal/loop`, `internal/limits`, `internal/compressor/learning` | Sensor-guided auto-upgrade and failure episodes (`cascade`); batch loop runner and report (`loop`); transparent reporting of harness limitations (`limits`); observes unrecognised command outputs (`compressor/learning`) |
+| `internal/console`, `internal/clispec` | Full-screen terminal UI (subpackages for home, output, palette, report view, setup wizard, shared widgets, surface); the root command table of the binary as data |
+| `internal/selfupdate`, `internal/installer`, `internal/lazyre`, `internal/docscheck`, `internal/archtest`, `internal/testenv`, `internal/testrace` | Replace the running binary with a published release; install-script tests; regex compiled on first use; doc and architecture checks that run as tests; cross-OS test environment and wall-clock race helpers |
 | `internal/setup/configfile` | Config-file primitives of `setup`: order-keeping JSON `Object`, raw-text JSON `Member` edits (`MembersAt`, `RenderWithMembersAt`), `UnifiedDiff`, `WriteAtomic`, `RemoveEmptyDirs`, the ownership marker (`Owns`). Standard library only; knows no harness, target or plan. Outer layer: `core` must not import `setup` (archtest `TestImportGraph`). The rest of setup lives in `internal/setup` ([setup-extraction.md](setup-extraction.md)) |
 | `cmd/downshift` | CLI, `harnessRegistry`, `runHookAdapter`, `runEnd`, setup, doctor. Installs the `routing/decide` decider (`core.SetDecider`); blank-imports `quota` |
 
@@ -476,13 +482,15 @@ bundled: [companions.md](../guides/companions.md).
 
 ## Known gaps and limits
 
-These are real and open on 2026-10-19. Nothing here is hidden elsewhere.
+These were re-measured on 2026-11-15. Nothing here is hidden elsewhere.
 
-1. **`telemetry` is large.** The `internal/` tree holds 292 non-test `.go`
-   files across 43 packages as of 2026-10-23. `telemetry` alone spans events,
-   cost, stats, report, rotation, pause, session tree, and
-   completion behind one package, imported by adapters, `childend`, `hookport`
-   and `server`. A split (event log and appenders vs read-outs) is proposed,
+1. **`telemetry` is large.** The `internal/` tree holds 708 non-test `.go`
+   files across 83 packages as of 2026-11-15
+   (`find internal -name '*.go' -not -name '*_test.go' | wc -l`;
+   `go list ./internal/... | wc -l`). `telemetry` alone holds 60 non-test files
+   (events, cost, stats, report, rotation, pause, session tree, completion)
+   behind one package, imported by adapters, `childend`, `hookport`,
+   `accounting`, `mainwork`, `loop`, `operatorexport` and `execwrap`. A split (event log and appenders vs read-outs) is proposed,
    not done.
 2. **`init`-registered hooks in `core` (Fullstack P1-1).** The result of
    `core.Route` depends on which decider `cmd/downshift` installed and which
@@ -499,10 +507,13 @@ These are real and open on 2026-10-19. Nothing here is hidden elsewhere.
 5. **Savings are token shares, not invoices.** `stats` and `report` print no dollar.
    Tokens are observed only where the harness reports them (Claude Code most completely). The
    one tracked field trial is -12% on mechanical pieces, not a general rate.
-6. **The native PostToolUse path is measure-only.** Claude Code accepts a
-   replacement (`updatedToolOutput`) but Downshift's hook does not send one, and
-   Codex accepts none, so the sensor reports a hypothetical reduction. The
-   Compactor cuts output by rewriting the command before it runs.
+6. **Output replacement after the run is Claude Code only.** Claude Code accepts
+   a replacement (`updatedToolOutput`) and Downshift sends one for shell and
+   search results through `internal/postrun` (read results are never touched).
+   Every other harness declares no `ReplacesToolOutput`, so the sensor there
+   reports a hypothetical reduction and compaction is the command rewrite or the
+   direct `downshift compact` call. See the
+   [harness matrix](../reference/harness-matrix.md).
 7. **Hook latency** after removing the per-spawn fsync: p50 8.5 ms, p95 9.7 ms
    for a Claude Code Task payload (n = 200, Apple M3 Pro, macOS 26.6, Go
    1.27.1; `downshift version` p50 7.7 ms; process floor 2.2 ms). Not measured on
@@ -516,8 +527,8 @@ These are real and open on 2026-10-19. Nothing here is hidden elsewhere.
    the [harness matrix](../reference/harness-matrix.md).
 9. **Stale diagram source.** `docs/img/architecture.svg` (and `-dark`) is
     hand-drawn, not generated, and predates `classify`, `fuse`, `session`,
-    `opencode` and the hook ports; it still names e5 and graphify helpers.
-    Nothing links to it. The ASCII diagram above is the maintained one.
+    `opencode` and the hook ports (none appears in its text as of 2026-11-15).
+    No doc links to it. The ASCII diagram above is the maintained one.
     `downshift-bdi` and `downshift-execution` are current.
 10. **Dead-end packages.** Removed on 2026-10-19: `internal/routecache`,
     `internal/orchestration`, `internal/routingv2/router` and `matcher`.
@@ -533,4 +544,4 @@ These are real and open on 2026-10-19. Nothing here is hidden elsewhere.
 | [context-optimization.md](context-optimization.md), [companions.md](../guides/companions.md) | Context layer |
 | [report.md](../guides/report.md), [benchmark/README.md](../benchmark/README.md) | Measurement discipline |
 | [router-generalization.md](router-generalization.md) | Evaluation honesty |
-| [pt/README.md](../pt/README.md) | Portuguese doc set |
+| [pt-br/README.md](../pt-br/README.md) | Portuguese doc set |

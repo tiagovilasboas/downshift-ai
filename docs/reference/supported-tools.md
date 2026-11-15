@@ -272,5 +272,5 @@ All `gh` subcommands are supported:
 ## Missing a Tool?
 
 Run `downshift learning suggestions` to see which uncompacted commands you use
-most frequently. Then [contribute a compressor](../contributing/compressors.md)
+most frequently. Then [contribute a compressor](../contrib/compressors.md)
 or [open an issue](https://github.com/tiagovilasboas/downshift-ai/issues).

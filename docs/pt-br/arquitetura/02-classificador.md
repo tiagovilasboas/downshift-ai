@@ -17,7 +17,7 @@ A taxonomia de complexidade do Downshift é dividida em quatro classes bem delim
 
 Se os padrões do prompt não apresentarem correspondência clara com nenhuma classe, a tarefa pode ficar com baixa confiança. Diante de incerteza, a política de roteamento opta pela segurança e **não altera** o modelo ativo.
 
-A tabela de pesos, os pontos extras e a escolha do modelo em cada harness estão em [complexity-weights.md](../reference/complexity-weights.md).
+A tabela de pesos, os pontos extras e a escolha do modelo em cada harness estão em [complexity-weights.md](../../reference/complexity-weights.md).
 
 ---
 
@@ -25,11 +25,11 @@ A tabela de pesos, os pontos extras e a escolha do modelo em cada harness estão
 
 Pontuação por regex, margem de confiança, boost por hash em processo e fluxo de contribuição (`misroute:`) estão documentados em inglês para mantenedores:
 
-**[contrib/classifier.md](../contrib/classifier.md)**
+**[contrib/classifier.md](../../contrib/classifier.md)**
 
-O candidato estatístico da v2 **não** substitui este caminho nos hooks; o pacote de shadow foi removido (2026-10-26). A direção atual está em [routing v2](../design/routing-v2.md).
+O candidato estatístico da v2 **não** substitui este caminho nos hooks; o pacote de shadow foi removido (2026-10-26). A direção atual está em [routing v2](../../design/routing-v2.md).
 
-**Multilíngue e risco:** o guard de idioma (`lang_guard.go`) e o piso de risco (`risk.go`) podem **abster** (`Confident=false`, `RiskAbstain`) em briefs de delegação ou padrões de alto risco, sem baixar o tier. A cobertura de regras é inglês e português. E5 e Graphify não fazem parte do binário. Detalhes em [complexity-weights.md](../reference/complexity-weights.md#language-coverage).
+**Multilíngue e risco:** o guard de idioma (`lang_guard.go`) e o piso de risco (`risk.go`) podem **abster** (`Confident=false`, `RiskAbstain`) em briefs de delegação ou padrões de alto risco, sem baixar o tier. A cobertura de regras é inglês e português. E5 e Graphify não fazem parte do binário. Detalhes em [complexity-weights.md](../../reference/complexity-weights.md#language-coverage).
 
 ---
 

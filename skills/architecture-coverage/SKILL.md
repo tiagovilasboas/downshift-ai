@@ -15,7 +15,7 @@ compaction plan, an accounting plan, or any request that says "the whole thing".
 **This skill does not ship in the plugin.** Operators who install Downshift do
 not pay this context. It is a contributor-only procedure.
 
-## Step 1 — read the three sources (do not use `docs/architecture/`)
+## Step 1 — read the three sources (do not use `docs/archive/architecture-*.md`)
 
 1. [`docs/design/architecture.md`](../../docs/design/architecture.md) —
    current import graph, domain map, known gaps.
@@ -24,7 +24,7 @@ not pay this context. It is a contributor-only procedure.
 3. [`docs/reference/capability-matrix.md`](../../docs/reference/capability-matrix.md) —
    what each harness can and cannot do today.
 
-`docs/architecture/` files are historical. Do not cite them as current.
+`docs/archive/architecture-*.md` files are historical. Do not cite them as current.
 
 ## Step 2 — fill the inventory
 

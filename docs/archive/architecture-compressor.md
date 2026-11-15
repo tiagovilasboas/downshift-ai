@@ -1,3 +1,5 @@
+> Superseded by [design/architecture.md](../design/architecture.md); kept for history.
+
 Superseded in part by O8 (2026-10-28): see docs/internal/plans/mvp-plan.md
 
 # Compressor Pipeline
@@ -77,4 +79,4 @@ See [Compressor Learning](../features/learning.md).
 
 ## Adding Compressors
 
-See [Contributing Compressors](../contributing/compressors.md).
+See [Contributing Compressors](../contrib/compressors.md).
