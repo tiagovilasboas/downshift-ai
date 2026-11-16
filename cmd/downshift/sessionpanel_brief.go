@@ -25,6 +25,7 @@ type panelBrief struct {
 	// unbuilt report is left out.
 	TokensSavedEstimate *int64 `json:"tokens_saved_estimate,omitempty"`
 	TokensSavedShort    string `json:"tokens_saved_short,omitempty"`
+	WorkingMemoryLine   string `json:"working_memory_line,omitempty"`
 }
 
 // briefSpawn is one spawn row of the band.
@@ -61,10 +62,11 @@ func briefOf(v telemetry.PanelView) panelBrief {
 }
 
 // briefWithTokens is briefOf plus the report's final figure and its short text.
-func briefWithTokens(v telemetry.PanelView, tokensSaved int64) panelBrief {
+func briefWithTokens(v telemetry.PanelView, tokensSaved int64, workingMemoryLine string) panelBrief {
 	b := briefOf(v)
 	b.TokensSavedEstimate = &tokensSaved
 	b.TokensSavedShort = telemetry.TokensShort(tokensSaved)
+	b.WorkingMemoryLine = workingMemoryLine
 	return b
 }
 
