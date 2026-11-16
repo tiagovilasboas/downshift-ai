@@ -82,15 +82,19 @@ distinct operational configurations:
 - **Declared policy for Arm C:**
   ```json
   {
-    "policy_floor": "small",
-    "profiles": {
-      "explore": "small",
-      "plan": "mid"
-    },
-    "raise_complex": true
+    "version": 1,
+    "min_tier": "small",
+    "routing": {
+      "raise_complex": true,
+      "profiles": [
+        {"name": "explore", "tier": "small", "harness": "claude-code"},
+        {"name": "plan", "tier": "mid", "harness": "claude-code"}
+      ]
+    }
   }
   ```
-  This exercises the PR #18 agent-type profiles and deterministic tier boundaries under O8.
+  (Corrected 2026-11-16: the first draft used `policy_floor`, a `profiles` map and a top-level `raise_complex`,
+  which the policy schema does not accept. Same intent; `downshift policy check` passes.) This exercises the PR #18 agent-type profiles and deterministic tier boundaries under O8.
 
 ---
 
@@ -176,14 +180,9 @@ STATE_DIR="$(mktemp -d /tmp/downshift-state-arm-c-XXXXXX)"
 
 # 2. Configure Arm C settings
 cat <<EOF > "$WORK_DIR/.downshift/policy.json"
-{
-  "policy_floor": "small",
-  "profiles": {
-    "explore": "small",
-    "plan": "mid"
-  },
-  "raise_complex": true
-}
+{"version":1,"min_tier":"small","routing":{"raise_complex":true,"profiles":[
+  {"name":"explore","tier":"small","harness":"claude-code"},
+  {"name":"plan","tier":"mid","harness":"claude-code"}]}}
 EOF
 
 # 3. For each task in shuffled order:
@@ -229,6 +228,9 @@ The smoke run is successful and authorises broader benchmarking (such as closing
 
 If the smoke fails on any of these criteria, the benchmark stops immediately, and the failure is logged and triaged as a
 defect before any further tokens are spent.
+
+**First run (2026-11-16):** FAIL on the S1 criterion (no spawn in Arm C, so no downshift); the other four pass. See
+[post-o8-smoke-2026-11-16.md](post-o8-smoke-2026-11-16.md).
 
 ---
 
