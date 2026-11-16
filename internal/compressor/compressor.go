@@ -27,6 +27,13 @@ func Compress(input []byte, mode Mode) Result {
 // CompressExit preserves the raw output when exitCode is non-zero.
 // exitCode < 0 means the caller does not know the status.
 func CompressExit(input []byte, mode Mode, exitCode int) Result {
+	return CompressExitExpected(input, mode, exitCode)
+}
+
+// CompressExitExpected is CompressExit when the caller already knows the
+// candidate format(s) from the command family. Those detectors run first; if
+// none match, it falls back to the full detectFormat scan.
+func CompressExitExpected(input []byte, mode Mode, exitCode int, expected ...Format) Result {
 	origLen := len(input)
 	res := Result{
 		Output:        input,
@@ -86,7 +93,7 @@ func CompressExit(input []byte, mode Mode, exitCode int) Result {
 	}
 
 	// Detect format
-	format, isError := detectFormat(text)
+	format, isError := detectFormatExpected(text, expected)
 	res.Format = format
 
 	// Safety Rule: Fail-open on error.
