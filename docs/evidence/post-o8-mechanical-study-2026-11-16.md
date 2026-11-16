@@ -9,6 +9,28 @@ session model, does a session with Downshift's routing hooks spend fewer tokens
 than one without, at the same acceptance? The answer, by the pre-registered
 criterion, is **no**: acceptance held, tokens did not drop.
 
+## Where this sits in the evidence
+
+This study is **not** the pre-registered post-O8 benchmark. It deviates from
+[post-o8-benchmark-protocol-2026-11-07.md](post-o8-benchmark-protocol-2026-11-07.md)
+in four ways: two arms instead of three (no fixed-Opus arm), mechanical tasks
+only instead of one task per category, the default policy instead of the
+protocol's declared policy, and a token total that includes cache reads, which
+the protocol reports apart. Read it as a narrow check of one category, not as
+the protocol's verdict.
+
+- The earlier controlled suite on natural tasks that delegate
+  ([controlled-suite-opusplan-natural-2026-10-29.md](controlled-suite-opusplan-natural-2026-10-29.md))
+  passed its parity criterion: acceptance 19/24 vs 20/24 and paired savings of
+  22.2% (95% interval 9.8% to 32.3%). That suite's control arm used the
+  `DOWNSHIFT_NO_ROUTE` switch, removed on 2026-11-02, so it predates the
+  current control setup.
+- [anthropic-references-benchmark-reconciliation-2026-11-07.md](anthropic-references-benchmark-reconciliation-2026-11-07.md)
+  and [delegation-boundaries-and-overhead-2026-11-07.md](delegation-boundaries-and-overhead-2026-11-07.md)
+  already scope the gain of delegation to broad, exploratory work, not small
+  edits. This study agrees: on small mechanical tasks routing finds little to
+  save.
+
 ## Setup
 
 - Harness: Claude Code, headless (`claude -p`), session model `opusplan`.
@@ -65,6 +87,19 @@ The prompt requires subagents. 40 runs, 0 errors, 70.5M tokens.
   same or slightly more tokens.
 - Acceptance: no loss. Moving 29 of 100 spawns to the small tier failed no
   task.
+
+Recomputed with the protocol's metric (billable = input + output + cache
+write, cache reads apart), same 20 pairs matched by task and repetition:
+
+| Arm | Billable / run | Cache read / run |
+|---|---|---|
+| control | 212,713 | 1,528,281 |
+| routed | 221,920 | 1,562,943 |
+
+Paired billable savings: mean **−4.7%**, 95% interval **[−10.4%, −0.2%]**
+(10,000 resamples, seed 20261029). On this metric the routed arm spent
+slightly more, and the interval excludes zero. By task: `mech-rename` −12.6%,
+`mech-doc-comments` −3.9%, `mech-constant` −2.7%, `mech-test-mirror` +0.3%.
 
 ## What moved the spawns
 
