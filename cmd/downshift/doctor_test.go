@@ -81,10 +81,10 @@ func (f *doctorFixture) writeEvents(t *testing.T, dir string, age time.Duration,
 	t.Helper()
 	ts := f.started.Add(-age)
 	lines := []string{
-		fmt.Sprintf(`{"correlation_id":"a1","timestamp":%q,"harness":"claude-code","session_id":"s1","requested_model":"opus","final_model":"sonnet","outcome":"rewrite_emitted"}`, ts.Format(time.RFC3339Nano)),
+		fmt.Sprintf(`{"correlation_id":"a1","timestamp":%q,"harness":"claude-code","source":"hook","session_id":"s1","requested_model":"opus","final_model":"sonnet","outcome":"rewrite_emitted"}`, ts.Format(time.RFC3339Nano)),
 	}
 	if withHonor {
-		lines = append(lines, fmt.Sprintf(`{"correlation_id":"a2","timestamp":%q,"harness":"claude-code","session_id":"s1","requested_model":"sonnet","final_model":"sonnet","outcome":"allow"}`, ts.Add(time.Second).Format(time.RFC3339Nano)))
+		lines = append(lines, fmt.Sprintf(`{"correlation_id":"a2","timestamp":%q,"harness":"claude-code","source":"hook","session_id":"s1","requested_model":"sonnet","final_model":"sonnet","outcome":"allow"}`, ts.Add(time.Second).Format(time.RFC3339Nano)))
 	}
 	writeFile(t, filepath.Join(dir, "events.jsonl"), strings.Join(lines, "\n")+"\n")
 }

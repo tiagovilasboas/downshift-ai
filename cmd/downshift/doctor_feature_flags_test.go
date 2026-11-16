@@ -123,7 +123,7 @@ func TestDoctor_CodexWithEventKeepsLastEventOK(t *testing.T) {
 	f.writeCodexHooks(t)
 	ts := f.started.Add(-time.Minute).Format(time.RFC3339Nano)
 	writeFile(t, filepath.Join(f.home, ".downshift", "events.jsonl"),
-		fmt.Sprintf(`{"correlation_id":"c1","timestamp":%q,"harness":"codex","verdict":"OK","outcome":"allow"}`, ts)+"\n")
+		fmt.Sprintf(`{"correlation_id":"c1","timestamp":%q,"harness":"codex","source":"hook","verdict":"OK","outcome":"allow"}`, ts)+"\n")
 	wantStatus(t, f.check(t, buildDoctorReport(f.env), "codex", "last hook event"), doctorOK)
 }
 

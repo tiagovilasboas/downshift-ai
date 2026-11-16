@@ -122,13 +122,17 @@ func checkEvidence(add func(id, status, detail, fix string), env doctorEnv, nc c
 	checkQuotaHold(add, env, h)
 	checkQuotaSource(add, env, h)
 
-	var mine []telemetry.Event
+	var mine, fromHooks []telemetry.Event
 	for _, ev := range events {
-		if ev.Harness == h {
-			mine = append(mine, ev)
+		if ev.Harness != h {
+			continue
+		}
+		mine = append(mine, ev)
+		if ev.Source == "hook" {
+			fromHooks = append(fromHooks, ev)
 		}
 	}
-	checkLastEvent(add, env, h, mine, activate)
+	checkLastEvent(add, env, h, fromHooks, len(mine)-len(fromHooks), activate)
 	checkCompletion(add, h, events)
 	if nc.Caps.CanRewriteModel && len(mine) > 0 {
 		checkHonored(add, mine)

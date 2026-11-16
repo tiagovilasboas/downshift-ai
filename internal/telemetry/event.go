@@ -24,7 +24,7 @@ package telemetry
 type Event struct {
 	CorrelationID   string `json:"correlation_id"`             // opaque ID generated per hook invocation
 	Timestamp       string `json:"timestamp"`                  // RFC3339Nano
-	Source          string `json:"source"`                     // hook|cli
+	Source          string `json:"source"`                     // hook|mcp|git
 	Agent           string `json:"agent"`                      // subagent, never task text
 	Harness         string `json:"harness"`                    // e.g. "claude-code"
 	SessionID       string `json:"session_id,omitempty"`       // Codex session identifier, when provided
