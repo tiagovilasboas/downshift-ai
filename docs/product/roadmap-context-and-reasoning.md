@@ -79,6 +79,6 @@ Downshift is uniquely positioned at the OS / PreToolUse hook boundary to mitigat
 
 | Milestone | Deliverable | Effort | Dependencies | Target |
 | :--- | :--- | :---: | :--- | :---: |
-| **P1** | Working Memory Preserved in `downshift session` | 1 SP | None (ready to implement) | Next sprint |
+| **P1** | Working Memory Preserved in `downshift session` | 1 SP | None (ready to implement) | **Done** (`internal/accounting/working_memory.go`) |
 | **P2** | Reasoning Effort Observability in `session` & `stats` | 2 SP | P1 | Sprint +1 |
 | **P3** | CCR Anti-Loop Guard | 3 SP | P1, CCR digest storage | Sprint +2 |

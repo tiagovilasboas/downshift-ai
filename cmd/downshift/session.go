@@ -11,6 +11,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/tiagovilasboas/downshift-ai/internal/accounting"
 	"github.com/tiagovilasboas/downshift-ai/internal/core"
 	"github.com/tiagovilasboas/downshift-ai/internal/discovery"
 	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
@@ -70,8 +71,15 @@ func runSession(args []string, stdout, stderr io.Writer, catalog core.Resolver) 
 	}
 
 	opt := telemetry.TreeOptions{Paused: telemetry.SessionPaused(hash)}
+	treeView := telemetry.BuildSessionTree(events, hash, opt)
+	wm := sessionWorkingMemory(events)
 	if *asJSON {
-		out, err := json.MarshalIndent(telemetry.BuildSessionTree(events, hash, opt), "", "  ")
+		out, err := json.MarshalIndent(sessionTreeJSON{
+			SessionTreeView:         treeView,
+			TokensCompactedEstimate: wm.TokensCompactedEstimate,
+			BytesCompactedTotal:     wm.BytesCompactedTotal,
+			WorkingMemory:           &wm,
+		}, "", "  ")
 		if err != nil {
 			fmt.Fprintf(stderr, "downshift session: %v\n", err)
 			return 1
@@ -79,8 +87,24 @@ func runSession(args []string, stdout, stderr io.Writer, catalog core.Resolver) 
 		fmt.Fprintln(stdout, string(out))
 		return 0
 	}
-	fmt.Fprint(stdout, telemetry.SessionTree(events, hash, opt))
+	fmt.Fprint(stdout, treeView.Render())
+	if wm.Line != "" {
+		fmt.Fprintln(stdout, wm.Line)
+	}
 	return 0
+}
+
+type sessionTreeJSON struct {
+	telemetry.SessionTreeView
+	TokensCompactedEstimate int64                     `json:"tokens_compacted_estimate"`
+	BytesCompactedTotal     int64                     `json:"bytes_compacted_total"`
+	WorkingMemory           *accounting.WorkingMemory `json:"working_memory,omitempty"`
+}
+
+func sessionWorkingMemory(events []telemetry.Event) accounting.WorkingMemory {
+	execEvents, _ := accounting.ReadExecEvents()
+	nums := accounting.Compute(events, execEvents, accounting.Scope{Kind: accounting.ScopeDays, Days: defaultReportDays})
+	return accounting.BuildWorkingMemory(nums)
 }
 
 func sessionPauseResume(hash string, pause bool, stdout, stderr io.Writer) int {

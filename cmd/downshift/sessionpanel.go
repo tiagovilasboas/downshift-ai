@@ -37,7 +37,7 @@ func writePanel(events []telemetry.Event, hash string, opt panelOptions, stdout,
 		full.Why = why
 		out = full
 		if opt.Brief {
-			out = briefWithTokens(view, full.TokensSavedEstimate)
+			out = briefWithTokens(view, full.TokensSavedEstimate, full.WorkingMemoryLine)
 		}
 	} else if opt.Brief {
 		out = briefOf(view)
@@ -115,7 +115,8 @@ type panelOut struct {
 	Efficiency accounting.Efficiency `json:"efficiency"`
 	// Why is one entry per spawn: requested model, final model, verdict and
 	// reason in one cell. Enums and declared ids only.
-	Why []accounting.SpawnWhy `json:"routing_why"`
+	Why               []accounting.SpawnWhy `json:"routing_why"`
+	WorkingMemoryLine string                `json:"working_memory_line,omitempty"`
 }
 
 // panelWithReport builds the panel from the session view and the full logs.
@@ -129,9 +130,10 @@ func panelWithReport(v telemetry.PanelView, hash string, events []telemetry.Even
 	session := accounting.Scope{Kind: accounting.ScopeSession, SessionHash: hash}
 	out := panelOut{
 		PanelView: v, Report: nums, TokensSavedEstimate: nums.TokensSavedEstimate,
-		TokensSavedScope: scope.Label() + ", all sessions",
-		BelowSession:     belowSessionRows(events, execEvents, session),
-		Efficiency:       accounting.BuildEfficiency(events, scope),
+		TokensSavedScope:  scope.Label() + ", all sessions",
+		BelowSession:      belowSessionRows(events, execEvents, session),
+		Efficiency:        accounting.BuildEfficiency(events, scope),
+		WorkingMemoryLine: accounting.BuildWorkingMemory(nums).Line,
 	}
 	c := accounting.Compute(events, execEvents, session).Compactor
 	direct := accounting.DirectCompactor(execEvents, scope, time.Now())
