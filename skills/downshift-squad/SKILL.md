@@ -1,6 +1,6 @@
 ---
 name: downshift-squad
-description: Invoke Downshift agent squads for coordinated multi-agent work. Use when the user says "squad", "time", "convoca", or wants to delegate to specialized agents. For "downshift full power", "força total" or "downshift shift <squad>", use the downshift-orchestrator skill.
+description: Invoke Downshift agent squads. Use when the user says "squad", "time", "convoca", or wants specialized agents. For "downshift full power", "força total" or "downshift shift <squad>", use downshift-orchestrator.
 ---
 
 # Squad — Downshift Agent Orchestration

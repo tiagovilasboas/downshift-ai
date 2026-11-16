@@ -1,6 +1,6 @@
 ---
 name: downshift-audit
-description: Read-only audit of a Downshift install and its fixed agent context. Use when the user names Downshift and asks why it does not rewrite models, whether its hooks are wired, or where subagent tokens go; the fixed-context measurement is part of that audit, not a standalone trigger.
+description: Read-only audit of a Downshift install and its fixed agent context. Use when the user names Downshift and asks why it does not rewrite models, whether hooks are wired, or where subagent tokens go.
 ---
 
 # Downshift audit

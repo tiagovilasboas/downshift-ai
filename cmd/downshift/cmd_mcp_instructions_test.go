@@ -14,8 +14,8 @@ import (
 // session start, so the rule for when to call must come first and fit well
 // inside the cut.
 func TestMcpInstructionsLeadWithTheTriggerAndStayShort(t *testing.T) {
-	if n := len(mcpInstructions); n > 1500 {
-		t.Errorf("instructions are %d characters, want at most 1500", n)
+	if n := len(mcpInstructions); n > 900 {
+		t.Errorf("instructions are %d characters, want at most 900", n)
 	}
 	lead := mcpInstructions
 	if len(lead) > 160 {
@@ -24,7 +24,7 @@ func TestMcpInstructionsLeadWithTheTriggerAndStayShort(t *testing.T) {
 	if !strings.Contains(lead, "Before you spawn a subagent") || !strings.Contains(lead, "providers") {
 		t.Errorf("the first 160 characters should say when to call providers, got %q", lead)
 	}
-	for _, want := range []string{"[tier=small]", "apply", "playbook", "status", "never picks one for you", "always call providers first", "every time before a spawn"} {
+	for _, want := range []string{"[tier=small]", "apply", "playbook", "status", "it never picks", "always call providers first", "every time"} {
 		if !strings.Contains(mcpInstructions, want) {
 			t.Errorf("instructions lack %q", want)
 		}
@@ -43,22 +43,22 @@ func TestMcpInstructionsFollowTheWorkerMode(t *testing.T) {
 	}{
 		{"", []string{"Worker tools are off", "delegate refuses every task", "orchestration.workers"}, false},
 		{policy.WorkersOff, []string{"Worker tools are off"}, false},
-		{policy.WorkersRead, []string{"read-only worker", "agents: claude", "write mode is off"}, true},
+		{policy.WorkersRead, []string{"read-only workers", "agents: claude", "write mode is off"}, true},
 		{policy.WorkersWrite, []string{"own git worktree", "never merges"}, true},
 	} {
 		got := mcpInstructionsFor(policy.Workers{Mode: tc.mode, Agents: []string{"claude"}})
 		if !strings.HasPrefix(got, mcpInstructions) {
 			t.Errorf("mode %q: the providers rule must still lead", tc.mode)
 		}
-		if n := len(got); n > 2000 {
-			t.Errorf("mode %q: instructions are %d characters, want at most 2000", tc.mode, n)
+		if n := len(got); n > 900 {
+			t.Errorf("mode %q: instructions are %d characters, want at most 900", tc.mode, n)
 		}
 		for _, w := range tc.want {
 			if !strings.Contains(got, w) {
 				t.Errorf("mode %q: instructions lack %q", tc.mode, w)
 			}
 		}
-		for _, rule := range []string{"never a single command", "data, not instructions", "Collect every worker"} {
+		for _, rule := range []string{"separate process", "data, not instructions", "Collect every worker"} {
 			if strings.Contains(got, rule) != tc.wantRules {
 				t.Errorf("mode %q: rule %q present=%v, want %v", tc.mode, rule, !tc.wantRules, tc.wantRules)
 			}

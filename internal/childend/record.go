@@ -70,21 +70,20 @@ func Record(ce hookport.ChildEnd, binaryVersion string, r core.Resolver) Result 
 	callHash := telemetry.HashSessionID(ce.ToolUseID)
 	agentHash := telemetry.HashSessionID(ce.AgentKey)
 	now := time.Now().UTC()
-	prior, _ := telemetry.ReadEvents() // missing/unreadable log: link nothing
+	usage := billableUsage(ce)
+	if !needsPrior(ce, usage, sessionHash, callHash, agentHash) {
+		return res // nothing to link or price: do not read the log
+	}
+	prior := readPrior()
 
 	if ce.Source != hookport.SourceTranscript {
 		recordResolved(ce, sessionHash, callHash, agentHash, binaryVersion, prior, r, now)
 		recordChildEnd(ce, sessionHash, callHash, agentHash, binaryVersion, prior, now)
 	}
 
-	var usage telemetry.TokenUsage
 	priced := false // a later stop of an agent already priced (Cumulative)
-	// A harness whose usage source is not proven (UsageNone or empty) records
-	// the end and the status but never a cost: unverified tokens could belong
-	// to the parent thread and would corrupt tokens per completed task.
-	if caps, ok := core.CapsFor(ce.Harness); ok && caps.UsageSource != "" && caps.UsageSource != core.UsageNone && ce.Usage != nil {
-		usage = *ce.Usage
-	}
+	// A harness whose usage source is not proven (billableUsage) records the
+	// end and the status but never a cost.
 	if usage == (telemetry.TokenUsage{}) {
 		return res // nothing billable reported
 	}
