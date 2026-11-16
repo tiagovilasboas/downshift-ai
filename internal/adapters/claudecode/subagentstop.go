@@ -32,6 +32,13 @@ type subagentUsage struct {
 // repeats one message id across several lines while streaming, with cumulative
 // usage, so the last line per id is the one that counts. The model is what the
 // API reported for the response, not what any hook asked for.
+//
+// Output is a lower bound: Claude Code writes a row per content block with the
+// usage known at that moment, and a message whose final row (the one carrying
+// stop_reason) is never written keeps a mid-stream output count. Measured
+// 2026-11-16: 10 of 7,890 messages in 300 transcripts lacked that row. Input
+// and cache counts are set when a message starts, so they are complete for
+// every message the file holds.
 func readSubagentUsage(path string) (subagentUsage, bool) {
 	if filepath.Ext(path) != ".jsonl" {
 		return subagentUsage{}, false
@@ -150,7 +157,7 @@ func firstAssistantModel(path string) string {
 // Tokens come from, in order: (1) an inline `usage` object (the mod-router's
 // turn.complete path, which already holds API counts and needs no transcript),
 // or (2) the subagent's .jsonl transcript on disk (the settings SubagentStop
-// path). Source stays SourceTranscript in both cases: a stop only prices usage
+// path), re-read until it stops growing (readSettledSubagentUsage). Source stays SourceTranscript in both cases: a stop only prices usage
 // and does not claim how the child ended. ok is false when there is no agent
 // id or no usable tokens.
 func parseSubagentStop(payload map[string]any) (hookport.ChildEnd, bool) {
@@ -181,7 +188,7 @@ func parseSubagentStop(payload map[string]any) (hookport.ChildEnd, bool) {
 	if path == "" || !strings.HasSuffix(path, ".jsonl") {
 		return hookport.ChildEnd{}, false
 	}
-	got, ok := readSubagentUsage(path)
+	got, ok := readSettledSubagentUsage(path, transcriptSettle)
 	if !ok {
 		return hookport.ChildEnd{}, false
 	}

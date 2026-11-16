@@ -341,6 +341,20 @@ not an end). Claude Code keeps `claude-code-post-tool-use` and
 Where `ChildEndEvent` is empty, `downshift end <harness>` exits 0, records nothing
 and says so on stderr.
 
+**Claude Code transcript limits (measured 2026-11-16).** `SubagentStop` can fire
+before Claude Code appends the child's last assistant message(s) to
+`agent_transcript_path`: 211 of 279 recorded children were short by exactly
+their last one or two messages, and the file changed 17 to 90 ms after the hook
+had recorded. The hook now re-reads the transcript while it grows and stops once
+its size has been unchanged for 250 ms, or after 1 s in total (fail open: the
+last good read is recorded; an unreadable or oversized transcript is not waited
+on). Output tokens stay a lower bound: a message whose final row (the one with
+`stop_reason`) is never written keeps a mid-stream output count (10 of 7,890
+messages in 300 transcripts). The Agent tool's `PostToolUse` for a finished
+foreground child carries `tool_response.usage` and `totalTokens`, but both
+describe the child's last API call only, not its total, so they are not
+recorded; the child is priced once, from its transcript.
+
 ## Child-end line (U2, 2026-10-13)
 
 `HarnessCapabilities.CanShowChildLine` says whether the hook protocol can show
