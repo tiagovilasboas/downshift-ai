@@ -9,8 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.2] - 2026-11-16
+
+Release notes: [docs/releases/v0.17.2.md](docs/releases/v0.17.2.md).
+
+### Fixed
+
+- **`downshift doctor` counts only hook-written events as proof the hook ran.** The `last hook event` check accepted any event with the harness name, so a `git` or `mcp` event could report OK for a harness whose hook never fired. It now warns and says how many events came from other sources.
+
+### Added
+
+- **`downshift doctor` reads the event log for bridge harnesses such as OpenCode**: `last hook event`, completion and `rewrite honored` now run for a harness whose glue is a bridge plugin, not a hook file. No tier changes.
+
 ### Changed
 
+- **Hooks stay fast as the event log grows.** Plain tool calls return before the child-end recorder reads the log, and record paths read only its last 4 MiB. The MCP instructions (1,950 → 897 B), the largest tool descriptions, the SessionStart context (735 → about 250 B) and the longest skill descriptions are shorter, with every trigger phrase kept.
 - **Git hooks no longer re-run a gate that already passed.** The pre-push hook now runs `make check` instead of `make check-changed` then `make test-changed`. It covers the same ground (gofmt, `go vet` for host, Windows and Linux, and the tests of the changed packages and their dependents, selected by the script CI uses), but runs the stages at once, through the Go test cache, and skips a tree that the last green `make check` already passed. Measured on a one-package change: 142 s before, 4 s on a new edit, 1 s on a push right after a green `make check`. Over the last 25 sessions, pushes had taken 433 minutes in total (p90 160 s). The pre-commit tests use the Go test cache as well. CI and `make check-full` still run uncached.
 
 ## [0.17.1] - 2026-11-12
