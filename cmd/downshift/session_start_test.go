@@ -30,9 +30,14 @@ func TestSessionStartAnswersWithContextAndTheToolsToCall(t *testing.T) {
 		t.Errorf("event = %q", got.HookSpecificOutput.HookEventName)
 	}
 	ctx := got.HookSpecificOutput.AdditionalContext
-	for _, want := range []string{"providers", "apply", "[tier=small]", "read-only", "Every time you are about to spawn"} {
+	for _, want := range []string{"Downshift is installed", "by tier", "never by model name", "server instructions"} {
 		if !strings.Contains(ctx, want) {
 			t.Errorf("context lacks %q: %s", want, ctx)
 		}
+	}
+	// The spawn rule lives in the MCP instructions only; repeating it here costs
+	// tokens in every session.
+	if strings.Contains(ctx, "providers first") || len(ctx) > 300 {
+		t.Errorf("context repeats the instructions or is %d bytes (cap 300): %s", len(ctx), ctx)
 	}
 }

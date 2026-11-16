@@ -1,6 +1,6 @@
 ---
 name: downshift-setup
-description: Install or repair Downshift hooks on the user's machine for any harness (Claude Code, Cursor, Codex, Antigravity, KiroCrew). Use when asked to install, set up, wire, fix or undo Downshift, or when subagents never change model. Dry-run first, write only after a yes.
+description: Install or repair Downshift hooks for any harness (Claude Code, Cursor, Codex, Antigravity, KiroCrew). Use to install, set up, wire, fix or undo Downshift, or when subagents never change model. Dry-run first, write only after a yes.
 ---
 
 # Downshift setup

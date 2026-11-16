@@ -1,6 +1,6 @@
 ---
 name: downshift-tune
-description: Tune what a session spends in tokens and quota with Downshift installed, in a fixed order with evidence first. Diagnoses routing, fixed context, tool output and project policy, then proposes one change at a time. Use only when the user names Downshift, or asks to cut subagent tokens, context or quota in a project where `downshift doctor` runs. Writes nothing to a file outside the repository without the user's yes.
+description: Tune session tokens and quota, evidence first, one change at a time (routing, fixed context, tool output, project policy). Use only when the user names Downshift or asks to cut subagent tokens, context or quota where `downshift doctor` runs. Asks before writing outside the repo.
 ---
 
 # Downshift tune

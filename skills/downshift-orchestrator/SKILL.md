@@ -1,6 +1,6 @@
 ---
 name: downshift-orchestrator
-description: Playbook for the orchestrator (the lead session) when it delegates work to subagents. Use when splitting a task into subagents or choosing the model and effort of a spawn, with Downshift installed. Also use when the user says "downshift full power" or "full-power", "potência total" or "potencia-total", "força total" or "forca-total", "downshift full force" or "full-force" (the squad the task needs, up to 5 at once), or "downshift shift <squad>" (security, quality, core, leadership).
+description: Playbook for the lead session when delegating to subagents or choosing a spawn's model and effort. Also when the user says "downshift full power", "full-power", "potência total", "potencia-total", "força total", "forca-total", "downshift full force", "full-force", or "downshift shift <squad>" (security, quality, core, leadership).
 triggers:
   - downshift full-power
   - downshift shift
