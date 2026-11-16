@@ -49,9 +49,11 @@ STATICCHECK = GOTOOLCHAIN="$$(go env GOVERSION)" go run honnef.co/go/tools/cmd/s
 # run while other worktrees load the machine.
 HOOK_ENV = DOWNSHIFT_TEST_TIMEOUT_SCALE=$${DOWNSHIFT_TEST_TIMEOUT_SCALE:-4}
 # At most 4 test binaries at once per hook run, so parallel worktrees share the CPUs.
-HOOK_TEST = $(HOOK_ENV) go test -count=1 -p $${DOWNSHIFT_HOOK_TEST_P:-4}
+# Through the Go test cache: a package whose inputs (code, env it reads, files it opens)
+# did not change keeps its last result. CI and make check-full still run uncached.
+HOOK_TEST = $(HOOK_ENV) go test -p $${DOWNSHIFT_HOOK_TEST_P:-4}
 
-## check-changed: gofmt, then go vet (host, windows, linux) on the changed packages and their dependents; run by the pre-push hook
+## check-changed: gofmt, then go vet (host, windows, linux) on the changed packages and their dependents; manual (the pre-push hook runs make check)
 check-changed:
 	@echo "[1/2] gofmt -l ."
 	@out=$$("$(GOFMT)" -l .); if [ -n "$$out" ]; then echo "$$out"; echo "gofmt: format the files above (gofmt -w <file>)"; exit 1; fi
@@ -60,21 +62,21 @@ check-changed:
 	echo "[2/2] go vet (host, GOOS=windows, GOOS=linux) $$(echo $$pkgs)"; \
 	go vet $$pkgs && GOOS=windows GOARCH=amd64 go vet $$pkgs && GOOS=linux GOARCH=amd64 go vet $$pkgs
 
-## test-changed: go test -count=1 on the packages changed since origin/main and their dependents, the CI selection (./... when unsure); run by the pre-push hook
+## test-changed: go test (cached) on the packages changed since origin/main and their dependents, the CI selection (./... when unsure); manual (the pre-push hook runs make check)
 test-changed:
 	@$(CHANGED_PKGS); \
 	if [ -z "$$pkgs" ]; then echo "[test-changed] no Go packages to test"; exit 0; fi; \
 	echo "[test-changed] $$(echo $$pkgs)"; \
 	$(HOOK_TEST) $$pkgs
 
-## test-mods: the Claude Code mod's own tests (claude plugin test), only when mods/ changed since origin/main; run by the pre-push hook
+## test-mods: the Claude Code mod's own tests (claude plugin test), only when mods/ changed since origin/main; manual (the pre-push hook runs make check)
 test-mods:
 	@base=$$(git merge-base origin/main HEAD 2>/dev/null); \
 	if [ -n "$$base" ] && git diff --quiet "$$base" HEAD -- mods/; then echo "[test-mods] mods/ unchanged"; exit 0; fi; \
 	if ! command -v claude >/dev/null 2>&1; then echo "[test-mods] claude CLI not on PATH; skipped"; exit 0; fi; \
 	claude plugin test mods/downshift-agents
 
-## test-staged: go test -count=1 on the packages of the staged .go files only (fast); run by the pre-commit hook
+## test-staged: go test (cached) on the packages of the staged .go files only (fast); run by the pre-commit hook
 test-staged:
 	@$(STAGED_PKGS); \
 	if [ -z "$$pkgs" ]; then echo "[test-staged] no staged Go packages"; exit 0; fi; \
