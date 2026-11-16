@@ -28,11 +28,13 @@ Downshift's code, no prompt storage** on the hot path, and every failure fails o
 > effort; Downshift applies the choice, enforces `policy.json` and measures. The
 > decider (`internal/routing/decide`) resolves: a pinned model is kept, then a declared
 > profile, then the first matching declared rule, then the orchestrator's tier hint
-> (down only for now), else the requested model is kept. The guard refuses only a
+> (down only for now), then a decisive TRIVIAL or SIMPLE class with no risk category
+> moves down to small (`routing.by_class`, on by default since 2026-11-01), else the requested
+> model is kept. The guard refuses only a
 > foreign id or an `explicit_only` model and keeps on doubt. Removed on 2026-10-28: the
 > built-in agent-type table (N11), the automatic upgrade after a failure, the built-in
-> risk floor and veto, and the economy effect on built-in types. The classifier now
-> feeds telemetry and user-declared floors; it does not decide. Where the sections
+> risk floor and veto, and the economy effect on built-in types. The classifier feeds
+> telemetry, user-declared floors and that one move down; it never moves a spawn up. Where the sections
 > below describe the classifier or the risk floor as the decision, they are the
 > pre-O8 pipeline. Added: playbooks (`downshift playbook`) and the `downshift-orchestrator`
 > skill (implemented); `downshift mcp serve` (implemented: six information tools and seven worker tools; see [cli](../reference/cli.md) and [safety](../features/safety.md)).
