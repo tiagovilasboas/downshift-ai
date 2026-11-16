@@ -138,11 +138,17 @@ func redactAWSStructured(current []byte, flags uint32) ([]byte, bool) {
 		lineModified = true
 	}
 
+	// The STS order matters: each replacement reads the previous one's output
+	// (a CREDENTIALS row holding "SessionToken: v" redacts differently).
+	if flags&hintSTSKey != 0 && flags&hintQuote != 0 && reSTSJSON.Match(current) {
+		current = reSTSJSON.ReplaceAll(current, []byte(`${1}"`+RedactedMark+`"`))
+		lineModified = true
+	}
+	if flags&hintCreds != 0 && reSTSCredentialsText.Match(current) {
+		current = reSTSCredentialsText.ReplaceAll(current, []byte(`${1}`+RedactedMark+`${3}`+RedactedMark+`${5}`+RedactedMark+`${7}`))
+		lineModified = true
+	}
 	if flags&hintSTSKey != 0 {
-		if flags&hintQuote != 0 && reSTSJSON.Match(current) {
-			current = reSTSJSON.ReplaceAll(current, []byte(`${1}"`+RedactedMark+`"`))
-			lineModified = true
-		}
 		if hasPipe && reSTSTable.Match(current) {
 			current = reSTSTable.ReplaceAll(current, []byte(`${1}`+RedactedMark+`${2}`))
 			lineModified = true
@@ -151,10 +157,6 @@ func redactAWSStructured(current []byte, flags uint32) ([]byte, bool) {
 			current = reSTSCLIKeyValue.ReplaceAll(current, []byte(`${1}`+RedactedMark))
 			lineModified = true
 		}
-	}
-	if flags&hintCreds != 0 && reSTSCredentialsText.Match(current) {
-		current = reSTSCredentialsText.ReplaceAll(current, []byte(`${1}`+RedactedMark+`${3}`+RedactedMark+`${5}`+RedactedMark+`${7}`))
-		lineModified = true
 	}
 
 	if flags&hintAWS != 0 {

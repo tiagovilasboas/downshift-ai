@@ -58,7 +58,7 @@ func TestRun_AntiLoopGuard(t *testing.T) {
 	if res.ExitCode != 1 {
 		t.Fatalf("run 3: exit code = %d, want 1", res.ExitCode)
 	}
-	want := "⚠️ [downshift ccr] Identical failure detected 3x (digest: deadbeef0001). Context loop detected. Check approach or review previous run with 'downshift retrieve deadbeef0001'."
+	want := "⚠️ [downshift ccr] Identical failure detected 3x (digest: deadbeef0001). Context loop detected. Check approach or review previous run with 'downshift retrieve --session=aaaaaaaaaaaa deadbeef0001'."
 	if !strings.Contains(stderr, want) {
 		t.Fatalf("run 3: stderr = %q, want substring %q", stderr, want)
 	}
@@ -114,6 +114,7 @@ func TestRun_AntiLoopFailOpenOnBadStateDir(t *testing.T) {
 		Stdout:     &out,
 		Stderr:     &errb,
 		Compact:    true,
+		Session:    "cccccccccccccccc",
 		KeepFailed: func([]byte) (string, bool) { return "deadbeef0003", true },
 	})
 	if res.ExitCode != 1 {

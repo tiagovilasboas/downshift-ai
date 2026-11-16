@@ -130,12 +130,13 @@ func panelWithReport(v telemetry.PanelView, hash string, events []telemetry.Even
 	session := accounting.Scope{Kind: accounting.ScopeSession, SessionHash: hash}
 	out := panelOut{
 		PanelView: v, Report: nums, TokensSavedEstimate: nums.TokensSavedEstimate,
-		TokensSavedScope:  scope.Label() + ", all sessions",
-		BelowSession:      belowSessionRows(events, execEvents, session),
-		Efficiency:        accounting.BuildEfficiency(events, scope),
-		WorkingMemoryLine: accounting.BuildWorkingMemory(nums).Line,
+		TokensSavedScope: scope.Label() + ", all sessions",
+		BelowSession:     belowSessionRows(events, execEvents, session),
+		Efficiency:       accounting.BuildEfficiency(events, scope),
 	}
-	c := accounting.Compute(events, execEvents, session).Compactor
+	sessionNums := accounting.Compute(events, execEvents, session)
+	out.WorkingMemoryLine = accounting.BuildWorkingMemory(sessionNums).Line
+	c := sessionNums.Compactor
 	direct := accounting.DirectCompactor(execEvents, scope, time.Now())
 	if c.Commands == 0 && direct.Commands == 0 {
 		return out
