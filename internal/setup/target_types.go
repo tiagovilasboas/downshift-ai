@@ -128,6 +128,11 @@ type Target struct {
 	Activate string
 }
 
+// Bridge reports a harness whose glue is whole files setup writes (Files) and
+// that has no hook file (File empty), the OpenCode plugin. Doctor reads it to
+// check the event log for such a harness, since there is no hook file to read.
+func (t Target) Bridge() bool { return len(t.Files) > 0 && t.File == "" }
+
 // Ways setup --mcp registers the server (mcp.go).
 const (
 	// McpViaCLI delegates the write to the harness CLI (`claude mcp add`); File

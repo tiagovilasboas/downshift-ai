@@ -241,6 +241,8 @@ func buildDoctorReport(env doctorEnv) *doctorReport {
 			}
 			if !checkGeneratedFiles(add, env.Home, harness) {
 				rep.NotDetected = append(rep.NotDetected, harness)
+			} else {
+				bridgeEvidence(rep, env, nc, pathBin, events)
 			}
 			continue
 		}
