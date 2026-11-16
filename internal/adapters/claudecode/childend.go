@@ -37,6 +37,11 @@ func isAgentTool(payload map[string]any) bool {
 // ended (event name, tool_response.status, is_interrupt; the error text is
 // never read) and any usage the payload itself reports. ok is false when the
 // payload is neither a subagent call nor carries a model or usage.
+//
+// tool_response.usage of a finished foreground child is deliberately not read:
+// it is the usage of the child's last API call only (one `iterations` entry,
+// and totalTokens equals that call's input, cache and output), not the child's
+// total. The child's total comes from its transcript at SubagentStop.
 func parsePostToolUse(payload map[string]any) (hookport.ChildEnd, bool) {
 	agent := isAgentTool(payload)
 	resolved := resolvedModel(payload)
