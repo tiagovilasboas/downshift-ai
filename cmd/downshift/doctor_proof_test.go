@@ -21,7 +21,7 @@ func TestDoctor_HistoricalSessionCannotProveCurrentHost(t *testing.T) {
 		if age != 0 {
 			events = []telemetry.Event{{Timestamp: f.started.Add(-age).Format(time.RFC3339Nano), SessionID: "recorded-session", Verdict: "OK", Outcome: "allow"}}
 		}
-		checkLastEvent(func(_, _, d, _ string) { detail = d }, f.env, "codex", events, "")
+		checkLastEvent(func(_, _, d, _ string) { detail = d }, f.env, "codex", events, 0, "")
 		if !strings.Contains(detail, "session not verified") {
 			t.Fatalf("age %s: historical event claimed current host proof: %q", age, detail)
 		}
@@ -31,7 +31,7 @@ func TestDoctor_HistoricalSessionCannotProveCurrentHost(t *testing.T) {
 func (f *doctorFixture) writeDecision(t *testing.T, age time.Duration, verdict, outcome, from, to string) {
 	t.Helper()
 	ts := f.started.Add(-age).Format(time.RFC3339Nano)
-	line := fmt.Sprintf(`{"correlation_id":"d1","timestamp":%q,"harness":"claude-code","requested_model":%q,"final_model":%q,"verdict":%q,"outcome":%q}`, ts, from, to, verdict, outcome)
+	line := fmt.Sprintf(`{"correlation_id":"d1","timestamp":%q,"harness":"claude-code","source":"hook","requested_model":%q,"final_model":%q,"verdict":%q,"outcome":%q}`, ts, from, to, verdict, outcome)
 	writeFile(t, filepath.Join(f.home, ".downshift", "events.jsonl"), line+"\n")
 }
 
@@ -114,5 +114,45 @@ func TestDoctor_QuotaSource(t *testing.T) {
 	wantStatus(t, c, doctorOK)
 	if !strings.Contains(c.Detail, "claude-statusline") {
 		t.Errorf("the source should be named: %q", c.Detail)
+	}
+}
+
+func TestDoctor_LastEventCountsOnlyHookSource(t *testing.T) {
+	const fix = "restart codex"
+	for _, tc := range []struct {
+		name   string
+		source string
+		hasEv  bool
+		age    time.Duration
+		want   string
+		detail string
+		fixHas string
+	}{
+		{"recent hook event", "hook", true, time.Minute, doctorOK, "1m ago", ""},
+		{"only cli event", "cli", true, time.Minute, doctorWarn, "no hook-written event", fix},
+		{"only git acceptance event", "git", true, time.Minute, doctorWarn, "other sources", fix},
+		{"no events", "", false, 0, doctorWarn, "none in the event log yet", fix},
+		{"stale hook event", "hook", true, 8 * 24 * time.Hour, doctorWarn, "older than 7 days", fix},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := newDoctorFixture(t)
+			var events []telemetry.Event
+			if tc.hasEv {
+				events = []telemetry.Event{{Timestamp: f.started.Add(-tc.age).Format(time.RFC3339Nano), Harness: "codex", Source: tc.source, Verdict: "OK", Outcome: "allow"}}
+			}
+			var hook, other []telemetry.Event
+			for _, ev := range events {
+				if ev.Source == "hook" {
+					hook = append(hook, ev)
+				} else {
+					other = append(other, ev)
+				}
+			}
+			var status, detail, gotFix string
+			checkLastEvent(func(_, s, d, x string) { status, detail, gotFix = s, d, x }, f.env, "codex", hook, len(other), "")
+			if status != tc.want || !strings.Contains(detail, tc.detail) || !strings.Contains(gotFix, tc.fixHas) {
+				t.Fatalf("status %q detail %q fix %q; want %q containing %q / %q", status, detail, gotFix, tc.want, tc.detail, tc.fixHas)
+			}
+		})
 	}
 }

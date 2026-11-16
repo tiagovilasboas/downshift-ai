@@ -156,8 +156,8 @@ func TestDoctorDuplicateEntry(t *testing.T) {
 	f := newDoctorFixture(t)
 	ts := f.started.Add(-time.Hour).Format(time.RFC3339Nano)
 	writeFile(t, filepath.Join(f.home, ".downshift", "events.jsonl"), strings.Join([]string{
-		fmt.Sprintf(`{"correlation_id":"d1","timestamp":%q,"harness":"claude-code","outcome":"allow","tool_use_hash":"abc","entry":"hook"}`, ts),
-		fmt.Sprintf(`{"correlation_id":"d2","timestamp":%q,"harness":"claude-code","outcome":"allow","tool_use_hash":"abc","entry":"mod"}`, ts),
+		fmt.Sprintf(`{"correlation_id":"d1","timestamp":%q,"harness":"claude-code","source":"hook","outcome":"allow","tool_use_hash":"abc","entry":"hook"}`, ts),
+		fmt.Sprintf(`{"correlation_id":"d2","timestamp":%q,"harness":"claude-code","source":"hook","outcome":"allow","tool_use_hash":"abc","entry":"mod"}`, ts),
 	}, "\n")+"\n")
 	writeFile(t, filepath.Join(f.home, ".claude", "settings.json"), claudeSettings(f.bin))
 	rep := buildDoctorReport(f.env)

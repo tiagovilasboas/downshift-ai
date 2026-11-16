@@ -19,9 +19,11 @@ const lastEventStale = 7 * 24 * time.Hour
 
 // checkLastEvent reports when the hook last logged and what it decided, so a
 // wired hook that never fires is told apart from one that fired and held.
+// mine holds only events a hook wrote (Source "hook"); nonHook counts the
+// harness events that came from elsewhere (git, mcp, cli), which prove nothing.
 // activate, when set, is the fix for a harness that never recorded an event:
 // the flag and activation steps it declares (activationFix).
-func checkLastEvent(add func(id, status, detail, fix string), env doctorEnv, h string, mine []telemetry.Event, activate string) {
+func checkLastEvent(add func(id, status, detail, fix string), env doctorEnv, h string, mine []telemetry.Event, nonHook int, activate string) {
 	fix := fmt.Sprintf("restart %s (hooks load at session start), spawn one subagent, then run: downshift stats --days=1", h)
 	var last time.Time
 	var lastDecision telemetry.Event
@@ -40,8 +42,14 @@ func checkLastEvent(add func(id, status, detail, fix string), env doctorEnv, h s
 	}
 	if last.IsZero() {
 		detail := "none in the event log yet; current host session not verified"
+		if nonHook > 0 {
+			detail = fmt.Sprintf("no hook-written event; %d event(s) came from other sources (git, mcp, cli), which do not show a hook ran", nonHook)
+		}
 		if activate != "" {
 			detail = "none in the event log yet: the hooks are wired but " + h + " has never run one"
+			if nonHook > 0 {
+				detail = fmt.Sprintf("no hook-written event: the hooks are wired but %d event(s) for %s came from other sources (git, mcp, cli)", nonHook, h)
+			}
 			fix = activate
 		}
 		add("last hook event", doctorWarn, detail, fix)
