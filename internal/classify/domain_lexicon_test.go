@@ -5,6 +5,7 @@ package classify
 
 import (
 	"encoding/json"
+	"regexp"
 	"testing"
 )
 
@@ -15,6 +16,16 @@ func TestEmbeddedBilingualLexiconCoverage(t *testing.T) {
 	}
 	if len(lex.actions) != 9 || len(lex.terms) != 96 {
 		t.Fatalf("lexicon: got %d actions and %d rules, want 9 and 96", len(lex.actions), len(lex.terms))
+	}
+	for key, joined := range lex.actions {
+		if _, err := regexp.Compile("(?i)(?:" + joined + ")"); err != nil {
+			t.Errorf("action %s regex: %v", key, err)
+		}
+	}
+	for key, joined := range lex.terms {
+		if _, err := regexp.Compile("(?i)(?:" + joined + ")"); err != nil {
+			t.Errorf("rule %s regex: %v", key, err)
+		}
 	}
 	for _, table := range [][]DomainSignalDef{RawDomainSignals(), RawExtendedDomainSignals()} {
 		for _, r := range table {
