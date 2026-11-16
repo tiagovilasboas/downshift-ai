@@ -38,11 +38,11 @@ https://github.com/tiagovilasboas/downshift-ai
 
 | Wave | Task | Story Points | Depends On | Parallel Group | Target Files / Packages | Status |
 | :---: | :--- | :---: | :---: | :---: | :--- | :---: |
-| **W6** | Circuit Breaker fast-path tail read (skip `linkLateUsage` on hook hot path) | 1 SP | — | **Group A** | `internal/telemetry/tail.go`, `internal/telemetry/event_log_read.go`, `cmd/downshift/hook_circuit.go` | Planned |
-| **W7** | Per-category lazy regex compilation in `risk.go` (`lazyre` behind `mayMatch`) | 1 SP | — | **Group A** | `internal/classify/risk.go` | Planned |
+| **W6** | Circuit Breaker fast-path tail read (skip `linkLateUsage` on hook hot path) | 1 SP | — | **Group A** | `internal/telemetry/tail.go`, `internal/telemetry/event_log_read.go`, `cmd/downshift/hook_circuit.go` | Done |
+| **W7** | Per-category lazy regex compilation in `risk.go` (`lazyre` behind `mayMatch`) | 1 SP | — | **Group A** | `internal/classify/risk.go` | Done |
 | **W8** | CCR Anti-Loop 24h TTL & stale `ccr-loop-*.json` pruning | 1 SP | — | **Group A** | `internal/execwrap/antiloop.go`, `internal/execwrap/antiloop_test.go` | Done (#117) |
 | **W9** | Consolidate redundant O(N) passes in `telemetry.Aggregate` | 2 SP | W6 | **Group B** | `internal/telemetry/aggregate.go` | Planned |
-| **W10** | Zero `funcCountBaseline` (Part 1: 10 files in Core, Adapters, Catalog, Discovery, Paths, Workers) | 3 SP | — | **Group A** | `internal/adapters/{claudecode,codex,kirocrew}`, `internal/catalog`, `internal/core`, `internal/discovery`, `internal/paths`, `internal/workers` | Planned |
+| **W10** | Zero `funcCountBaseline` (Part 1: 10 files in Core, Adapters, Catalog, Discovery, Paths, Workers) | 3 SP | — | **Group A** | `internal/adapters/{claudecode,codex,kirocrew}`, `internal/catalog`, `internal/core`, `internal/discovery`, `internal/paths`, `internal/workers` | Done |
 | **W11** | Zero `funcCountBaseline` (Part 2: 11 files in Telemetry, Console, ContextOpt, Cmd; empty baseline map) | 3 SP | W9, W10 | **Group B** | `internal/telemetry`, `internal/console`, `internal/contextopt`, `cmd/downshift`, `internal/archtest/func_count_test.go` | Planned |
 
 * **Out of Scope for Phase 2:**

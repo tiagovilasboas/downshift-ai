@@ -4,26 +4,27 @@
 package classify
 
 import (
-	"regexp"
 	"slices"
 	"sort"
 	"strings"
 	"sync"
+
+	"github.com/tiagovilasboas/downshift-ai/internal/lazyre"
 )
 
 type riskSignal struct {
 	category string
-	re       *regexp.Regexp
+	re       *lazyre.Regexp
 	literals []string // nil: no prefilter, always run re
 }
 
-// Compiled on first use, not at package init (see signals).
+// Registered on first use and each regex compiled only when its prefilter matches.
 var riskSignals = sync.OnceValue(func() []riskSignal {
 	out := make([]riskSignal, 0, len(RawRiskSignals))
 	for _, r := range RawRiskSignals {
 		out = append(out, riskSignal{
 			category: r.Category,
-			re:       regexp.MustCompile(`(?i)` + r.Pattern),
+			re:       lazyre.New(`(?i)` + r.Pattern),
 			literals: riskLiterals[r.Category],
 		})
 	}

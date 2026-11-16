@@ -19,8 +19,19 @@ func ReadEventsTail(maxBytes int64) ([]Event, error) {
 	return ReadEventsTailFrom(defaultEventPath(), maxBytes)
 }
 
+// ReadEventsTailUnlinked reads the tail of the default event log without
+// running linkLateUsage, for callers like the circuit breaker that only
+// inspect raw failure/decision rows.
+func ReadEventsTailUnlinked(maxBytes int64) ([]Event, error) {
+	return readEventsTailFrom(defaultEventPath(), maxBytes, parseEventsRaw)
+}
+
 // ReadEventsTailFrom is ReadEventsTail for an explicit path.
 func ReadEventsTailFrom(path string, maxBytes int64) ([]Event, error) {
+	return readEventsTailFrom(path, maxBytes, parseEvents)
+}
+
+func readEventsTailFrom(path string, maxBytes int64, parse func(io.Reader) ([]Event, error)) ([]Event, error) {
 	f, err := os.Open(path)
 	if os.IsNotExist(err) {
 		return nil, nil
@@ -35,7 +46,7 @@ func ReadEventsTailFrom(path string, maxBytes int64) ([]Event, error) {
 	}
 	size := fi.Size()
 	if maxBytes <= 0 || size <= maxBytes {
-		return parseEvents(f)
+		return parse(f)
 	}
 	buf := make([]byte, maxBytes)
 	if _, err := f.ReadAt(buf, size-maxBytes); err != nil && err != io.EOF {
@@ -47,5 +58,5 @@ func ReadEventsTailFrom(path string, maxBytes int64) ([]Event, error) {
 			break
 		}
 	}
-	return parseEvents(bytes.NewReader(buf))
+	return parse(bytes.NewReader(buf))
 }

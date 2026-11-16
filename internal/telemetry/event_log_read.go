@@ -31,6 +31,12 @@ func ReadEventsFrom(path string) ([]Event, error) {
 }
 
 func parseEvents(r io.Reader) ([]Event, error) {
+	events, err := parseEventsRaw(r)
+	linkLateUsage(events)
+	return events, err
+}
+
+func parseEventsRaw(r io.Reader) ([]Event, error) {
 	var events []Event
 	sc := bufio.NewScanner(r)
 	sc.Buffer(make([]byte, 0, 64*1024), MaxLineBytes)
@@ -45,7 +51,6 @@ func parseEvents(r io.Reader) ([]Event, error) {
 		}
 		events = append(events, ev)
 	}
-	linkLateUsage(events)
 	return events, sc.Err()
 }
 
