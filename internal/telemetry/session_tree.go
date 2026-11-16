@@ -48,6 +48,7 @@ type TreeRow struct {
 	Depth  int    `json:"depth"` // 0 for a first attempt, +1 for each redo level
 	Label  string `json:"label"`
 	Model  string `json:"model"`
+	Effort string `json:"effort,omitempty"`
 	Status string `json:"status"` // done|redone|error|blocked|running|unknown
 	// Tokens is this child's routing tokens, known once it ended;
 	// TokensLabel its text. Tokens only, never dollars.
@@ -145,4 +146,24 @@ func sessionEvents(events []Event, sessionHash string) []Event {
 func evTime(ev Event) time.Time {
 	t, _ := time.Parse(time.RFC3339Nano, ev.Timestamp)
 	return t
+}
+
+func isKnownEffort(s string) bool {
+	return s != "" && s != "unknown" && s != EffortUnobserved
+}
+
+// rowEffort returns the child's reasoning effort when known: the usage
+// record's final effort, else the decision's final effort, else its requested
+// effort.
+func rowEffort(d Event, f *childFacts) string {
+	if f != nil && f.usage != nil && isKnownEffort(f.usage.FinalEffort) {
+		return f.usage.FinalEffort
+	}
+	if isKnownEffort(d.FinalEffort) {
+		return d.FinalEffort
+	}
+	if isKnownEffort(d.RequestedEffort) {
+		return d.RequestedEffort
+	}
+	return ""
 }

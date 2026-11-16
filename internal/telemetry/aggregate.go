@@ -69,6 +69,7 @@ func newAggregator() *aggregator {
 			ChildStatus:  make(map[ChildStatus]int),
 			ReasonCodes:  make(map[string]int),
 			ModelMix:     make(map[string]int),
+			EffortMix:    make(map[string]int),
 			ByAgentType:  make(map[string]AgentTypeCount),
 		},
 		decisions: make(map[linkKey]Event),
@@ -144,6 +145,11 @@ func (a *aggregator) countDecision(ev Event) {
 	a.s.ByComplexity[ev.Complexity]++
 	served, isRefuted := a.refuted[linkKey{ev.Harness, DecisionKey(ev)}]
 	a.countModelMix(ev, isRefuted, served)
+	if isKnownEffort(ev.FinalEffort) {
+		a.s.EffortMix[ev.FinalEffort]++
+	} else if isKnownEffort(ev.RequestedEffort) {
+		a.s.EffortMix[ev.RequestedEffort]++
+	}
 	a.countGatewayShadow(ev)
 	for _, code := range ev.ReasonCodes {
 		a.s.ReasonCodes[code]++

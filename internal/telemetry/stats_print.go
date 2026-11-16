@@ -6,6 +6,7 @@ package telemetry
 import (
 	"fmt"
 	"io"
+	"sort"
 )
 
 // StatsOptions controls PrintStats output.
@@ -56,6 +57,7 @@ func PrintStats(events []Event, opts StatsOptions, w io.Writer) {
 		fmt.Fprintf(w, "  %-8s            %8d  %5.1f%%\n", cls, n, pct(n, s.Total))
 	}
 	fmt.Fprintf(w, "\n")
+	printEffortMix(w, s.EffortMix, s.Total)
 
 	if s.Corrected > 0 {
 		fmt.Fprintf(w, "Safety-held           %8d  (guardrail applied, see corrections)\n", s.Corrected)
@@ -141,4 +143,29 @@ func printChildStatus(w io.Writer, counts map[ChildStatus]int) {
 		}
 	}
 	fmt.Fprintf(w, "  Note: launched is a background start, not a success.\n")
+}
+
+// printEffortMix writes the "By effort" section when at least one decision
+// carried a known reasoning effort.
+func printEffortMix(w io.Writer, mix map[string]int, total int) {
+	if len(mix) == 0 {
+		return
+	}
+	fmt.Fprintf(w, "By effort\n")
+	keys := make([]string, 0, len(mix))
+	for k := range mix {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		ri, rj := effortLevels[keys[i]], effortLevels[keys[j]]
+		if ri != rj {
+			return ri < rj
+		}
+		return keys[i] < keys[j]
+	})
+	for _, k := range keys {
+		n := mix[k]
+		fmt.Fprintf(w, "  %-8s            %8d  %5.1f%%\n", k, n, pct(n, total))
+	}
+	fmt.Fprintf(w, "\n")
 }
