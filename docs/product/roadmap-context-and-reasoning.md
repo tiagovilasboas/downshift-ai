@@ -6,7 +6,7 @@
 Downshift by Tiago Vilas Boas  
 https://github.com/tiagovilasboas/downshift-ai
 
-**Status:** Planned / Local Roadmap  
+**Status:** Done (P1–P3 delivered)  
 **Origin:** Empirical insights from Fabio Akita's *"Competente o Suficiente"* (October 2026) on context-window degradation (*context rot*), reasoning effort sensitivity, and autonomous agent loops.
 
 ---
@@ -80,5 +80,5 @@ Downshift is uniquely positioned at the OS / PreToolUse hook boundary to mitigat
 | Milestone | Deliverable | Effort | Dependencies | Target |
 | :--- | :--- | :---: | :--- | :---: |
 | **P1** | Working Memory Preserved in `downshift session` | 1 SP | None (ready to implement) | **Done** (`internal/accounting/working_memory.go`) |
-| **P2** | Reasoning Effort Observability in `session` & `stats` | 2 SP | P1 | Sprint +1 |
-| **P3** | CCR Anti-Loop Guard | 3 SP | P1, CCR digest storage | Sprint +2 |
+| **P2** | Reasoning Effort Observability in `session` & `stats` | 2 SP | P1 | **Done** (`internal/telemetry`) |
+| **P3** | CCR Anti-Loop Guard | 3 SP | P1, CCR digest storage | **Done** (`internal/execwrap/antiloop.go`) |

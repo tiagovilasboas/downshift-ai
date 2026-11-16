@@ -130,6 +130,7 @@ func (v SessionTreeView) Render() string {
 	b.WriteByte('\n')
 
 	names := make([]string, len(v.Rows))
+	models := make([]string, len(v.Rows))
 	costs := make([]string, len(v.Rows))
 	nameW, modelW, costW := 0, 0, 0
 	var lastAt []bool // per ancestor depth: that ancestor was the last of its siblings
@@ -160,7 +161,8 @@ func (v SessionTreeView) Render() string {
 		}
 		names[i] = p.String() + r.Label
 		nameW = max(nameW, utf8.RuneCountInString(names[i]))
-		modelW = max(modelW, utf8.RuneCountInString(r.Model))
+		models[i] = rowModelLabel(r)
+		modelW = max(modelW, utf8.RuneCountInString(models[i]))
 		costs[i] = "-"
 		if r.TokensLabel != "" {
 			costs[i] = r.TokensLabel
@@ -169,7 +171,7 @@ func (v SessionTreeView) Render() string {
 	}
 	for i, r := range v.Rows {
 		line := fmt.Sprintf("%s  %s  %s  %s  %s",
-			padRight(names[i], nameW), padRight(r.Model, modelW), r.mark,
+			padRight(names[i], nameW), padRight(models[i], modelW), r.mark,
 			padRight(costs[i], costW), rowWords(r))
 		b.WriteString(strings.TrimRight(line, " "))
 		b.WriteByte('\n')
@@ -178,6 +180,13 @@ func (v SessionTreeView) Render() string {
 		b.WriteString("by type: " + strings.Join(lines, " · ") + "\n")
 	}
 	return b.String()
+}
+
+func rowModelLabel(r TreeRow) string {
+	if isKnownEffort(r.Effort) {
+		return r.Model + " [effort: " + r.Effort + "]"
+	}
+	return r.Model
 }
 
 func padRight(s string, w int) string {

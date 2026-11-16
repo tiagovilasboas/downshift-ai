@@ -214,6 +214,7 @@ func Run(argv []string, o Options) (res Result) {
 		res.EmittedBytes += int64(g.noteBytes)
 		res.KeptID = keptID
 	}
+	checkAntiLoop(o.Stderr, o.Session, res.ExitCode, res.KeptID)
 	return res
 }
 

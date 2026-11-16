@@ -69,6 +69,9 @@ type Stats struct {
 	// ModelMix counts decisions per model the child ended up on (final_model,
 	// short family name). Decisions with no recorded model add nothing.
 	ModelMix map[string]int
+	// EffortMix counts decisions per known reasoning effort
+	// (final_reasoning_effort, falling back to requested_reasoning_effort).
+	EffortMix map[string]int
 
 	// RewriteShifted counts rewrite_emitted events that asked for a different model.
 	// RewriteHonored is the inferred count from CountInferredHonored. The

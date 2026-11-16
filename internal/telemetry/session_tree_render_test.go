@@ -37,10 +37,10 @@ func renderFixture() []Event {
 // ALL_CAPS codes and the complexity word are not in it.
 func TestSessionTree_GoldenPlainWords(t *testing.T) {
 	const want = "session · 4 subagents · 1 model changed · 1 effort changed · 1 kept as requested (why: --why) · 1.0k of 1.0k billable below the requested model (1 spawn, no session model)\n" +
-		"├─ subagent 1  haiku   ✓  1.0k tokens · below the requested model  moved to haiku\n" +
-		"├─ subagent 2  haiku   ✓  -                                        effort lowered to low\n" +
-		"├─ subagent 3  sonnet  ✓  -                                        kept: unsure of the task\n" +
-		"└─ subagent 4  haiku   ✓  -                                        left unchanged, already fit\n"
+		"├─ subagent 1  haiku                ✓  1.0k tokens · below the requested model  moved to haiku\n" +
+		"├─ subagent 2  haiku [effort: low]  ✓  -                                        effort lowered to low\n" +
+		"├─ subagent 3  sonnet               ✓  -                                        kept: unsure of the task\n" +
+		"└─ subagent 4  haiku                ✓  -                                        left unchanged, already fit\n"
 	got := SessionTree(renderFixture(), sessA, TreeOptions{})
 	if got != want {
 		t.Fatalf("golden mismatch\n--- got\n%s--- want\n%s", got, want)

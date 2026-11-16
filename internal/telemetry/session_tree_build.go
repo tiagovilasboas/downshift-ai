@@ -124,6 +124,10 @@ func buildRow(n int, d Event, f *childFacts, opt TreeOptions) TreeRow {
 		f = &childFacts{}
 	}
 	row.Model = rowModel(d, f)
+	row.Effort = rowEffort(d, f)
+	if !isKnownEffort(row.effortTo) {
+		row.effortTo = row.Effort
+	}
 	row.State, row.FromModel, row.ReasonCodes = SpawnStateOf(d), shortOrQ(d.FromModel), d.ReasonCodes
 	if row.State == StateSwitched && d.FromModel != d.ToModel {
 		row.Reason = "switched from " + row.FromModel + ", " + row.Reason
