@@ -13,7 +13,7 @@ import (
 // a short, factual pointer to the orchestrator's own choice, the only channel
 // that reaches the model before it decides how to delegate.
 const sessionStartContext = "Downshift is installed. You choose the model and effort of each subagent, by tier (small, mid, frontier), never by model name. " +
-	"The rules for when to call its MCP tools (providers, apply) and for [tier=small] are in the downshift server instructions."
+	"Mechanical work: start its prompt with [tier=small] (moves down only). With the downshift MCP, call providers before each spawn."
 
 // runClaudeCodeSessionStart answers the SessionStart hook with the context line.
 // It reads nothing from its input and fails open: any write error is ignored,
