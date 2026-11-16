@@ -10,8 +10,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/tiagovilasboas/downshift-ai/internal/core"
 	"github.com/tiagovilasboas/downshift-ai/internal/setup"
 	"github.com/tiagovilasboas/downshift-ai/internal/setup/configfile"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
 )
 
 // The generated-file check for `doctor`. A harness whose glue is a file setup
@@ -42,6 +44,21 @@ func checkGeneratedFiles(add func(id, status, detail, fix string), home, harness
 		add(worst.id, worst.status, worst.detail, worst.fix)
 	}
 	return true
+}
+
+// bridgeEvidence runs the shared event-log checks for a bridge harness
+// (setup.Target.Bridge): last hook event, completion and honored rewrites. It
+// has no hook file, hook binary or activation step to check, so those inputs
+// are empty and the generic fix applies.
+func bridgeEvidence(rep *doctorReport, env doctorEnv, nc core.NamedCaps, pathBin string, events []telemetry.Event) {
+	t, ok := generatedFilesTarget(nc.Harness)
+	if !ok || !t.Bridge() {
+		return
+	}
+	add := func(id, status, detail, fix string) {
+		rep.add(doctorCheck{ID: id, Harness: nc.Harness, Status: status, Detail: detail, Fix: fix})
+	}
+	checkEvidence(add, env, nc, "", nil, pathBin, events, "")
 }
 
 type doctorRow struct{ id, status, detail, fix string }
