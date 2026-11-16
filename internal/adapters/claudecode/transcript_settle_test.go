@@ -203,3 +203,27 @@ func TestReadSettledSubagentUsage_StopsAtDeadline(t *testing.T) {
 		t.Fatalf("waited %v, want the 150ms deadline to hold", waited)
 	}
 }
+
+// A transcript removed mid-wait still yields the usage it held before removal.
+func TestReadSettledSubagentUsage_KeepsUsageWhenRemovedMidWait(t *testing.T) {
+	window := settleWindow{poll: 5 * time.Millisecond, quiet: time.Second, deadline: 2 * time.Second}
+	path := filepath.Join(t.TempDir(), "agent-a1.jsonl")
+	if err := os.WriteFile(path, []byte(settleRow(t, "m1", 2, 30, 100, 0)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		time.Sleep(20 * time.Millisecond)
+		appendFile(t, path, userRow)
+		time.Sleep(20 * time.Millisecond)
+		if err := os.Remove(path); err != nil {
+			t.Error(err)
+		}
+	}()
+	got, ok := readSettledSubagentUsage(path, window)
+	<-done
+	if !ok || got.Usage.OutputTokens != 30 || got.Usage.CacheWriteTokens != 100 {
+		t.Fatalf("got %+v ok=%v, want the usage present before removal", got.Usage, ok)
+	}
+}

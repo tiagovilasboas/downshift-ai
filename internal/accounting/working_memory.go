@@ -27,18 +27,20 @@ func BuildWorkingMemory(n Numbers) WorkingMemory {
 		BytesCompactedTotal:     n.Compactor.SavedBytes,
 		CompactedCommands:       n.Compactor.Compacted,
 		Scope:                   n.Scope.Label(),
-		Line:                    WorkingMemoryLine(n.Compactor.Tokens, n.Compactor.SavedBytes),
+		Line:                    WorkingMemoryLine(n.Compactor.Tokens, n.Compactor.SavedBytes, n.Scope.Label()),
 	}
 }
 
 // WorkingMemoryLine formats the one-line working-memory protection indicator,
-// returning "" when no bytes have been kept out of context.
-func WorkingMemoryLine(tokens, savedBytes int64) string {
+// returning "" when no bytes have been kept out of context. The scope label
+// is part of the line so a reader never takes a multi-session total for the
+// session in front of them.
+func WorkingMemoryLine(tokens, savedBytes int64, scope string) string {
 	if tokens > 0 {
-		return fmt.Sprintf("Context preserved: ~%s tokens of noisy scrollback kept out of working memory", telemetry.ShortTokens(tokens))
+		return fmt.Sprintf("Context preserved (%s): ~%s tokens of noisy scrollback kept out of working memory", scope, telemetry.ShortTokens(tokens))
 	}
 	if savedBytes > 0 {
-		return fmt.Sprintf("Context preserved: %d bytes of noisy scrollback kept out of working memory", savedBytes)
+		return fmt.Sprintf("Context preserved (%s): %d bytes of noisy scrollback kept out of working memory", scope, savedBytes)
 	}
 	return ""
 }

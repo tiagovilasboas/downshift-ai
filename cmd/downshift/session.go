@@ -72,14 +72,9 @@ func runSession(args []string, stdout, stderr io.Writer, catalog core.Resolver) 
 
 	opt := telemetry.TreeOptions{Paused: telemetry.SessionPaused(hash)}
 	treeView := telemetry.BuildSessionTree(events, hash, opt)
-	wm := sessionWorkingMemory(events)
+	wm := sessionWorkingMemory(events, hash)
 	if *asJSON {
-		out, err := json.MarshalIndent(sessionTreeJSON{
-			SessionTreeView:         treeView,
-			TokensCompactedEstimate: wm.TokensCompactedEstimate,
-			BytesCompactedTotal:     wm.BytesCompactedTotal,
-			WorkingMemory:           &wm,
-		}, "", "  ")
+		out, err := json.MarshalIndent(sessionTreeJSON{SessionTreeView: treeView, WorkingMemory: &wm}, "", "  ")
 		if err != nil {
 			fmt.Fprintf(stderr, "downshift session: %v\n", err)
 			return 1
@@ -96,14 +91,14 @@ func runSession(args []string, stdout, stderr io.Writer, catalog core.Resolver) 
 
 type sessionTreeJSON struct {
 	telemetry.SessionTreeView
-	TokensCompactedEstimate int64                     `json:"tokens_compacted_estimate"`
-	BytesCompactedTotal     int64                     `json:"bytes_compacted_total"`
-	WorkingMemory           *accounting.WorkingMemory `json:"working_memory,omitempty"`
+	WorkingMemory *accounting.WorkingMemory `json:"working_memory,omitempty"`
 }
 
-func sessionWorkingMemory(events []telemetry.Event) accounting.WorkingMemory {
+// sessionWorkingMemory is the working-memory indicator of the session shown
+// by the tree, never a multi-session total: the tree is one session's view.
+func sessionWorkingMemory(events []telemetry.Event, hash string) accounting.WorkingMemory {
 	execEvents, _ := accounting.ReadExecEvents()
-	nums := accounting.Compute(events, execEvents, accounting.Scope{Kind: accounting.ScopeDays, Days: defaultReportDays})
+	nums := accounting.Compute(events, execEvents, accounting.Scope{Kind: accounting.ScopeSession, SessionHash: hash})
 	return accounting.BuildWorkingMemory(nums)
 }
 

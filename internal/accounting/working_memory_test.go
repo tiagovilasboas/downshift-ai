@@ -29,7 +29,7 @@ func TestBuildWorkingMemory(t *testing.T) {
 		if wm.BytesCompactedTotal != 3 || wm.TokensCompactedEstimate != 0 {
 			t.Fatalf("sub_token WorkingMemory = %+v, want 3 bytes and 0 tokens", wm)
 		}
-		want := "Context preserved: 3 bytes of noisy scrollback kept out of working memory"
+		want := "Context preserved (last 30 days): 3 bytes of noisy scrollback kept out of working memory"
 		if wm.Line != want {
 			t.Fatalf("Line = %q, want %q", wm.Line, want)
 		}
@@ -43,7 +43,23 @@ func TestBuildWorkingMemory(t *testing.T) {
 		if wm.TokensCompactedEstimate != 331000 || wm.BytesCompactedTotal != 1324000 || wm.CompactedCommands != 1 {
 			t.Fatalf("WorkingMemory = %+v", wm)
 		}
-		want := "Context preserved: ~331k tokens of noisy scrollback kept out of working memory"
+		want := "Context preserved (last 30 days): ~331k tokens of noisy scrollback kept out of working memory"
+		if wm.Line != want {
+			t.Fatalf("Line = %q, want %q", wm.Line, want)
+		}
+	})
+
+	t.Run("session_scope_labels_and_filters", func(t *testing.T) {
+		execs := []execwrap.Event{
+			{TS: ts, RawBytes: 4000, EmittedBytes: 0, Compacted: true, Session: "aaaaaaaaaaaa"},
+			{TS: ts, RawBytes: 8000, EmittedBytes: 0, Compacted: true, Session: "bbbbbbbbbbbb"},
+		}
+		nums := Compute(nil, execs, Scope{Kind: ScopeSession, SessionHash: "aaaaaaaaaaaa"})
+		wm := BuildWorkingMemory(nums)
+		if wm.BytesCompactedTotal != 4000 || wm.Scope != "this session" {
+			t.Fatalf("session WorkingMemory = %+v, want only the session's 4000 bytes", wm)
+		}
+		want := "Context preserved (this session): ~1.0k tokens of noisy scrollback kept out of working memory"
 		if wm.Line != want {
 			t.Fatalf("Line = %q, want %q", wm.Line, want)
 		}

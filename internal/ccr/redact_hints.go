@@ -34,13 +34,23 @@ const (
 	hintSecretMask = hintSecretToken | hintPass | hintKeyAuthCookie | hintBearerPriv | hintScheme | hintEyJ | hintGH | hintSK | hintAKIA | hintASIA
 )
 
+// hintAll sets every hint, so every regex runs.
+const hintAll = ^uint32(0)
+
 // scanLineHints scans l in a single pass to collect bitmask hints for all AWS
-// and secret patterns, avoiding repeated regex scans per line.
+// and secret patterns, avoiding repeated regex scans per line. The hints must
+// be a superset of what the regexes match. The scan folds ASCII case only,
+// while (?i) in Go regexp applies Unicode simple case folding (U+212A KELVIN
+// SIGN matches 'k', U+017F LONG S matches 's'), so a line with any non-ASCII
+// byte gets hintAll and runs every regex.
 func scanLineHints(l []byte) uint32 {
 	var h uint32
 	n := len(l)
 	for i := 0; i < n; i++ {
 		b := l[i]
+		if b >= 0x80 {
+			return hintAll
+		}
 		switch b {
 		case '=':
 			h |= hintEq
@@ -84,7 +94,7 @@ func scanLineHints(l []byte) uint32 {
 				h |= hintKeyAuthCookie
 			} else if c1 == 'c' && c2 == 'c' {
 				h |= hintSTSKey
-			} else if c1 == 'r' && c2 == 'n' && i+11 < n && bytes.HasPrefix(l[i:], []byte("arn:aws:ssm:")) {
+			} else if c1 == 'r' && c2 == 'n' && i+11 < n && hasPrefixFoldASCII(l[i:], "arn:aws:ssm:") {
 				h |= hintArnSSM
 			}
 		case 'b':
@@ -154,6 +164,12 @@ func mayBeSecretWithFlags(l []byte, flags uint32) bool {
 			containsFoldASCII(l, "_pass") || containsFoldASCII(l, "-pass") || containsFoldASCII(l, ".pass")
 	}
 	return false
+}
+
+// hasPrefixFoldASCII reports whether s starts with lowerPrefix (all lowercase
+// ASCII), ignoring ASCII case.
+func hasPrefixFoldASCII(s []byte, lowerPrefix string) bool {
+	return len(s) >= len(lowerPrefix) && containsFoldASCII(s[:len(lowerPrefix)], lowerPrefix)
 }
 
 // containsFoldASCII reports whether haystack contains lowerNeedle (which must be

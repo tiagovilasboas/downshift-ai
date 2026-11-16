@@ -33,22 +33,30 @@ var transcriptSettle = settleWindow{
 }
 
 // readSettledSubagentUsage waits for a subagent transcript's size to stay
-// unchanged for the quiet period (or until the deadline passes), then parses
-// the settled transcript once. A transcript that cannot be read (not .jsonl,
-// not a regular file, oversized) is not waited on. If transcriptSize fails
-// during waiting, it falls back to a final readSubagentUsage attempt.
+// unchanged for the quiet period (or until the deadline passes), then returns
+// its usage. A transcript that cannot be read (not .jsonl, not a regular file,
+// oversized) is not waited on.
+//
+// Design: the transcript is parsed once up front, before the wait. If the size
+// never changed, that parse is the answer (one parse, as before). If it grew,
+// it is parsed again once settled and that read wins when it succeeds. The
+// up-front parse is what survives a transcript removed or pushed past the cap
+// mid-wait: a failed size check cannot be read after the fact, and one parse is
+// cheap next to the up-to-1s wait.
 func readSettledSubagentUsage(path string, w settleWindow) (subagentUsage, bool) {
 	size, ok := transcriptSize(path)
 	if !ok {
 		return subagentUsage{}, false
 	}
+	first, firstOK := readSubagentUsage(path)
+	firstSize := size
 	start := time.Now()
 	lastChange := start
 	for time.Since(start) < w.deadline {
 		time.Sleep(w.poll)
 		now, ok := transcriptSize(path)
 		if !ok {
-			break // the file went away or past the cap: fall back to a final read
+			break // gone or past the cap: the final read below decides, else the first
 		}
 		if now != size {
 			size, lastChange = now, time.Now()
@@ -58,7 +66,13 @@ func readSettledSubagentUsage(path string, w settleWindow) (subagentUsage, bool)
 			break
 		}
 	}
-	return readSubagentUsage(path)
+	if now, ok := transcriptSize(path); ok && now == firstSize {
+		return first, firstOK
+	}
+	if last, ok := readSubagentUsage(path); ok {
+		return last, true
+	}
+	return first, firstOK
 }
 
 // transcriptSize is the size of a readable transcript within the read cap; ok
