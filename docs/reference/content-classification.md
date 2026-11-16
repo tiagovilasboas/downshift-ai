@@ -56,7 +56,7 @@ discipline, velocity, and **ops you keep private** — see
 | `docs/design/architecture.md`, `docs/guides/when-to-use.md`, `docs/guides/config.md` | Core user docs |
 | `docs/reference/session-models.md`, `docs/reference/harness-matrix.md` | Integration |
 | `docs/reference/beta-exit.md`, `docs/reference/stats-export.md` | Trust / beta |
-| `docs/design/minilm-semantic.md`, `docs/pt/` (user track) | Guides |
+| `docs/design/minilm-semantic.md`, `docs/pt-br/` (user track) | Guides |
 | `docs/evidence/` | Honest harness honor protocol (no secrets) |
 | `LICENSE`, `NOTICE`, `SECURITY.md`, `COMMERCIAL.md`, `MONETIZATION.md` | Legal / trust (high level) |
 | `docs/roadmap.md`, `GOVERNANCE.md` | Direction (public, not sales deck) |

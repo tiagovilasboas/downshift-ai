@@ -1,3 +1,5 @@
+> Superseded by [design/architecture.md](../design/architecture.md); kept for history.
+
 Superseded in part by O8 (2026-10-28): see docs/internal/plans/mvp-plan.md
 
 > **Historical — 2026-10-22.** This document describes an earlier design.

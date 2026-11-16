@@ -5,7 +5,7 @@ orchestrator does, and Downshift applies that choice (see [routing](../features/
 telemetry, as the key of floors the user declares in `policy.json`, and in DCI. The built-in risk floor and veto
 were removed on 2026-10-28; step 7 below, and any text calling the class a routing decision, describe the pre-O8
 behaviour.
-User-facing Portuguese overview: [pt/02-classificador.md](../pt/02-classificador.md).
+User-facing Portuguese overview: [pt-br/arquitetura/02-classificador.md](../pt-br/arquitetura/02-classificador.md).
 
 Experimental v2 is documented in [routing-v2.md](../design/routing-v2.md).
 

@@ -1,7 +1,7 @@
 # Architecture coverage inventory
 
 Fill this table before proposing any roadmap phase that touches the binary.
-A blank cell invalidates the plan. **Do not use `docs/architecture/` as a source** —
+A blank cell invalidates the plan. **Do not use `docs/archive/architecture-*.md` as a source** —
 those files are historical. Read [`docs/design/architecture.md`](../design/architecture.md),
 [`docs/domains/README.md`](../domains/README.md), and
 [`docs/reference/capability-matrix.md`](../reference/capability-matrix.md).

@@ -63,7 +63,7 @@ Markdown file names under `docs/` are lowercase kebab-case; only names a tool re
 | [../LICENSE](../LICENSE) | Apache 2.0 |
 | [commercial.md](reference/commercial.md) | Optional hosted/support |
 | [../GOVERNANCE.md](../.github/GOVERNANCE.md) | Releases and decisions |
-| [pt/README.md](pt/README.md) | Documentação em português |
+| [pt-br/README.md](pt-br/README.md) | Documentação em português |
 
 ---
 
@@ -195,7 +195,7 @@ The harness adapters and packaging domain connects Downshift's core intelligence
 | [reference/relicense.md](reference/relicense.md) | Relicense to Apache 2.0 record (2026-10-06) |
 | [reference/publishing-boundaries.md](reference/publishing-boundaries.md) | Public vs internal vs private documentation boundaries |
 | [reference/content-classification.md](reference/content-classification.md) | Content classification map (adoption -> secret) |
-| [pt/README.md](pt/README.md) | Documentação em português |
+| [pt-br/README.md](pt-br/README.md) | Documentação em português |
 
 ---
 

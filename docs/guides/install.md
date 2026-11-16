@@ -7,7 +7,7 @@ https://github.com/tiagovilasboas/downshift-ai
 
 Canonical guide for humans and coding agents installing Downshift on a user machine.
 
-**Related:** [config.md](config.md) · [session-models.md](../reference/session-models.md) · [harness-matrix.md](../reference/harness-matrix.md) · [examples/README.md](../../examples/README.md) · [Portuguese guides](../pt/README.md)
+**Related:** [config.md](config.md) · [session-models.md](../reference/session-models.md) · [harness-matrix.md](../reference/harness-matrix.md) · [examples/README.md](../../examples/README.md) · [Portuguese guides](../pt-br/README.md)
 
 **Harness status:** Claude Code is Completed; Codex is Functional; Cursor, Antigravity and KiroCrew are Experimental (see [Experimental harnesses](#experimental-harnesses)); OpenCode is Beta (adapter, routing and observation wire in this repository, and the bridge plugin that setup installs; live-verified except the retry fallback). The sections below follow that order. Definitions and evidence: [harness-matrix.md](../reference/harness-matrix.md#status-per-harness).
 

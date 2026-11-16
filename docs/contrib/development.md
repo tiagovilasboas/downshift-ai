@@ -57,4 +57,4 @@ make vet           # Go vet
 ## See Also
 
 - [Adding Compressors](compressors.md)
-- [Architecture Overview](../architecture/design.md)
+- [Architecture Overview](../design/architecture.md)

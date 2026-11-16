@@ -1,3 +1,5 @@
+> Superseded by [design/architecture.md](../design/architecture.md); kept for history.
+
 Superseded in part by O8 (2026-10-28): see docs/internal/plans/mvp-plan.md
 
 > **Note (2026-11-01).** The naive-Bayes opinions were removed: the upshift opinion on 2026-10-31 and the TRIVIAL downshift opinion in #708. `internal/classify` has no naive-Bayes code today (checked at `bf56237b`), so the "Naive Bayes" parts below describe an earlier design, not the current classifier. The live reference is [`docs/design/architecture.md`](../design/architecture.md).
@@ -69,5 +71,5 @@ Local-only observability:
 
 ## See Also
 
-- [Compressor Pipeline](compressor.md)
-- [Routing Engine](routing.md)
+- [Compressor Pipeline](architecture-compressor.md)
+- [Routing Engine](architecture-routing.md)

@@ -204,6 +204,29 @@ Como cada achado vira um princípio de design, e o que ele não mostra: [True no
 
 **Qual a diferença para o `CLAUDE_CODE_SUBAGENT_MODEL`?** Essa variável define um modelo padrão para todo subagente que nada mais configura. O Downshift aplica o modelo escolhido para cada subagente dentro de uma política declarada, mantém o modelo pedido na dúvida, registra onde os tokens rodaram e também funciona no Codex, no Cursor e no OpenCode.
 
+
+
+## Navegação da Documentação
+
+A estrutura abaixo detalha cada etapa do ciclo de vida da requisição, combinando os objetivos de arquitetura de produto com os respectivos pontos de código:
+
+| Documento | Foco | O que cobre |
+|---|---|---|
+| [01 · Entrada do Fluxo](arquitetura/01-entrada.md) | Ciclo de Vida | O que o Downshift intercepta no stdin, limites de payload e o que é ignorado |
+| [02 · Classificador](arquitetura/02-classificador.md) | Decisão | Heurísticas de regex, matriz de sinais ponderados e o limiar de confiança |
+| [Visão BDI e fluxo completo (EN)](../../README.md#bdi-agentic-view-beliefs--intentions) | Arquitetura | Primeiro a lente conceitual, depois o caminho executado e os limites de observação |
+| [03 · Gestão de Marchas](arquitetura/03-marcha.md) | Política | As faixas de capacidade (Small/Mid/Frontier), regras de downshift e upshift seguro |
+| [04 · Fallbacks e Tolerância](arquitetura/04-fallbacks.md) | Resiliência | O contrato fail-open: como o sistema reage a erros sem quebrar o fluxo do dev |
+| [05 · Catálogo e Sessão](arquitetura/05-catalogo-e-sessao.md) | Permissões | Preço de lista versus modelos realmente autorizados na sessão ativa (`session-models.json`) e, desde `downshift models discover`, os modelos que o próprio harness informa ([session-discovery](../reference/session-discovery.md), em inglês) |
+| [06 · Adapters de Harness](arquitetura/06-harnesses.md) | Integração | Especificidades de integração: Claude Code, Codex e Cursor; Antigravity e KiroCrew (Experimental) |
+| [07 · Boost semântico por hash](arquitetura/07-minilm.md) | Classificação | FNV em processo, centróides, condições de subida e privacidade; o nome do arquivo é histórico |
+| [08 · Telemetria e Métricas](arquitetura/08-telemetria.md) | Observabilidade | Estrutura do `events.jsonl`, métricas normalizadas e auditoria sem vazamento de prompt |
+| [09 · Decisões Técnicas e Trade-offs](arquitetura/09-decisoes.md) | Engenharia | Racional de arquitetura, compensações técnicas e próximos passos do projeto |
+| [11 · Compressor Nativo de Contexto](../design/context-optimization.md) | Otimização | Compressor determinístico em Go e sensor de telemetria passiva |
+| [13 · Plugin, skills e agente (EN)](../design/architecture.md#packaging-layers-what-an-agent-harness-loads) | Empacotamento | As cinco camadas que um harness carrega: memória (`AGENTS.md`), skills (`skills/`), hooks (binário; `hooks/hooks.json` no plugin), agente de exemplo (`agents/`) e o plugin do Claude Code (`/plugin install downshift --marketplace tiagovilasboas/downshift-ai`) |
+| [14 · Companions (EN)](../guides/companions.md) | Ecossistema | Headroom como companion padrão (detectado e registrado, nunca instalado pelo Downshift), mods do Claude Code recomendados (You should know, Token Weather, Replay Theater, reflect-mod), padrões que o Downshift segue mas não empacota |
+
+
 ## Documentação e comunidade
 
 [Início rápido](../guides/quickstart.md) · [Referência de CLI](../reference/cli.md) · [Arquitetura](../design/architecture.md) · [English](../../README.md)
