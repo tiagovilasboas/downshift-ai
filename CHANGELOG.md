@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Git hooks no longer re-run a gate that already passed.** The pre-push hook now runs `make check` instead of `make check-changed` then `make test-changed`. It covers the same ground (gofmt, `go vet` for host, Windows and Linux, and the tests of the changed packages and their dependents, selected by the script CI uses), but runs the stages at once, through the Go test cache, and skips a tree that the last green `make check` already passed. Measured on a one-package change: 142 s before, 4 s on a new edit, 1 s on a push right after a green `make check`. Over the last 25 sessions, pushes had taken 433 minutes in total (p90 160 s). The pre-commit tests use the Go test cache as well. CI and `make check-full` still run uncached.
+
 ## [0.17.1] - 2026-11-12
 
 Release notes: [docs/releases/v0.17.1.md](docs/releases/v0.17.1.md).

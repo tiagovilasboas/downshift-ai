@@ -55,8 +55,10 @@ Windows job, from test files that call helpers defined behind `//go:build !windo
   - Pre-commit, on staged Go files: gofmt (fixes and re-stages), then `go vet`, staticcheck
     and the tests of the staged packages (`make vet-staged`, `make staticcheck-staged`,
     `make test-staged`).
-  - Pre-push: `make check-changed` (gofmt, then `go vet` for host, Windows and Linux),
-    `make test-changed` and `make test-mods`. The Go packages are those changed since
+  - Pre-push: `make check` (gofmt, `go vet` for host, Windows and Linux, and the tests,
+    all at once, through the Go test cache) and `make test-mods`. `make check` records the
+    last green tree, so a push right after a green `make check` takes about a second
+    instead of re-running the gate. The Go packages are those changed since
     `origin/main` plus their dependents, chosen by `scripts/ci-test-packages.sh`, the same
     script CI uses. Markdown and `docs/` select `internal/docscheck` only; TypeScript under
     `mods/` selects the `mods` package, and `make test-mods` runs `claude plugin test` (skipped
