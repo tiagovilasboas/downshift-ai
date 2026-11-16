@@ -7,9 +7,10 @@ Downshift by Tiago Vilas Boas · https://github.com/tiagovilasboas/downshift-ai
 ## Why this plan
 
 Downshift is well built and its thesis is sound (`docs/true-north.md`), but its value in real use is not shown yet.
-The bench result is real and honest about its size: the controlled suite of 2026-10-29 measured 22.2% paired
-savings (95% interval 9.8% to 32.3%, `docs/evidence/controlled-suite-opusplan-natural-2026-10-29.md`). Real use
-has not repeated it.
+The controlled suite of 2026-10-29 reported 22.2% paired savings (95% interval 9.8% to 32.3%,
+`docs/evidence/controlled-suite-opusplan-natural-2026-10-29.md`). **Corrected 2026-11-16:** Downshift moved no spawn in
+that batch, so the saving was session variation, not routing (billable metric: 3.7%, interval −5.5% to 13.1%). Real use
+has not shown a routing saving either.
 
 State on 2026-10-31 (`downshift report`, v0.3.1, Claude Code, last 30 days, read on this machine):
 

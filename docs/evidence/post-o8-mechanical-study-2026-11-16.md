@@ -24,7 +24,9 @@ the protocol's verdict.
   passed its parity criterion: acceptance 19/24 vs 20/24 and paired savings of
   22.2% (95% interval 9.8% to 32.3%). That suite's control arm used the
   `DOWNSHIFT_NO_ROUTE` switch, removed on 2026-11-02, so it predates the
-  current control setup.
+  current control setup. **Corrected 2026-11-16:** Downshift moved no spawn in
+  any of its 48 runs, so that saving was session variation, not routing; on the
+  billable metric it is 3.7%, interval −5.5% to 13.1%.
 - [anthropic-references-benchmark-reconciliation-2026-11-07.md](anthropic-references-benchmark-reconciliation-2026-11-07.md)
   and [delegation-boundaries-and-overhead-2026-11-07.md](delegation-boundaries-and-overhead-2026-11-07.md)
   already scope the gain of delegation to broad, exploratory work, not small

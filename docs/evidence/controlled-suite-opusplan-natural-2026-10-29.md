@@ -4,6 +4,17 @@
 
 Downshift by Tiago Vilas Boas · https://github.com/tiagovilasboas/downshift-ai
 
+> **Correction (2026-11-16): the savings below are not a routing effect.** A re-read of the batch's run records found
+> that Downshift moved **zero** spawns in all 48 runs (`routing.downshifts` = 0 in every routed and control run):
+> routed spawns were allowed at the requested tier, control spawns were logged as baseline at the same tier. Both arms
+> ran the same models. The token gap comes from how many parent calls each session made (for example 26.8 vs 19.3 on
+> `agent-type-telemetry`), which no routing decision caused; with n = 6 per cell it is run-to-run variation. The metric
+> is also about 99% cache reads: on the billable metric of the post-O8 protocol (input + output + cache write) the same
+> 19 pairs give 3.7% savings, 95% interval −5.5% to 13.1%, which includes zero. Pairs are formed by repetition index,
+> which carries no meaning; unpaired, the accepted runs give 25.9%, interval −7.3% to 48.7%. The PASS verdict below
+> stands as a record of what the criterion said, but it must not be read as evidence that routing saves tokens. Current
+> evidence: [post-o8-smoke-2026-11-16.md](post-o8-smoke-2026-11-16.md).
+
 Level: **measured once: one harness, one batch, four tasks, six repetitions per cell.** On this suite, routing kept
 acceptance within the pre-registered limit and reduced tokens in matched runs. It says nothing about other harnesses,
 other tasks, or other days.
