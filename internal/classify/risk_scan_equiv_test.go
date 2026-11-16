@@ -25,10 +25,19 @@ import (
 
 var (
 	refCamelBoundary = regexp.MustCompile(`([a-z0-9])([A-Z])`)
-	refRiskSignals   = func() []riskSignal {
-		out := make([]riskSignal, 0, len(RawRiskSignals))
+	refRiskSignals   = func() []struct {
+		category string
+		re       *regexp.Regexp
+	} {
+		out := make([]struct {
+			category string
+			re       *regexp.Regexp
+		}, 0, len(RawRiskSignals))
 		for _, r := range RawRiskSignals {
-			out = append(out, riskSignal{category: r.Category, re: regexp.MustCompile(`(?i)` + r.Pattern)})
+			out = append(out, struct {
+				category string
+				re       *regexp.Regexp
+			}{category: r.Category, re: regexp.MustCompile(`(?i)` + r.Pattern)})
 		}
 		return out
 	}()

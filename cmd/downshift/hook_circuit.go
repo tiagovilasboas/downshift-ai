@@ -190,7 +190,7 @@ func (b *hookCircuit) state() (routingCircuit, bool) {
 			b.open = false
 		}
 	}()
-	events, err := telemetry.ReadEventsTail(circuitTailBytes)
+	events, err := telemetry.ReadEventsTailUnlinked(circuitTailBytes)
 	if err != nil {
 		return b.circuit, false
 	}

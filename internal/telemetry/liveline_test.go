@@ -111,6 +111,47 @@ func TestReadEventsTailIsBoundedAndDropsTheCutLine(t *testing.T) {
 	}
 }
 
+func TestReadEventsTailUnlinkedSkipsLateUsageLink(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "events.jsonl")
+	t.Setenv("DOWNSHIFT_EVENT_LOG", path)
+	rows := []Event{
+		{CorrelationID: "d1", Timestamp: "2026-10-20T10:00:00Z", Harness: "claude-code", SessionID: "s", Outcome: OutcomeAllow,
+			Verdict: "DOWNSHIFT", FromModel: "claude-opus-4-8", ToModel: "claude-haiku-4-5", Tier: "small"},
+		{CorrelationID: "u1", Timestamp: "2026-10-20T10:00:05Z", Harness: "claude-code", SessionID: "s", Outcome: OutcomeUsage,
+			AgentHash: "a1", FromModel: "unknown", ToModel: "claude-haiku-4-5", Verdict: "UNKNOWN", InputTokens: i64(100)},
+		{CorrelationID: "r1", Timestamp: "2026-10-20T10:00:06Z", Harness: "claude-code", SessionID: "s", Outcome: OutcomeResolved,
+			AgentHash: "a1", LinkedDecision: "d1", FromModel: "claude-opus-4-8", ToModel: "claude-haiku-4-5"},
+	}
+	f, err := os.Create(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, ev := range rows {
+		b, _ := json.Marshal(ev)
+		f.Write(append(b, '\n'))
+	}
+	f.Close()
+
+	unlinked, err := ReadEventsTailUnlinked(DefaultTailBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(unlinked) != 3 {
+		t.Fatalf("got %d events, want 3", len(unlinked))
+	}
+	if unlinked[1].LinkedDecision != "" || unlinked[1].FromModel != "unknown" {
+		t.Errorf("ReadEventsTailUnlinked linked late usage: %+v", unlinked[1])
+	}
+
+	linked, err := ReadEventsTail(DefaultTailBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if linked[1].LinkedDecision != "d1" || linked[1].FromModel != "claude-opus-4-8" {
+		t.Errorf("ReadEventsTail did not link late usage: %+v", linked[1])
+	}
+}
+
 func TestChildEndLine(t *testing.T) {
 	cases := []struct {
 		name string
