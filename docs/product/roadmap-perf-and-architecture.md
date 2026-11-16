@@ -6,7 +6,7 @@ Downshift by Tiago Vilas Boas
 https://github.com/tiagovilasboas/downshift-ai
 
 **Branch:** `perf/arch-hardening-waves`
-**Status:** Active (wave-by-wave delivery)
+**Status:** Done (W0–W5 delivered on branch)
 **Scope:** Hot-path performance bottlenecks, cold-start regex cost, redundant transcript I/O, targeted format detection, and automated `archtest` layer enforcement.
 
 ---
@@ -15,12 +15,12 @@ https://github.com/tiagovilasboas/downshift-ai
 
 | Wave | Task | Story Points | Target Packages | Status |
 | :---: | :--- | :---: | :--- | :---: |
-| **W0** | Map roadmap and wave tasks | 1 SP | `docs/product/` | In progress |
-| **W1** | `ccr.Redact` fast-path literal prefilters & single-pass replacement | 1 SP | `internal/ccr` | Planned |
-| **W2** | `classify` cold-start & hot-loop optimization (skip runtime embed re-validation, single `FindAllStringIndex` pass) | 2 SP | `internal/classify` | Planned |
-| **W3** | `claudecode` `SubagentStop` settle-before-parse & single-pass transcript read (usage + verification) | 2 SP | `internal/adapters/claudecode` | Planned |
-| **W4** | `execwrap` → `compressor` targeted format detection (`expectedFormats` hint) | 2 SP | `internal/compressor`, `internal/execwrap` | Planned |
-| **W5** | Enforce adapter boundary in `archtest/imports_test.go` (forbid `routing/policy` and `routing/decide`) | 2 SP | `internal/archtest` | Planned |
+| **W0** | Map roadmap and wave tasks | 1 SP | `docs/product/` | Done |
+| **W1** | `ccr.Redact` fast-path literal prefilters & single-pass replacement | 1 SP | `internal/ccr` | Done |
+| **W2** | `classify` cold-start & hot-loop optimization (skip runtime embed re-validation, single `FindAllStringIndex` pass) | 2 SP | `internal/classify` | Done |
+| **W3** | `claudecode` `SubagentStop` settle-before-parse & single-pass transcript read (usage + verification) | 2 SP | `internal/adapters/claudecode` | Done |
+| **W4** | `execwrap` → `compressor` targeted format detection (`expectedFormats` hint) | 2 SP | `internal/compressor`, `internal/execwrap` | Done |
+| **W5** | Enforce adapter boundary in `archtest/imports_test.go` (forbid `routing/policy` and `routing/decide`) | 2 SP | `internal/archtest` | Done |
 
 ---
 

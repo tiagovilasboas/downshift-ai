@@ -121,6 +121,18 @@ func TestViolationsDetectsForbiddenImports(t *testing.T) {
 	if v := violations(deps, []string{"nbtier"}); len(v) != 0 {
 		t.Fatalf("false positive: %v", v)
 	}
+
+	routingDeps := []string{
+		module + "core",
+		module + "routing/contract", // allowed
+		module + "routing/policy",
+		module + "routing/decide",
+	}
+	gotRouting := violations(routingDeps, []string{"routing/policy", "routing/decide"})
+	wantRouting := []string{"routing/decide", "routing/policy"}
+	if strings.Join(gotRouting, ",") != strings.Join(wantRouting, ",") {
+		t.Fatalf("routing violations = %v, want %v", gotRouting, wantRouting)
+	}
 }
 
 // The rules table checks the telemetry root. This checks every other package
@@ -282,5 +294,30 @@ var decideImports = []string{"core", "paths", "routing/contract", "routing/polic
 func TestDecideDirectImports(t *testing.T) {
 	if bad := outsideAllowlist(directImports(t, "routing/decide"), decideImports); len(bad) > 0 {
 		t.Errorf("internal/routing/decide imports %v; it may import only %v", bad, decideImports)
+	}
+}
+
+// Adapters only parse payloads, declare capabilities, and emit wire responses;
+// routing policy and decision logic stay in shared layers.
+func TestAdaptersDoNotImportRoutingPolicy(t *testing.T) {
+	out, err := exec.Command("go", "list", "-f", "{{.ImportPath}} {{join .Deps \" \"}}", module+"adapters/...").Output()
+	if err != nil {
+		t.Fatalf("go list adapters tree: %v", err)
+	}
+	forbidden := []string{"routing/policy", "routing/decide"}
+	checked := 0
+	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) == 0 {
+			continue
+		}
+		checked++
+		pkg := strings.TrimPrefix(fields[0], module)
+		if v := violations(fields[1:], forbidden); len(v) > 0 {
+			t.Errorf("internal/%s must not depend on %v (adapters hold no routing policy)", pkg, v)
+		}
+	}
+	if checked == 0 {
+		t.Fatal("go list found no adapter packages to check")
 	}
 }
