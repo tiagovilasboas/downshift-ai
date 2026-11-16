@@ -32,38 +32,33 @@ var transcriptSettle = settleWindow{
 	deadline: time.Second,
 }
 
-// readSettledSubagentUsage reads a subagent transcript, then keeps re-reading it
-// while it grows, until its size has stayed unchanged for the quiet period or
-// the deadline passes. The last successful read wins; a transcript that cannot
-// be read (not .jsonl, not a regular file, oversized) is not waited on.
-// Dedupe by message id is readSubagentUsage's, so a re-read never adds a
-// message twice.
+// readSettledSubagentUsage waits for a subagent transcript's size to stay
+// unchanged for the quiet period (or until the deadline passes), then parses
+// the settled transcript once. A transcript that cannot be read (not .jsonl,
+// not a regular file, oversized) is not waited on. If transcriptSize fails
+// during waiting, it falls back to a final readSubagentUsage attempt.
 func readSettledSubagentUsage(path string, w settleWindow) (subagentUsage, bool) {
 	size, ok := transcriptSize(path)
 	if !ok {
 		return subagentUsage{}, false
 	}
-	got, gotOK := readSubagentUsage(path)
 	start := time.Now()
 	lastChange := start
 	for time.Since(start) < w.deadline {
 		time.Sleep(w.poll)
 		now, ok := transcriptSize(path)
 		if !ok {
-			break // the file went away or past the cap: keep what was read
+			break // the file went away or past the cap: fall back to a final read
 		}
 		if now != size {
 			size, lastChange = now, time.Now()
-			if g, ok := readSubagentUsage(path); ok {
-				got, gotOK = g, true
-			}
 			continue
 		}
 		if time.Since(lastChange) >= w.quiet {
 			break
 		}
 	}
-	return got, gotOK
+	return readSubagentUsage(path)
 }
 
 // transcriptSize is the size of a readable transcript within the read cap; ok

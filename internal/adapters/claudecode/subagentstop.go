@@ -23,9 +23,10 @@ const maxTranscriptBytes = 32 << 20
 
 // subagentUsage is what a finished subagent's transcript reports.
 type subagentUsage struct {
-	Model  string // model of the last assistant message
-	Effort string // reasoning effort of the last assistant line that names one
-	Usage  telemetry.TokenUsage
+	Model        string // model of the last assistant message
+	Effort       string // reasoning effort of the last assistant line that names one
+	Usage        telemetry.TokenUsage
+	Verification string // outcome of the last recognised Bash verification check
 }
 
 // readSubagentUsage reads a Claude Code subagent transcript (JSONL). The API
@@ -62,6 +63,7 @@ func readSubagentUsage(path string) (subagentUsage, bool) {
 	byID := map[string]usage{}
 	var order []string
 	var model, effort string
+	verify := newVerificationTracker()
 	rd := bufio.NewReaderSize(io.LimitReader(f, maxTranscriptBytes), 1<<20)
 	for {
 		line, err := rd.ReadBytes('\n')
@@ -70,22 +72,26 @@ func readSubagentUsage(path string) (subagentUsage, bool) {
 				Type    string `json:"type"`
 				Effort  string `json:"effort"`
 				Message struct {
-					ID    string         `json:"id"`
-					Model string         `json:"model"`
-					Usage map[string]any `json:"usage"`
+					ID      string          `json:"id"`
+					Model   string          `json:"model"`
+					Usage   map[string]any  `json:"usage"`
+					Content json.RawMessage `json:"content"`
 				} `json:"message"`
 			}
-			if json.Unmarshal(line, &row) == nil && row.Type == "assistant" && row.Message.ID != "" {
-				u := telemetry.TokenUsageFromPayload(map[string]any{"usage": row.Message.Usage})
-				if _, seen := byID[row.Message.ID]; !seen {
-					order = append(order, row.Message.ID)
-				}
-				byID[row.Message.ID] = usage{u.InputTokens, u.OutputTokens, u.CachedTokens, u.CacheWriteTokens}
-				if row.Message.Model != "" {
-					model = row.Message.Model
-				}
-				if row.Effort != "" {
-					effort = row.Effort
+			if json.Unmarshal(line, &row) == nil {
+				verify.observe(row.Message.Content)
+				if row.Type == "assistant" && row.Message.ID != "" {
+					u := telemetry.TokenUsageFromPayload(map[string]any{"usage": row.Message.Usage})
+					if _, seen := byID[row.Message.ID]; !seen {
+						order = append(order, row.Message.ID)
+					}
+					byID[row.Message.ID] = usage{u.InputTokens, u.OutputTokens, u.CachedTokens, u.CacheWriteTokens}
+					if row.Message.Model != "" {
+						model = row.Message.Model
+					}
+					if row.Effort != "" {
+						effort = row.Effort
+					}
 				}
 			}
 		}
@@ -104,7 +110,12 @@ func readSubagentUsage(path string) (subagentUsage, bool) {
 	if total == (telemetry.TokenUsage{}) {
 		return subagentUsage{}, false
 	}
-	return subagentUsage{Model: model, Effort: effort, Usage: total}, true
+	return subagentUsage{
+		Model:        model,
+		Effort:       effort,
+		Usage:        total,
+		Verification: verify.outcome(),
+	}, true
 }
 
 // firstAssistantModel reads a Claude Code subagent transcript (JSONL) and
@@ -202,7 +213,7 @@ func parseSubagentStop(payload map[string]any) (hookport.ChildEnd, bool) {
 		Cumulative:   true,
 		Source:       hookport.SourceTranscript,
 		IsChild:      true,
-		Verification: readSubagentVerification(path),
+		Verification: got.Verification,
 		Effort:       got.Effort,
 	}, true
 }

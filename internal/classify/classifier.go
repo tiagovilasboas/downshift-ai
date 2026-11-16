@@ -142,10 +142,10 @@ func Classify(prompt string) Classification {
 	mentionDomains := map[string]bool{}
 
 	for _, s := range activeSignals() {
-		if !s.re.MatchString(lower) {
+		locs := s.re.FindAllStringIndex(lower, -1)
+		if len(locs) == 0 {
 			continue
 		}
-		locs := s.re.FindAllStringIndex(lower, -1)
 		if s.class == Complex {
 			// "do not touch the architecture" takes the architecture out of the work.
 			locs = dropNegatedScope(lower, locs)

@@ -73,28 +73,27 @@ func redact(raw []byte) []byte {
 	ssmBraceDepth := 0
 
 	for i, l := range lines {
-		if !inPEM && rePEMBegin.Match(l) {
+		flags := scanLineHints(l)
+		if !inPEM && flags&hintPEMBegin != 0 && rePEMBegin.Match(l) {
 			inPEM = true
 		}
 		if inPEM {
-			if rePEMEnd.Match(l) {
+			if flags&hintPEMEnd != 0 && rePEMEnd.Match(l) {
 				inPEM = false
 			}
 			lines[i] = []byte(redactedLine)
 			continue
 		}
 
-		if reSSMBlockBegin.Match(l) {
+		if !inSSMBlock && flags&hintQuote != 0 && flags&hintParam != 0 && reSSMBlockBegin.Match(l) {
 			inSSMBlock = true
 		}
 
-		lineModified := false
 		current := l
-
 		if inSSMBlock {
 			ssmBraceDepth += bytes.Count(current, []byte("{")) + bytes.Count(current, []byte("[")) -
 				bytes.Count(current, []byte("}")) - bytes.Count(current, []byte("]"))
-			if reSSMJSONValue.Match(current) {
+			if flags&hintQuote != 0 && flags&hintValue != 0 && reSSMJSONValue.Match(current) {
 				current = reSSMJSONValue.ReplaceAll(current, []byte(`${1}"`+RedactedMark+`"`))
 			}
 			if ssmBraceDepth <= 0 && (bytes.Contains(current, []byte("}")) || bytes.Contains(current, []byte("]"))) {
@@ -105,29 +104,46 @@ func redact(raw []byte) []byte {
 			continue
 		}
 
-		if reSSMTableValue.Match(current) {
-			current = reSSMTableValue.ReplaceAll(current, []byte(`${1}`+RedactedMark+`${2}`))
-			lineModified = true
-		} else if reSSMTableSecure.Match(current) {
-			current = reSSMTableSecure.ReplaceAll(current, []byte(`${1}`+RedactedMark+`${2}`))
-			lineModified = true
-		} else if reSSMTextParameters.Match(current) {
-			current = reSSMTextParameters.ReplaceAll(current, []byte(`${1}${2}${3}`+RedactedMark))
-			lineModified = true
-		} else if reSSMTextSingle.Match(current) {
-			current = reSSMTextSingle.ReplaceAll(current, []byte(`${1}${2}${3}`+RedactedMark))
-			lineModified = true
+		lineModified := false
+		if flags&hintAWSMask != 0 {
+			current, lineModified = redactAWSStructured(current, flags)
+			if lineModified {
+				lines[i] = current
+				continue
+			}
 		}
 
-		if reSTSJSON.Match(current) {
+		if flags&hintSecretMask != 0 && mayBeSecretWithFlags(current, flags) && reSecret.Match(current) {
+			lines[i] = []byte(redactedLine)
+		}
+	}
+
+	return bytes.Join(lines, []byte("\n"))
+}
+
+func redactAWSStructured(current []byte, flags uint32) ([]byte, bool) {
+	lineModified := false
+	hasPipe := flags&hintPipe != 0
+	if hasPipe && flags&hintValue != 0 && reSSMTableValue.Match(current) {
+		current = reSSMTableValue.ReplaceAll(current, []byte(`${1}`+RedactedMark+`${2}`))
+		lineModified = true
+	} else if hasPipe && flags&hintSecure != 0 && reSSMTableSecure.Match(current) {
+		current = reSSMTableSecure.ReplaceAll(current, []byte(`${1}`+RedactedMark+`${2}`))
+		lineModified = true
+	} else if flags&hintParam != 0 && reSSMTextParameters.Match(current) {
+		current = reSSMTextParameters.ReplaceAll(current, []byte(`${1}${2}${3}`+RedactedMark))
+		lineModified = true
+	} else if flags&hintArnSSM != 0 && reSSMTextSingle.Match(current) {
+		current = reSSMTextSingle.ReplaceAll(current, []byte(`${1}${2}${3}`+RedactedMark))
+		lineModified = true
+	}
+
+	if flags&hintSTSKey != 0 {
+		if flags&hintQuote != 0 && reSTSJSON.Match(current) {
 			current = reSTSJSON.ReplaceAll(current, []byte(`${1}"`+RedactedMark+`"`))
 			lineModified = true
 		}
-		if reSTSCredentialsText.Match(current) {
-			current = reSTSCredentialsText.ReplaceAll(current, []byte(`${1}`+RedactedMark+`${3}`+RedactedMark+`${5}`+RedactedMark+`${7}`))
-			lineModified = true
-		}
-		if reSTSTable.Match(current) {
+		if hasPipe && reSTSTable.Match(current) {
 			current = reSTSTable.ReplaceAll(current, []byte(`${1}`+RedactedMark+`${2}`))
 			lineModified = true
 		}
@@ -135,7 +151,13 @@ func redact(raw []byte) []byte {
 			current = reSTSCLIKeyValue.ReplaceAll(current, []byte(`${1}`+RedactedMark))
 			lineModified = true
 		}
+	}
+	if flags&hintCreds != 0 && reSTSCredentialsText.Match(current) {
+		current = reSTSCredentialsText.ReplaceAll(current, []byte(`${1}`+RedactedMark+`${3}`+RedactedMark+`${5}`+RedactedMark+`${7}`))
+		lineModified = true
+	}
 
+	if flags&hintAWS != 0 {
 		if reAWSEnvQuotedDouble.Match(current) {
 			current = reAWSEnvQuotedDouble.ReplaceAll(current, []byte(`${1}${2}="`+RedactedMark+`"`))
 			lineModified = true
@@ -146,21 +168,11 @@ func redact(raw []byte) []byte {
 			current = reAWSEnvUnquoted.ReplaceAll(current, []byte(`${1}${2}=`+RedactedMark))
 			lineModified = true
 		}
-
-		if reASIAKey.Match(current) {
-			current = reASIAKey.ReplaceAll(current, []byte(RedactedMark))
-			lineModified = true
-		}
-
-		if lineModified {
-			lines[i] = current
-			continue
-		}
-
-		if reSecret.Match(current) {
-			lines[i] = []byte(redactedLine)
-		}
 	}
 
-	return bytes.Join(lines, []byte("\n"))
+	if flags&hintASIA != 0 && reASIAKey.Match(current) {
+		current = reASIAKey.ReplaceAll(current, []byte(RedactedMark))
+		lineModified = true
+	}
+	return current, lineModified
 }

@@ -7,7 +7,6 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -98,9 +97,6 @@ func parseDomainLexicon(en, pt []byte) (domainLexicon, error) {
 			joined, err := mergeLexiconItems(items)
 			if err != nil {
 				return domainLexicon{}, fmt.Errorf("%s %s: %w", pair.name, key, err)
-			}
-			if _, err := regexp.Compile("(?i)(?:" + joined + ")"); err != nil {
-				return domainLexicon{}, fmt.Errorf("%s %s regex: %w", pair.name, key, err)
 			}
 			pair.result[key] = joined
 		}
