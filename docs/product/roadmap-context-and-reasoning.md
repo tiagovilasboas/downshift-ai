@@ -28,15 +28,16 @@ Downshift is uniquely positioned at the OS / PreToolUse hook boundary to mitigat
 * **Goal:** Elevate context protection from a secondary statistic to a primary visibility signal in everyday CLI commands.
 * **Current State:** `downshift stats` computes `Token ledger (last 30 days): 331k cut by the compactor (estimate: saved bytes / 4)`. However, `downshift session` only emphasizes routed tokens.
 * **Target Behavior:**
-  - Display a prominent working-memory protection indicator in `downshift session`:
+  - Display a prominent working-memory protection indicator in `downshift session` (scoped to the shown session):
     ```text
-    Context preserved: ~331k tokens of noisy scrollback kept out of working memory
+    Context preserved (this session): ~331k tokens of noisy scrollback kept out of working memory
     ```
-  - Expose `--json` fields: `tokens_compacted_estimate` and `bytes_compacted_total`.
+  - Expose `--json` fields under `working_memory` (`tokens_compacted_estimate`, `bytes_compacted_total`, `compacted_commands`, `scope`, `line`) and `working_memory_line` in `session --panel` / `--brief`.
 * **Impacted Packages:**
-  - `cmd/downshift/sessionpanel_brief.go`
-  - `cmd/downshift/cmd_stats.go`
-* **Definition of Done (DoD):** Unit tests in `cmd/downshift/session_test.go` and `cmd/downshift/stats_test.go` verifying calculation and formatting under clean, partial, and empty states.
+  - `internal/accounting/working_memory.go`
+  - `cmd/downshift/session.go`
+  - `cmd/downshift/sessionpanel.go`, `cmd/downshift/sessionpanel_brief.go`
+* **Definition of Done (DoD):** Unit tests in `internal/accounting/working_memory_test.go` and `cmd/downshift/session_working_memory_test.go` verifying calculation, session scoping, and formatting under clean, partial, and empty states.
 
 ---
 
@@ -62,10 +63,10 @@ Downshift is uniquely positioned at the OS / PreToolUse hook boundary to mitigat
 * **Goal:** Prevent catastrophic context burnout when an agent is stuck in an error loop.
 * **Current State:** Command Context Recovery (`internal/ccr`) captures command outputs and computes output hashes/digests for retrieval.
 * **Target Behavior:**
-  - If the same failing command produces an identical error digest 3 times in a single session:
+  - If the same failing command produces an identical error digest 3 times in a single session (within a 30-minute streak window; sessionless runs are not tracked, and state files older than 24h are pruned):
     - Downshift Compactor emits a structured warning to stderr:
       ```text
-      ⚠️ [downshift ccr] Identical failure detected 3x (digest: 4f6b1c38). Context loop detected. Check approach or review previous run with 'downshift retrieve 4f6b1c38'.
+      ⚠️ [downshift ccr] Identical failure detected 3x (digest: 4f6b1c38). Context loop detected. Check approach or review previous run with 'downshift retrieve --session=<ref> 4f6b1c38'.
       ```
     - Prevents silent re-running loops from consuming remaining context budget.
 * **Impacted Packages:**
