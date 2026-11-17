@@ -504,8 +504,11 @@ These were re-measured on 2026-11-15. Nothing here is hidden elsewhere.
    (`TestImportGraph`, run by `go test ./...`) fails on the forbidden imports
    listed under the dependency check above. Rules outside that list are still
    checked by hand with `go list`.
-4. **Rotated log backups are not read.** `stats` prints a note and counts only
-   the live `events.jsonl`; totals drop after a rotation (100 MB by default).
+4. **Rotated log backups are bounded.** `telemetry.ReadEvents` (used by `stats`
+   and `report`, via `internal/telemetry/rotated_read.go`) reads rotated
+   `events.jsonl.*` backups and the live log in chronological order, capped at
+   `DefaultRotatedMaxBytes` (64 MiB of raw log data, keeping the newest events
+   when total size exceeds the cap).
 5. **Savings are token shares, not invoices.** `stats` and `report` print no dollar.
    Tokens are observed only where the harness reports them (Claude Code most completely). The
    one tracked field trial is -12% on mechanical pieces, not a general rate.
