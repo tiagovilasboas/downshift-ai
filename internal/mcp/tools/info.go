@@ -17,10 +17,10 @@ import (
 // `downshift models available --json` prints.
 type Model struct {
 	ID       string   `json:"id"`
-	Tier     string   `json:"tier"`
+	Tier     string   `json:"tier,omitempty"`
 	Efforts  []string `json:"efforts,omitempty"`
-	Source   string   `json:"source"`
-	Untiered bool     `json:"untiered"`
+	Source   string   `json:"source,omitempty"`
+	Untiered bool     `json:"untiered,omitempty"`
 }
 
 // ModelList is the detected models of one harness.
@@ -28,7 +28,7 @@ type ModelList struct {
 	Harness string  `json:"harness"`
 	Models  []Model `json:"models"`
 	// Fallback is true when the list is only the catalog stand-in.
-	Fallback       bool      `json:"fallback"`
+	Fallback       bool      `json:"fallback,omitempty"`
 	CacheWrittenAt time.Time `json:"cache_written_at,omitzero"`
 }
 
