@@ -78,10 +78,23 @@ func TestCompact_HintCarriesSession(t *testing.T) {
 	}
 }
 
-func TestCompact_ReadNeverTouched(t *testing.T) {
-	in := hookport.ToolOutput{Category: core.CategoryRead, Content: bigLog(), HasContent: true}
-	if res := Compact(allCaps, in, Options{Keep: keepOK, Balanced: true}); res.Considered || res.Replaced {
-		t.Error("a Read result was compacted")
+func TestCompact_ReadThreshold(t *testing.T) {
+	small := hookport.ToolOutput{Category: core.CategoryRead, Content: bigLog(), HasContent: true}
+	if res := Compact(allCaps, small, Options{Keep: keepOK, Balanced: true}); !res.Considered || res.Replaced || res.Output.Content != small.Content {
+		t.Errorf("Read under 64 KiB was modified: considered=%v replaced=%v", res.Considered, res.Replaced)
+	}
+
+	var b strings.Builder
+	for i := 1; i <= 3000; i++ {
+		fmt.Fprintf(&b, "line %04d: exact content for edit matching\n", i)
+	}
+	large := hookport.ToolOutput{Category: core.CategoryRead, Content: b.String(), HasContent: true}
+	res := Compact(allCaps, large, Options{Keep: keepOK, Balanced: true})
+	if !res.Considered || !res.Replaced || !res.Compacted || !res.Folded || res.Family != FamilyReadTool || res.KeptID != "0123456789ab" {
+		t.Fatalf("large Read not compacted as expected: %+v", res)
+	}
+	if res.EmittedBytes >= res.RawBytes {
+		t.Errorf("large Read did not shrink: raw=%d emitted=%d", res.RawBytes, res.EmittedBytes)
 	}
 }
 
