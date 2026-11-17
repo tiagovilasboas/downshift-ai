@@ -17,13 +17,10 @@ import (
 const verifyDefaultWindow = 15 * time.Minute
 
 type verifyEnv struct {
-	Now          func() time.Time
-	ReadRouting  func() ([]telemetry.Event, error)
-	ReadExec     func() ([]execwrap.Event, error)
-	Window       time.Duration
-	PollInterval time.Duration
-	PollTimeout  time.Duration
-	Sleep        func(time.Duration)
+	Now         func() time.Time
+	ReadRouting func() ([]telemetry.Event, error)
+	ReadExec    func() ([]execwrap.Event, error)
+	Window      time.Duration
 }
 
 type verifyEventMatch struct {
@@ -55,7 +52,6 @@ func defaultVerifyEnv() verifyEnv {
 			return execwrap.ReadEvents(p)
 		},
 		Window: verifyDefaultWindow,
-		Sleep:  time.Sleep,
 	}
 }
 
@@ -98,22 +94,6 @@ func runDoctorVerify(harness string, asJSON bool, w, errW io.Writer, env verifyE
 }
 
 func confirmVerifyEvents(harness string, since time.Time, env verifyEnv) (verifyResult, error) {
-	start := env.Now()
-	for {
-		res, err := checkVerifyOnce(harness, since, env)
-		if err != nil {
-			return res, err
-		}
-		if res.OK || env.PollTimeout <= 0 || env.Now().Sub(start) >= env.PollTimeout {
-			return res, nil
-		}
-		if env.Sleep != nil && env.PollInterval > 0 {
-			env.Sleep(env.PollInterval)
-		}
-	}
-}
-
-func checkVerifyOnce(harness string, since time.Time, env verifyEnv) (verifyResult, error) {
 	routing, err := env.ReadRouting()
 	if err != nil {
 		return verifyResult{}, fmt.Errorf("read routing events: %w", err)
@@ -207,7 +187,7 @@ func verifyInstructions(harness string) []string {
 	caps, _ := core.CapsFor(harness)
 	shellStep := fmt.Sprintf("Run one shell command in %s (for example: git status)", harness)
 	if !caps.CanRewriteShellCommand {
-		shellStep = fmt.Sprintf("Run one compacted shell command in %s (for example: downshift compact -- git status)", harness)
+		shellStep = fmt.Sprintf("Run one compacted shell command in %s (for example: downshift compact --harness=%s -- git status)", harness, harness)
 	}
 	return []string{
 		fmt.Sprintf("Open or restart %s so hooks are loaded for the session", harness),
