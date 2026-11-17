@@ -5,6 +5,7 @@ package compressor
 
 import (
 	"bytes"
+	"sort"
 	"strings"
 	"unicode/utf8"
 
@@ -54,8 +55,8 @@ func compressArtisanMigrate(input []byte) ([]byte, bool, string) {
 		return input, false, "artisan_migrate_too_large"
 	}
 
-	// Fail open on errors
-	if reArtisanError.Match(input) {
+	// Fail open on errors or danger words
+	if reArtisanError.Match(input) || linesHaveDangerWord(input, nil) {
 		return input, false, "artisan_migrate_has_error"
 	}
 
@@ -114,6 +115,9 @@ func compressArtisanMigrate(input []byte) ([]byte, bool, string) {
 func compressArtisanRouteList(input []byte) ([]byte, bool, string) {
 	if len(input) > MaxProcessableBytes || !utf8.Valid(input) {
 		return input, false, "artisan_routes_too_large"
+	}
+	if linesHaveDangerWord(input, nil) {
+		return input, false, "artisan_routes_danger_preserved"
 	}
 
 	lines := strings.Split(string(input), "\n")
@@ -180,6 +184,7 @@ func compressArtisanRouteList(input []byte) ([]byte, bool, string) {
 		for k := range middlewareSet {
 			mw = append(mw, k)
 		}
+		sort.Strings(mw)
 		out.WriteString(strings.Join(mw, ", "))
 		out.WriteString("\n")
 	}

@@ -586,8 +586,8 @@ written. The family name is the only command fact telemetry keeps.
 | `gradle` | `gradle`, `gradlew`, `./gradlew` with the allowlisted tasks (build, check, test, assemble, lint, ...) | compresses |
 | `maven` | `mvn`, `mvnw`, `./mvnw` with test, verify, package, install or clean | compresses |
 | `phpunit` | `phpunit`, `vendor/bin/phpunit`, `./vendor/bin/phpunit`, `php vendor/bin/phpunit`, `php ./vendor/bin/phpunit` | compresses |
-| `composer` | `composer` | passes through |
-| `artisan` | `php artisan <command>` | passes through |
+| `composer` | `composer` | compresses |
+| `artisan` | `php artisan <command>` | compresses |
 | `phpstan` | `phpstan`, `phpstan analyse`; `--generate-baseline`, `--watch`, `--fix`, `--pro` and other subcommands refused (clean run only) | compresses |
 | `psalm` | `psalm` | passes through |
 | `php-cs-fixer` | `php-cs-fixer` | passes through |
@@ -595,7 +595,7 @@ written. The family name is the only command fact telemetry keeps.
 | `pest` | `pest` | passes through |
 | `rector` | `rector` | passes through |
 | `sail-test` | `sail test` | passes through |
-| `sail-artisan` | `sail artisan <command>` | passes through |
+| `sail-artisan` | `sail artisan <command>` | compresses |
 | `vitest` | `vitest`, `npx vitest`, `pnpm exec vitest`, `yarn vitest`; not `vitest watch`, `vitest dev`, `--watch` or `-w` | compresses |
 | `jest` | `jest`, `npx jest`, `pnpm exec jest`, `yarn jest`; not `--watch` or `--watchAll` | compresses |
 | `playwright` | `playwright test`, `npx playwright test`, `pnpm exec playwright test`, `yarn playwright test` | compresses |
@@ -621,10 +621,10 @@ written. The family name is the only command fact telemetry keeps.
 | `redis-read` | `redis-cli <read-only command>` (and `valkey-cli`), never `--pipe` | passes through |
 | `kubectl-get` | `kubectl get`; `-w`, `--watch`, `--watch-only` refused (the plain `NAME READY STATUS RESTARTS AGE` pod table only) | compresses |
 | `kubectl-describe` | `kubectl describe` | passes through |
-| `kubectl-logs` | `kubectl logs`; not `-f`/`--follow` | passes through |
+| `kubectl-logs` | `kubectl logs`; not `-f`/`--follow` | compresses |
 | `helm-list` | `helm list` | passes through |
 | `helm-status` | `helm status` | passes through |
-| `terraform-plan` | `terraform plan` | passes through |
+| `terraform-plan` | `terraform plan` | compresses |
 | `terraform-fmt` | `terraform fmt` | passes through |
 | `az-list` | `az list` | passes through |
 | `az-show` | `az show` | passes through |
@@ -635,14 +635,14 @@ written. The family name is the only command fact telemetry keeps.
 | `aws-s3-cp` | `aws s3 cp` (read-only forms only) | passes through |
 | `aws-logs` | `aws logs`; not `tail --follow` | passes through |
 | `docker-ps` | `docker ps` (the default table only; a row that is not a container row keeps the output raw) | compresses |
-| `docker-logs` | `docker logs`; not `-f`/`--follow` | passes through |
+| `docker-logs` | `docker logs`; not `-f`/`--follow` | compresses |
 | `docker-images` | `docker images` (the default table only) | compresses |
 | `docker-build` | `docker build`; `--push`, `-o`/`--output`, `--secret`, `--ssh`, `--cache-to` and a URL context refused (classic builder transcript; any error, failure or warning line keeps it raw) | compresses |
 | `argocd-list` | `argocd list` | passes through |
 | `argocd-get` | `argocd get` | passes through |
 | `argocd-diff` | `argocd diff` | passes through |
 | `kustomize-build` | `kustomize build` | passes through |
-| `az-pipelines` | `az pipelines <read form>` | passes through |
+| `az-pipelines` | `az pipelines <read form>` | compresses |
 | `logcli` | `logcli`; not `query --tail`/`-t` | passes through |
 | `sentry-cli` | `sentry-cli` | passes through |
 | `grafana-cli` | `grafana-cli` | passes through |
@@ -688,12 +688,12 @@ written. The family name is the only command fact telemetry keeps.
 | `cargo-build` | `cargo build` | compresses |
 | `cargo-run` | `cargo run` | passes through |
 | `cargo-check` | `cargo check` | passes through |
-| `cargo-clippy` | `cargo clippy` | passes through |
+| `cargo-clippy` | `cargo clippy` | compresses |
 | `cargo-fmt` | `cargo fmt` | passes through |
 | `cargo-doc` | `cargo doc` | passes through |
 | `cargo-add` | `cargo add` | passes through |
 | `cargo-update` | `cargo update` | passes through |
-| `cargo-tree` | `cargo tree` | passes through |
+| `cargo-tree` | `cargo tree` | compresses |
 | `cargo-audit` | `cargo audit` | passes through |
 | `cargo-outdated` | `cargo outdated` | passes through |
 | `pip-list` | `pip list` | passes through |

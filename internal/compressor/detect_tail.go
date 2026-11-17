@@ -87,11 +87,8 @@ func detectFormatTail(input []byte) (Format, bool) {
 	}
 
 	// 16. Linters: eslint/ruff/mypy/golangci-lint are detected earlier (before
-	// TSC) so the generic heuristics do not claim them. cargo clippy shares the
-	// cargo test grammar, so it stays here after the test-suite checks.
-	if isCargoClippy(input) {
-		return FormatCargoClippy, false
-	}
+	// TSC) so the generic heuristics do not claim them; cargo clippy is checked
+	// above before search.
 
 	// 17. Build errors (cargo build, go build, dotnet build) are detected
 	// earlier, before cargo test, so the test/search/tsc heuristics do not

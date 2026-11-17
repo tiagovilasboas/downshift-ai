@@ -1,0 +1,10 @@
+INFO  Preparing database.
+
+Migrating: 2026_01_01_000000_create_users_table
+Migrated:  2026_01_01_000000_create_users_table (12.34ms)
+Migrating: 2026_01_02_000000_create_sessions_table
+Migrated:  2026_01_02_000000_create_sessions_table (8.10ms)
+Migrating: 2026_01_03_000000_create_jobs_table
+Migrated:  2026_01_03_000000_create_jobs_table (15.20ms)
+Migrating: 2026_01_04_000000_add_role_to_users_table
+Migrated:  2026_01_04_000000_add_role_to_users_table (5.40ms)

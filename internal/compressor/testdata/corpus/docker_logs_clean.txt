@@ -1,0 +1,6 @@
+2026-11-17T10:00:01Z INFO healthcheck ok
+2026-11-17T10:00:02Z INFO healthcheck ok
+2026-11-17T10:00:02Z INFO healthcheck ok
+2026-11-17T10:00:02Z INFO healthcheck ok
+2026-11-17T10:00:02Z INFO healthcheck ok
+2026-11-17T10:00:03Z INFO ready to serve

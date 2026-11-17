@@ -1,0 +1,9 @@
+warning: unused variable: `x`
+ --> src/main.rs:4:9
+  |
+4 |     let x = 5;
+  |         ^ help: if this is intentional, prefix it with an underscore: `_x`
+  |
+  = note: `#[warn(unused_variables)]` on by default
+
+warning: `myapp` (bin "myapp") generated 1 warning

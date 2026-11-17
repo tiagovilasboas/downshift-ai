@@ -1,0 +1,8 @@
+Installing dependencies from lock file (including require-dev)
+Verifying lock file contents can be installed on current platform.
+Package operations: 12 installs, 3 updates, 0 removals
+  - Downloading psr/log (3.0.0)
+  - Downloading symfony/console (v7.1.0)
+  - Installing psr/log (3.0.0): Extracting archive
+  - Installing symfony/console (v7.1.0): Extracting archive
+Generating optimized autoload files

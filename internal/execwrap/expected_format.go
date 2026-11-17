@@ -63,15 +63,24 @@ var expectedFormats = map[Family][]compressor.Format{
 	// Test runners, analysers and read-only listings whose clean run has a
 	// fixed summary shape. A run that fails (non-zero exit) or prints any other
 	// shape stays raw; see policy_refusals.go for the argv shapes that wrap.
-	FamilyRspec:        {compressor.FormatRspec},
-	FamilyRubocop:      {compressor.FormatRubocop},
-	FamilyDotnetTest:   {compressor.FormatDotnetTest},
-	FamilyPHPStan:      {compressor.FormatPHPStan},
-	FamilyDockerBuild:  {compressor.FormatDockerBuild},
-	FamilyDockerPS:     {compressor.FormatDockerPs},
-	FamilyDockerImages: {compressor.FormatDockerImages},
-	FamilyKubectlGet:   {compressor.FormatKubectlPods},
-	FamilyGitStash:     {compressor.FormatGitStash},
+	FamilyRspec:         {compressor.FormatRspec},
+	FamilyRubocop:       {compressor.FormatRubocop},
+	FamilyDotnetTest:    {compressor.FormatDotnetTest},
+	FamilyPHPStan:       {compressor.FormatPHPStan},
+	FamilyDockerBuild:   {compressor.FormatDockerBuild},
+	FamilyDockerPS:      {compressor.FormatDockerPs},
+	FamilyDockerImages:  {compressor.FormatDockerImages},
+	FamilyDockerLogs:    {compressor.FormatDockerLogs},
+	FamilyKubectlGet:    {compressor.FormatKubectlPods},
+	FamilyKubectlLogs:   {compressor.FormatKubectlLogs},
+	FamilyTerraformPlan: {compressor.FormatTerraformPlan},
+	FamilyAzPipelines:   {compressor.FormatAzPipelines},
+	FamilyCargoClippy:   {compressor.FormatCargoClippy},
+	FamilyCargoTree:     {compressor.FormatCargoTree},
+	FamilyComposer:      {compressor.FormatComposer},
+	FamilyArtisan:       {compressor.FormatArtisanMigrate, compressor.FormatArtisanRoutes},
+	FamilySailArtisan:   {compressor.FormatArtisanMigrate, compressor.FormatArtisanRoutes},
+	FamilyGitStash:      {compressor.FormatGitStash},
 	// Another program's transcript with a go test run inside: `make check`.
 	// Clean package lines and complete passing go test -v, pytest and vitest
 	// blocks fold (compressor.FoldTestRuns); every
@@ -148,6 +157,8 @@ var commandFormats = map[Family]compressor.Format{
 	FamilyCurl:         compressor.FormatHTTPFetch,
 	FamilyWget:         compressor.FormatHTTPFetch,
 	FamilyAgentDesktop: compressor.FormatAgentDesktop,
+	FamilyDockerLogs:   compressor.FormatDockerLogs,
+	FamilyKubectlLogs:  compressor.FormatKubectlLogs,
 }
 
 // stderrIsReport lists the families whose stderr is part of what the
