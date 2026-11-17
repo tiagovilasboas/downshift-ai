@@ -71,6 +71,10 @@ Source: `internal/telemetry/aggregate.go` (`Aggregate`), `export.go`, [stats-exp
   only. The headline percentage this produces (19.3% in one operator's log, per
   [subagent-routing-ab-2026-10-15.md](../evidence/subagent-routing-ab-2026-10-15.md)) is an estimate per decision at
   list price, not a measurement.
+- **Projections from recorded transcripts.** The v0.18.0 figure (about 3.5x to 4.5x more tokens cut per month, from
+  about 1.0M to 3.5M–4.5M) applies the new compaction rules to one operator's last 30 days of recorded tool output. It
+  is below rung B: no saving was observed after the change. Method, inputs and limits:
+  [compaction-projection-2026-11-17.md](../evidence/compaction-projection-2026-11-17.md).
 
 ## C. Saving measured in controlled benchmarks
 

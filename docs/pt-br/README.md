@@ -43,6 +43,17 @@ downshift update
 
 [![O assistente interativo detecta harnesses, permite escolher componentes e revisar alterações, grava após a confirmação e depois o usuário verifica a configuração](../brand/readme-media/setup-flow.svg)](../brand/readme-media/setup-flow.png)
 
+## Novo na v0.18.0: a compactação alcança muito mais do que os agentes rodam
+
+**Projeção de 3,5 a 4,5 vezes mais tokens cortados por mês com a mesma carga de trabalho**, de cerca de 1,0M para algo entre 3,5M e 4,5M (bytes economizados / 4). É uma projeção calculada sobre os transcripts dos últimos 30 dias de um operador no Claude Code (69.341 resultados de ferramentas), ainda não medida depois da release: [método e limites](../evidence/compaction-projection-2026-11-17.md).
+
+- **Corte depois da execução a partir de 4 KB** (antes 16 KB) no Claude Code, com a saída bruta guardada para `downshift retrieve`.
+- **Resultados de WebFetch e MCP compactados** depois da execução. O Read continua intacto abaixo de 64 KB.
+- **Mais comandos envolvidos antes da execução**: cadeias com `;` / `&&`, globs entre aspas, caminhos como `/opt/homebrew/bin/gh` e `| head` / `| tail` sem número.
+- **Novos compressores**: JSON de `gh api` / `curl`, `gh pr checks`, `gh pr diff`, listas do git, `git diff` / `show` / `status` grandes e mais nove famílias (terraform plan, cargo clippy e tree, docker e kubectl logs, composer, artisan, az pipelines).
+
+[Notas da release](../releases/v0.18.0.md) · Depois de atualizar, rode `downshift setup --yes` (e `claude plugin update downshift@downshift` se usar o plugin) para receber o novo matcher.
+
 ## Otimização de tokens para agentes de programação
 
 Para desenvolvedores que utilizam agentes de código com IA, suítes longas de testes e saídas verbosas de build não apenas gastam tokens — elas diluem a janela de contexto. À medida que o histórico de terminal se acumula, a capacidade do modelo de reter instruções anteriores, invariantes de arquitetura e regras de negócio se degrada. O Downshift compacta a saída de comandos suportados antes de ela chegar ao agente, preservando o foco da memória de trabalho, códigos de saída e detalhes de falhas intactos. Saídas menores protegem a capacidade do contexto e reduzem o consumo de tokens a cada turno.
@@ -154,7 +165,7 @@ Os modelos disponíveis para um harness ou sessão não são considerados dispon
 | Compactação balanced, saídas grandes | **80,9% menos bytes** | 4 saídas reais deste repositório acima de 16 KB (`go test -v`, `git show`, `git log -p`, `grep -rn`); 45,2% só com o compressor sem perda. As linhas cortadas voltam com `downshift retrieve`. |
 | Roteamento de subagentes | **24,1% menos tokens por execução aceita** | Estudo controlado com 46 execuções no Claude Code para tarefas mecânicas, realizado antes da decisão O8. |
 
-São medições separadas, com unidades e cargas de trabalho diferentes. Os totais do corpus sintético incluem apenas fixtures processadas pelo compactor e excluem fixtures preservadas. O resultado de roteamento é evidência histórica; ele não estabelece o efeito da implementação após O8. A economia no uso cotidiano sem restrições ainda não foi estabelecida. Estimativas de tokens baseadas em bytes não são uma fatura nem uma medida dos limites do plano.
+São medições separadas, com unidades e cargas de trabalho diferentes. Os totais do corpus sintético incluem apenas fixtures processadas pelo compactor e excluem fixtures preservadas. O resultado de roteamento é evidência histórica; ele não estabelece o efeito da implementação após O8. A economia no uso cotidiano sem restrições ainda não foi estabelecida. Estimativas de tokens baseadas em bytes não são uma fatura nem uma medida dos limites do plano. O número da v0.18.0 acima (3,5 a 4,5 vezes) é uma projeção a partir de transcripts gravados, não uma destas medições.
 
 [Benchmark de compactação](../reference/bench.md) · [Estudo de roteamento](../evidence/four-arm-mechanical-2026-10-21.md) · [Guia de evidências](../guides/evidence.md)
 

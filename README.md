@@ -43,6 +43,17 @@ downshift update
 
 [![Interactive setup detects harnesses, lets you choose components and review changes, writes after confirmation, then the user verifies the setup](docs/brand/readme-media/setup-flow.svg)](docs/brand/readme-media/setup-flow.png)
 
+## New in v0.18.0: compaction reaches far more of what agents run
+
+**Projected 3.5x to 4.5x more tokens cut per month on the same workload**, from about 1.0M to about 3.5M to 4.5M (saved bytes / 4). This is a projection over one operator's last 30 days of Claude Code transcripts (69,341 tool results), not yet measured after the release: [method and limits](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/evidence/compaction-projection-2026-11-17.md).
+
+- **Post-run cut from 4 KB** (was 16 KB) on Claude Code, with the raw output kept for `downshift retrieve`.
+- **WebFetch and MCP results compacted** after the run. Read stays untouched under 64 KB.
+- **More commands wrapped before the run**: `;` / `&&` chains, quoted globs, `/opt/homebrew/bin/gh`-style paths, bare `| head` / `| tail`.
+- **New compressors**: JSON from `gh api` / `curl`, `gh pr checks`, `gh pr diff`, git lists, large `git diff` / `show` / `status`, plus nine families (terraform plan, cargo clippy and tree, docker and kubectl logs, composer, artisan, az pipelines).
+
+[Release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.18.0.md) · After updating, run `downshift setup --yes` (and `claude plugin update downshift@downshift` with the plugin) to get the new matcher.
+
 ## Token optimization for AI coding agents
 
 For developers using AI coding agents, long test suites, build logs, and repetitive terminal outputs do not just consume tokens — they cause context rot. As verbose scrollback accumulates in the context window, the model's recall of earlier system prompts, architectural invariants, and business constraints degrades. Downshift compacts supported command output before it reaches the agent, preserving working-memory focus, exit codes, and failure details verbatim. Shorter output protects context capacity and reduces billable tokens on every subsequent turn.
@@ -155,7 +166,7 @@ Models available to one harness or session are not assumed to be available to an
 | Balanced compaction, large outputs | **80.9% fewer bytes** | 4 real outputs of this repository over 16 KB (`go test -v`, `git show`, `git log -p`, `grep -rn`); 45.2% with the lossless compressor alone. Cut lines stay retrievable with `downshift retrieve`. |
 | Subagent routing | **24.1% fewer tokens per accepted run** | Controlled 46-run Claude Code study on mechanical tasks, conducted before decision O8. |
 
-These are separate measurements in different units and workloads. The synthetic corpus totals include only fixtures the compactor processed, excluding preserved fixtures. The routing result is historical evidence; it does not establish the effect of the implementation after O8. Savings in unconstrained everyday use have not been established. Token estimates based on bytes are not an invoice or a measurement of plan limits.
+These are separate measurements in different units and workloads. The synthetic corpus totals include only fixtures the compactor processed, excluding preserved fixtures. The routing result is historical evidence; it does not establish the effect of the implementation after O8. Savings in unconstrained everyday use have not been established. Token estimates based on bytes are not an invoice or a measurement of plan limits. The v0.18.0 figure above (3.5x to 4.5x) is a projection from recorded transcripts, not one of these measurements.
 
 [Compaction benchmark](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/reference/bench.md) · [Routing study](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/evidence/four-arm-mechanical-2026-10-21.md) · [Evidence guide](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/guides/evidence.md)
 

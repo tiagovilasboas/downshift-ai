@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-11-17
+
+Release notes: [docs/releases/v0.18.0.md](docs/releases/v0.18.0.md).
+
+Projected effect: about 3.5x to 4.5x more tokens cut per month on the same workload, from about 1.0M to about 3.5M to 4.5M (saved bytes / 4). A projection over one operator's last 30 days of Claude Code transcripts, not measured after the release: [compaction projection](docs/evidence/compaction-projection-2026-11-17.md).
+
+### Added
+
+- **WebFetch and MCP results are compacted after the run on Claude Code.** `mcp__*` results (answered with `updatedMCPToolOutput`) and `WebFetch` results (`updatedToolOutput`) over 4 KB go through the balanced cut with the raw output kept in CCR. Errors (`isError`) and image or other non-text blocks stay whole; Read keeps its 64 KB rule. `downshift setup` and the plugin wire a new `WebFetch|mcp__.*` PostToolUse matcher; run `downshift setup --yes` or `claude plugin update downshift@downshift` to get it (#145, #147).
+- **Nine more command families compress.** `terraform plan`, `cargo clippy`, `cargo tree`, `docker logs`, `kubectl logs`, `composer`, `artisan` and `sail artisan`, and `az pipelines` are wired to their compressors, each with a fail-open guard on danger words and with clean and preserve corpus fixtures (#144).
+- **JSON pruning for `gh api` and `curl`.** Valid JSON over 512 bytes drops `*_url`, `node_id`, `gravatar_id`, `_links` and `url` values over 80 bytes, and arrays over 20 items keep 20 and a count. IDs stay exact. Malformed JSON, a failed run and `agent-desktop` snapshots pass through (#143).
+- **`gh pr checks`, `gh pr diff`, git lists and `wc`.** `gh pr checks` becomes a FAIL / PENDING / SKIP / PASS table with a summary; `gh pr diff` over 120 lines becomes per-file stats and hunk headers; `git ls-files`, `ls-tree`, `branch`, `worktree`, `remote` and `wc` over 40 lines keep the first 25 lines and a count (`wc` keeps its `total`); `ls -l` without directories is recognised (#143).
+- **Read-only `downshift` subcommands are compacted**: `stats`, `discover`, `report`, `doctor`, `version`, `help`, `session` and `models`. `compact`, `exec`, `compactor`, `setup`, `enable`, `uninstall` and `retrieve` are never wrapped (#141).
+- **`downshift discover --dedup`** counts each tool result once by `tool_use_id`, and the report splits coverage into Bash and non-Bash output (#139).
+- **Very large file reads are cut after the run on Claude Code.** A Read result over 64 KB (`postrun.ReadThreshold`) keeps its head and tail verbatim and cuts whole middle ranges, with the raw text kept in CCR, so later edits still match. Smaller reads are never touched (#138).
+
+### Changed
+
+- **Post-run cut from 4 KB.** The Claude Code post-run hook applies the balanced cut above 4 KB (`postrun.PostRunBalanceThreshold`) instead of 16 KB, and safe chained, quoted, `VAR=x` and absolute-path commands use their inner family's compressor. An explicit `balanced_threshold_kb` sets both thresholds. `downshift doctor` reads `outputs over 16 KB (post-run over 4 KB)` (#140, #147).
+- **More commands are wrapped before the run.** `;` and `&&` chains, quoted globs, binaries under known bin directories (`/opt/homebrew/bin`, `/usr/bin`, `/usr/local/bin` and others; the deny and ask rules see the bare name), and bare `| head` / `| tail` (10 lines). The command size limit goes from 512 to 2,048 bytes. Arbitrary absolute paths, redirects, substitutions, `||` and pipes to anything else are still refused (#137, #142, #147).
+- **Large `git diff`, `git show` and `git status` are summarised.** A diff over 120 lines keeps per-file `+add -del` stats and hunk headers (secret lines fail open); `git status` over 30 lines is grouped into staged, unstaged and untracked with counts and the first five of each, with conflicts kept raw (#146).
+- **The MCP `providers` tool returns a smaller payload**: empty fields are omitted and the history is capped (#141).
+
 ## [0.17.2] - 2026-11-16
 
 Release notes: [docs/releases/v0.17.2.md](docs/releases/v0.17.2.md).
