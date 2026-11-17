@@ -152,7 +152,7 @@ Models available to one harness or session are not assumed to be available to an
 | --- | --- | --- |
 | Lossless output compaction | **59.2% fewer bytes** | 72 lossless fixtures in a synthetic corpus. |
 | Output compaction with CCR | **69.1% fewer bytes** | 121-fixture synthetic corpus (52.7% with CCR off), command output and agent-desktop reads; displayed repetitions may be folded and raw output is recoverable. |
-| Balanced compaction, large outputs | **76.3% fewer bytes** | 4 real outputs of this repository over 16 KB (`go test -v`, `git show`, `git log -p`, `grep -rn`); 35.0% with the lossless compressor alone. Cut lines stay retrievable with `downshift retrieve`. |
+| Balanced compaction, large outputs | **80.9% fewer bytes** | 4 real outputs of this repository over 16 KB (`go test -v`, `git show`, `git log -p`, `grep -rn`); 45.2% with the lossless compressor alone. Cut lines stay retrievable with `downshift retrieve`. |
 | Subagent routing | **24.1% fewer tokens per accepted run** | Controlled 46-run Claude Code study on mechanical tasks, conducted before decision O8. |
 
 These are separate measurements in different units and workloads. The synthetic corpus totals include only fixtures the compactor processed, excluding preserved fixtures. The routing result is historical evidence; it does not establish the effect of the implementation after O8. Savings in unconstrained everyday use have not been established. Token estimates based on bytes are not an invoice or a measurement of plan limits.

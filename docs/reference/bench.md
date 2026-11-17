@@ -97,7 +97,7 @@ Balanced compaction (on by default) cuts an output over 16 KB once CCR stored it
 | Fixture | Raw bytes | Lossless bytes | Lossless saving % | Balanced bytes | Balanced saving % |
 |---|--:|--:|--:|--:|--:|
 | diff_git_log_p | 57777 | 57777 | 0.0 | 23714 | 59.0 |
-| diff_git_show | 38009 | 36265 | 4.6 | 17904 | 52.9 |
+| diff_git_show | 38009 | 2966 | 92.2 | 2966 | 92.2 |
 | log_go_test_v | 130408 | 18458 | 85.8 | 9246 | 92.9 |
 | matches_grep_rn | 98719 | 98719 | 0.0 | 26200 | 73.5 |
-| TOTAL | 324913 | 211219 | 35.0 | 77064 | 76.3 |
+| TOTAL | 324913 | 177920 | 45.2 | 62126 | 80.9 |
