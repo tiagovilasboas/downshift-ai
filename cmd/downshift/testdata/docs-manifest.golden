@@ -204,6 +204,9 @@
         },
         {
           "name": "--self-test"
+        },
+        {
+          "name": "--verify"
         }
       ]
     },
