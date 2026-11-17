@@ -10,6 +10,7 @@ import (
 	"github.com/tiagovilasboas/downshift-ai/internal/compressor"
 	"github.com/tiagovilasboas/downshift-ai/internal/contextopt"
 	"github.com/tiagovilasboas/downshift-ai/internal/execwrap"
+	"github.com/tiagovilasboas/downshift-ai/internal/postrun"
 )
 
 // maxBalancedThresholdKB caps balanced_threshold_kb: past the Compactor's hold
@@ -19,22 +20,29 @@ const maxBalancedThresholdKB = compressor.MaxProcessableBytes >> 10
 // balancedSettings is the balanced cut in effect: whether it is on, the size
 // above which it cuts, and its line caps (zero fields keep their defaults).
 type balancedSettings struct {
-	on        bool
-	threshold int // bytes
-	limits    compressor.BalanceLimits
+	on            bool
+	threshold     int // bytes (pre-run)
+	postThreshold int // bytes (post-run hook)
+	limits        compressor.BalanceLimits
 }
 
 // balancedFrom reads the balanced keys of the config file once. env is
 // DOWNSHIFT_BALANCED. A config that cannot be read keeps balanced on (as
 // contextopt.BalancedEnabled) with the default limits.
 func balancedFrom(cfg contextopt.Config, cfgErr error, env string) balancedSettings {
-	s := balancedSettings{on: contextopt.BalancedEnabled(cfg, cfgErr, env), threshold: execwrap.BalanceThreshold}
+	s := balancedSettings{
+		on:            contextopt.BalancedEnabled(cfg, cfgErr, env),
+		threshold:     execwrap.BalanceThreshold,
+		postThreshold: postrun.PostRunBalanceThreshold,
+	}
 	if cfgErr != nil {
 		s.limits = compressor.DefaultBalanceLimits()
 		return s
 	}
 	if kb := cfg.BalancedThresholdKB; kb > 0 {
-		s.threshold = min(kb, maxBalancedThresholdKB) << 10
+		capped := min(kb, maxBalancedThresholdKB) << 10
+		s.threshold = capped
+		s.postThreshold = capped
 	}
 	s.limits = compressor.BalanceLimits{
 		HunkLines: cfg.BalancedHunkLines, DiffLines: cfg.BalancedDiffLines,
@@ -58,6 +66,10 @@ func (s balancedSettings) apply(o *execwrap.Options) {
 // describe words the limits in effect for `downshift doctor`.
 func (s balancedSettings) describe() string {
 	l := s.limits
-	return fmt.Sprintf("outputs over %d KB are cut (log: first %d and last %d lines; diff: %d lines per hunk, %d in all; search: %d matches per file, %d in all), full output via downshift retrieve",
-		s.threshold>>10, l.LogHead, l.LogTail, l.HunkLines, l.DiffLines, l.MatchesPerFile, l.MatchLines)
+	postNote := ""
+	if s.postThreshold > 0 && s.postThreshold != s.threshold {
+		postNote = fmt.Sprintf(" (post-run over %d KB)", s.postThreshold>>10)
+	}
+	return fmt.Sprintf("outputs over %d KB%s are cut (log: first %d and last %d lines; diff: %d lines per hunk, %d in all; search: %d matches per file, %d in all), full output via downshift retrieve",
+		s.threshold>>10, postNote, l.LogHead, l.LogTail, l.HunkLines, l.DiffLines, l.MatchesPerFile, l.MatchLines)
 }

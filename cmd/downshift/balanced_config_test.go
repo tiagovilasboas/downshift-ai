@@ -60,6 +60,10 @@ func TestBalancedFromConfig(t *testing.T) {
 			}
 		})
 	}
+	defDesc := balancedFrom(contextopt.Config{}, nil, "").describe()
+	if !strings.Contains(defDesc, "over 16 KB (post-run over 4 KB)") {
+		t.Errorf("default describe = %q, want pre-run 16 KB and post-run 4 KB", defDesc)
+	}
 	if balancedFrom(contextopt.Config{}, nil, "0").on {
 		t.Error("DOWNSHIFT_BALANCED=0 must turn balanced off")
 	}
