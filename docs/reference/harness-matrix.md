@@ -138,7 +138,7 @@ so flip the code and this table together. `NativeUsageSource` and
 | `CanShowChildLine` | yes | no | no | no | no | no | no | The hook protocol can show the child-end line. |
 | `CanReturnNote` | yes | no | no | no | no | no | no | The PreToolUse answer can carry a note the model reads. |
 | `SessionEnv` | yes | no | no | no | yes | no | no | Env var holding the current session id. |
-| `ShellEnv` | no | no | yes | no | no | no | yes | Env var the harness sets in agent shells. |
+| `ShellEnv` | yes | no | yes | no | no | no | yes | Env var the harness sets in agent shells. |
 | `AgentEnv` | no | no | no | no | no | no | yes | Env vars whose presence means an agent runs the command. |
 | `ChildEndEvent` | yes | yes | yes | yes | yes | no | yes | A hook event carries the end of a child spawn. |
 | `UsageSource` | yes | no | no | no | no | no | yes | Child token usage is read (payload or transcript). |
