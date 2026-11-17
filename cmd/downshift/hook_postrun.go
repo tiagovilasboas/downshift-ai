@@ -36,11 +36,13 @@ func postRunAnswer(port hookport.Port, raw []byte, prev any) (out any) {
 		return prev
 	}
 	keep, _ := ccrKeep() // a successful call: only full CCR stores it
+	bal := loadBalanced()
 	res := postrun.Compact(caps, in, postrun.Options{
-		Keep:       keep,
-		Balanced:   loadBalanced().on,
-		Session:    telemetry.HashSessionID(in.Session),
-		PreWrapped: func(command string) bool { return shellwrap.WouldRewrite(port.ID, command) },
+		Keep:             keep,
+		Balanced:         bal.on,
+		BalanceThreshold: bal.postThreshold,
+		Session:          telemetry.HashSessionID(in.Session),
+		PreWrapped:       func(command string) bool { return shellwrap.WouldRewrite(port.ID, command) },
 	})
 	if res.Considered {
 		recordPostRun(port.ID, in.Session, res)

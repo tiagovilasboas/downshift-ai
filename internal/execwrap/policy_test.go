@@ -203,7 +203,7 @@ func TestDecide(t *testing.T) {
 		{"already wrapped", "downshift exec -- go test ./...", false, "", "", ReasonAlreadyWrapped},
 		{"wrapped twice", "downshift exec -- downshift exec -- git status", false, "", "", ReasonAlreadyWrapped},
 
-		{"pipe", "go test ./... | tail", false, "", "", ReasonUnsafeChar},
+		{"pipe", "go test ./... | wc -l", false, "", "", ReasonUnsafeChar},
 		{"or list", "git status || rm -rf x", false, "", "", ReasonUnsafeChar},
 		{"background list", "go test ./... & echo ok", false, "", "", ReasonUnsafeChar},
 		{"background", "go test ./... &", false, "", "", ReasonUnsafeChar},

@@ -29,6 +29,10 @@
       {
         "matcher": "Read|Grep|Glob",
         "hooks": [{ "type": "command", "command": "downshift claude-code-post-tool-use" }]
+      },
+      {
+        "matcher": "WebFetch|mcp__.*",
+        "hooks": [{ "type": "command", "command": "downshift claude-code-post-tool-use" }]
       }
     ],
     "PostToolUseFailure": [

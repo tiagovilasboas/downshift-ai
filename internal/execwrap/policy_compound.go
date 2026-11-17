@@ -143,11 +143,14 @@ func stderrSuffix(command string) (core, suffix string) {
 	return strings.TrimRight(strings.TrimSuffix(command, stderrDup), " "), stderrDup
 }
 
-// lineFilter reports whether words are exactly `tail|head -N`, `-n N` or
-// `-nN`, with N a short positive count.
+// lineFilter reports whether words are `tail|head` (default 10 lines) or
+// `tail|head -N`, `-n N`, or `-nN`, with N a short positive count.
 func lineFilter(words []string) bool {
-	if len(words) < 2 || len(words) > 3 || (words[0] != "tail" && words[0] != "head") {
+	if len(words) < 1 || len(words) > 3 || (words[0] != "tail" && words[0] != "head") {
 		return false
+	}
+	if len(words) == 1 {
+		return true
 	}
 	switch {
 	case len(words) == 3:

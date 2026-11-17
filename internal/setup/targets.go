@@ -94,6 +94,8 @@ var Targets = []Target{
 			// Read, Grep and Glob feed the main-session work count (mainwork);
 			// a large Grep or Glob result is also compacted after the run.
 			{Event: "PostToolUse", Matcher: "Read|Grep|Glob", Args: "claude-code-post-tool-use"},
+			// WebFetch and MCP tools compact verbose text/JSON after the run.
+			{Event: "PostToolUse", Matcher: "WebFetch|mcp__.*", Args: "claude-code-post-tool-use"},
 			{Event: "PostToolUseFailure", Matcher: "Agent|Task", Args: "claude-code-post-tool-use"},
 			{Event: "SessionStart", Args: "claude-code-session-start"},
 			{Event: "SubagentStop", Args: "claude-code-subagent-stop"},

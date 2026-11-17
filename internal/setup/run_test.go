@@ -131,10 +131,10 @@ func TestSetupFreshClaudeCode(t *testing.T) {
 		got := hookCommands(t, doc, event)
 		if event == "PreToolUse" || event == "PostToolUse" {
 			// Agent|Task spawns and Bash (the exec wrapper) share the handler;
-			// PostToolUse adds Read|Grep|Glob for the main-session work count.
+			// PostToolUse adds Read|Grep|Glob and WebFetch|mcp__.*.
 			n := 2
 			if event == "PostToolUse" {
-				n = 3
+				n = 4
 			}
 			if len(got) != n {
 				t.Errorf("%s = %v, want %d x %s", event, got, n, cmd)
@@ -152,6 +152,9 @@ func TestSetupFreshClaudeCode(t *testing.T) {
 	}
 	if !hasMatcher(doc, "PreToolUse", "Agent|Task") || !hasMatcher(doc, "PreToolUse", "Bash") {
 		t.Errorf("PreToolUse must carry the Agent|Task and Bash matchers: %v", doc["hooks"].(map[string]any)["PreToolUse"])
+	}
+	if !hasMatcher(doc, "PostToolUse", "WebFetch|mcp__.*") {
+		t.Errorf("PostToolUse must carry WebFetch|mcp__.* matcher: %v", doc["hooks"].(map[string]any)["PostToolUse"])
 	}
 	sl := doc["statusLine"].(map[string]any)
 	if sl["type"] != "command" || sl["command"] != testBin+" quota claude-statusline" {
