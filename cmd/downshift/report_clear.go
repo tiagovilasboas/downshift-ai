@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/paths"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
 )
 
 // reportClearFiles are the measurement logs `downshift report clear` moves
@@ -124,6 +125,19 @@ func reportClearFound(dir string) ([]clearFile, int64) {
 		}
 		out = append(out, clearFile{name: name, size: st.Size()})
 		total += st.Size()
+	}
+	if entries, err := os.ReadDir(dir); err == nil {
+		for _, e := range entries {
+			if !telemetry.IsRotatedBackupName("events.jsonl", e.Name()) {
+				continue
+			}
+			st, err := os.Lstat(filepath.Join(dir, e.Name()))
+			if err != nil || !st.Mode().IsRegular() {
+				continue
+			}
+			out = append(out, clearFile{name: e.Name(), size: st.Size()})
+			total += st.Size()
+		}
 	}
 	return out, total
 }

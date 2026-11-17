@@ -6,6 +6,8 @@ package telemetry
 import (
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 )
 
 // DefaultRotatedMaxBytes bounds total bytes read across rotated backups and
@@ -47,11 +49,39 @@ func ReadEventsWithRotatedFrom(path string, maxBytes int64) ([]Event, error) {
 	return events, nil
 }
 
+// IsRotatedBackupName reports whether name is a timestamp-rotated backup of
+// base (for example, "events.jsonl.2026-10-01T09-44-00").
+func IsRotatedBackupName(base, name string) bool {
+	suffix, ok := strings.CutPrefix(name, base+".")
+	if !ok {
+		return false
+	}
+	_, err := time.Parse(rotatedTimestampLayout, suffix)
+	return err == nil
+}
+
+// listRotatedBackups returns timestamp-rotated backups of logPath, oldest first.
+// Manual backups such as events.jsonl.bak-test are excluded.
+func listRotatedBackups(logPath string) ([]os.DirEntry, error) {
+	all, err := listBackups(logPath)
+	if err != nil {
+		return nil, err
+	}
+	base := filepath.Base(logPath)
+	var out []os.DirEntry
+	for _, e := range all {
+		if IsRotatedBackupName(base, e.Name()) {
+			out = append(out, e)
+		}
+	}
+	return out, nil
+}
+
 // collectLogSlices returns the log files to read in chronological order
 // (oldest backup first, live log last), trimming or skipping older files
 // once maxBytes is reached.
 func collectLogSlices(path string, maxBytes int64) ([]logSlice, error) {
-	backups, err := listBackups(path)
+	backups, err := listRotatedBackups(path)
 	if err != nil && !os.IsNotExist(err) {
 		return nil, err
 	}
