@@ -71,8 +71,12 @@ const (
 	FormatGitStash     Format = "git_stash"     // git stash list
 	FormatGhPr         Format = "gh_pr"         // gh pr view
 	FormatGhChecks     Format = "gh_checks"     // gh pr checks
+	FormatGhPrDiff     Format = "gh_pr_diff"    // gh pr diff (summary)
 	FormatGhRunList    Format = "gh_run_list"   // gh run list
 	FormatGhRunLog     Format = "gh_run_log"    // gh run view --log
+	FormatGitList      Format = "git_list"      // git ls-files / ls-tree / branch / worktree / remote
+	FormatWc           Format = "wc"            // wc -l / wc multi-line counts
+	FormatJSONPrune    Format = "json_prune"    // pruned gh api / curl JSON response
 	FormatCargoBuild   Format = "cargo_build"   // Rust cargo build
 	FormatGoBuild      Format = "go_build"      // Go go build
 	FormatDotnetBuild  Format = "dotnet_build"  // .NET dotnet build (MSBuild)

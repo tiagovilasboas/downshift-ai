@@ -125,12 +125,7 @@ func isGhPrChecks(input []byte) bool {
 // an agent spots them immediately; passing ones use "ok". Rows are ordered
 // failures first.
 func compressGhPrChecks(input []byte) ([]byte, bool, string) {
-	type check struct {
-		name  string
-		state string
-		fail  bool
-	}
-	var checks []check
+	var checks []ghCheckRow
 	for _, line := range strings.Split(strings.TrimSuffix(string(input), "\n"), "\n") {
 		if strings.TrimSpace(line) == "" {
 			continue
@@ -141,7 +136,7 @@ func compressGhPrChecks(input []byte) ([]byte, bool, string) {
 			// plain table we expect; preserve everything.
 			return input, false, "gh_pr_checks_unrecognized_line_preserved"
 		}
-		checks = append(checks, check{
+		checks = append(checks, ghCheckRow{
 			name:  strings.TrimSpace(m[1]),
 			state: m[2],
 			fail:  ghCheckFailureStates[m[2]],
@@ -151,26 +146,9 @@ func compressGhPrChecks(input []byte) ([]byte, bool, string) {
 		return input, false, "gh_pr_checks_no_rows"
 	}
 
-	var b strings.Builder
-	failures := 0
-	// Failures first.
-	for _, c := range checks {
-		if c.fail {
-			fmt.Fprintf(&b, "FAIL %s (%s)\n", c.name, c.state)
-			failures++
-		}
-	}
-	for _, c := range checks {
-		if !c.fail {
-			fmt.Fprintf(&b, "ok   %s\n", c.name)
-		}
-	}
-	out := b.String()
+	out, failures := formatGhCheckRows(checks)
 	if len(out) >= len(input) {
 		return input, false, "no_compression_gain"
-	}
-	if ghDroppedDangerLine(input, []byte(out)) {
-		return input, false, "gh_pr_checks_danger_line_preserved"
 	}
 	reason := fmt.Sprintf("compressed gh pr checks (%d checks, %d failing)", len(checks), failures)
 	return []byte(out), true, reason

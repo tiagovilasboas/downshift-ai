@@ -81,9 +81,15 @@ func detectFormatTail(input []byte) (Format, bool) {
 		return FormatDotnetTest, reDotnetTestFailure.Match(input)
 	}
 
-	// 15. File listings / tree
+	// 15. File listings / tree / git lists / wc
 	if bytes.Contains(input, []byte("total ")) && bytes.Contains(input, []byte("drwx")) {
 		return FormatFileList, false
+	}
+	if isGitList(input) {
+		return FormatGitList, false
+	}
+	if isWcOutput(input) {
+		return FormatWc, false
 	}
 
 	// 16. Linters: eslint/ruff/mypy/golangci-lint are detected earlier (before
@@ -160,6 +166,11 @@ func detectFormatTail(input []byte) (Format, bool) {
 	// 24. Azure DevOps
 	if isAzPipelines(input) {
 		return FormatAzPipelines, false
+	}
+
+	// 25. JSON pruning (gh api / curl REST responses)
+	if isJSONPrunable(input) {
+		return FormatJSONPrune, false
 	}
 
 	return FormatUnknown, false

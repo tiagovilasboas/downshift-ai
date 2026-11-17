@@ -60,10 +60,18 @@ func applyFormatCompression(input []byte, f Format) ([]byte, bool, string) {
 		return compressMarkdownView(input)
 	case FormatGhChecks:
 		return compressGhPrChecks(input)
+	case FormatGhPrDiff:
+		return compressGhPrDiff(input)
 	case FormatGhRunList:
 		return compressGhRunList(input)
 	case FormatGhRunLog:
 		return compressGhRunLog(input)
+	case FormatGitList:
+		return compressGitList(input)
+	case FormatWc:
+		return compressWc(input)
+	case FormatJSONPrune:
+		return compressJSONPrune(input)
 	case FormatSearch:
 		return compressSearchResults(input)
 	case FormatFileList:
