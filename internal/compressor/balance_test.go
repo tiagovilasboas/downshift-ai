@@ -96,3 +96,42 @@ func TestBalanceCutKeepsValidUTF8(t *testing.T) {
 		}
 	}
 }
+
+func TestBalanceCutFailureLineKeepsHeadAndTail(t *testing.T) {
+	head := "ERROR: " + strings.Repeat("a", 293) // 300 bytes
+	mid := strings.Repeat("m", 400)
+	tail := strings.Repeat("z", 183) + ": assertion_end()" // 200 bytes
+	failLine := head + mid + tail
+	if len(failLine) != 900 {
+		t.Fatalf("len(failLine) = %d, want 900", len(failLine))
+	}
+
+	gotFail := balanceCut(failLine)
+	if !strings.HasPrefix(gotFail, head) {
+		t.Errorf("failure line lost first 300 bytes: %q", gotFail[:40])
+	}
+	if !strings.HasSuffix(gotFail, tail) {
+		t.Errorf("failure line lost last 200 bytes: %q", gotFail[len(gotFail)-40:])
+	}
+	if !strings.Contains(gotFail, " … (400 bytes cut) … ") {
+		t.Errorf("failure line missing cut marker: %q", gotFail)
+	}
+
+	plainLine := strings.Repeat("p", 300) + strings.Repeat("q", 400) + strings.Repeat("r", 200)
+	gotPlain := balanceCut(plainLine)
+	if !strings.HasPrefix(gotPlain, strings.Repeat("p", 300)) {
+		t.Errorf("plain line lost prefix: %q", gotPlain[:40])
+	}
+	if strings.Contains(gotPlain, "rrr") {
+		t.Errorf("plain line unexpectedly kept tail: %q", gotPlain[len(gotPlain)-40:])
+	}
+	if !strings.Contains(gotPlain, " … (600 more bytes)") {
+		t.Errorf("plain line missing more-bytes marker: %q", gotPlain)
+	}
+
+	utf8Fail := "error: " + strings.Repeat("é", 450) + ": end"
+	gotUTF8 := balanceCut(utf8Fail)
+	if !utf8.ValidString(gotUTF8) {
+		t.Errorf("UTF-8 failure cut is invalid UTF-8: %q", gotUTF8)
+	}
+}
