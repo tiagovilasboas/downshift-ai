@@ -5,12 +5,17 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
+	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/tiagovilasboas/downshift-ai/internal/adapters/claudecode"
 	"github.com/tiagovilasboas/downshift-ai/internal/core"
+	"github.com/tiagovilasboas/downshift-ai/internal/core/decidertest"
 	"github.com/tiagovilasboas/downshift-ai/internal/execwrap"
 	"github.com/tiagovilasboas/downshift-ai/internal/paths"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
 )
 
 // runExecOneEvent runs a no-op command through runExec in an isolated state
@@ -40,11 +45,15 @@ func runExecOneEvent(t *testing.T) execwrap.Event {
 	return evs[0]
 }
 
-// With CLAUDE_CODE_ENTRYPOINT set to a valid client, the exec event records it.
+// With CLAUDE_CODE_ENTRYPOINT set to a valid client, the exec event records it
+// and attributes the harness to claude-code rather than unknown.
 func TestRunExec_ClientFromEntrypoint(t *testing.T) {
 	t.Setenv(claudeClientEnv, "claude-desktop")
 
 	ev := runExecOneEvent(t)
+	if ev.Harness != "claude-code" {
+		t.Errorf("harness = %q, want %q", ev.Harness, "claude-code")
+	}
 	if ev.Client != "claude-desktop" {
 		t.Errorf("client = %q, want %q", ev.Client, "claude-desktop")
 	}
@@ -87,5 +96,36 @@ func TestEnvClient(t *testing.T) {
 	t.Setenv(claudeClientEnv, "CLI")
 	if got := envClient(); got != "" {
 		t.Errorf("envClient() = %q, want empty for untrusted value", got)
+	}
+}
+
+// A PreToolUse hook run from the Claude Desktop Code tab (CLAUDE_CODE_ENTRYPOINT=claude-desktop)
+// records harness="claude-code" and client="claude-desktop", never "unknown".
+func TestHookClaudeCode_DesktopCodeTabAttributed(t *testing.T) {
+	decidertest.Use(t, decidertest.Tier(core.TierSmall))
+	path := filepath.Join(t.TempDir(), "hook-events.jsonl")
+	t.Setenv("DOWNSHIFT_EVENT_LOG", path)
+	t.Setenv(claudeClientEnv, "claude-desktop")
+
+	event := []byte(`{"hook_event_name":"PreToolUse","tool_name":"Agent","model":"opus","tool_input":{"prompt":"find files","subagent_type":"Explore"}}`)
+	captureStdout(func() {
+		runHookAdapter(
+			"claude-code",
+			bytes.NewReader(event),
+			func(b []byte) (claudecode.Event, error) { var e claudecode.Event; return e, json.Unmarshal(b, &e) },
+			func(e claudecode.Event) (any, string, core.Decision) { return claudecode.Handle(e, cmdCat) },
+			printAllow,
+		)
+	})
+
+	events, err := telemetry.ReadEventsFrom(path)
+	if err != nil || len(events) != 1 {
+		t.Fatalf("events = %#v, err = %v", events, err)
+	}
+	if events[0].Harness != "claude-code" {
+		t.Errorf("harness = %q, want %q", events[0].Harness, "claude-code")
+	}
+	if events[0].Client != "claude-desktop" {
+		t.Errorf("client = %q, want %q", events[0].Client, "claude-desktop")
 	}
 }
