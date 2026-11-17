@@ -95,6 +95,20 @@ func hasChildTokens(ev Event) bool {
 	return ev.InputTokens != nil || ev.OutputTokens != nil || ev.CachedTokens != nil
 }
 
+func childTokenSum(ev Event) int64 {
+	var sum int64
+	if ev.InputTokens != nil {
+		sum += *ev.InputTokens
+	}
+	if ev.OutputTokens != nil {
+		sum += *ev.OutputTokens
+	}
+	if ev.CachedTokens != nil {
+		sum += *ev.CachedTokens
+	}
+	return sum
+}
+
 // ObservedChildTokens sums input, output, and cached tokens only from usage
 // events that already count as child tokens (hasChildTokens). records is the
 // count of those usage events. A nil pointer adds nothing. records == 0 means
@@ -105,15 +119,7 @@ func ObservedChildTokens(events []Event) (sum int64, records int) {
 			continue
 		}
 		records++
-		if ev.InputTokens != nil {
-			sum += *ev.InputTokens
-		}
-		if ev.OutputTokens != nil {
-			sum += *ev.OutputTokens
-		}
-		if ev.CachedTokens != nil {
-			sum += *ev.CachedTokens
-		}
+		sum += childTokenSum(ev)
 	}
 	return sum, records
 }

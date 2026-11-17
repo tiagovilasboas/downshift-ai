@@ -27,10 +27,12 @@ type SpawnRef struct{ Harness, Key string }
 // RanUnknown, never a guess. A rewrite the harness never confirmed is assumed
 // honored, as everywhere else in the report.
 func RanTiers(events []Event) map[SpawnRef]RanTier {
-	a := newAggregator()
-	a.indexDecisions(events)
+	refuted := map[linkKey]string{}
 	usage := map[linkKey][]Event{}
 	for _, ev := range events {
+		if ev.Outcome == OutcomeResolved && ev.LinkedDecision != "" && ev.RewriteHonored != nil && !*ev.RewriteHonored {
+			refuted[linkKey{ev.Harness, ev.LinkedDecision}] = ev.ToModel
+		}
 		if ev.Outcome == OutcomeUsage && ev.LinkedDecision != "" {
 			k := linkKey{ev.Harness, ev.LinkedDecision}
 			usage[k] = append(usage[k], ev)
@@ -47,7 +49,7 @@ func RanTiers(events []Event) map[SpawnRef]RanTier {
 			records = []Event{{}}
 		}
 		best := RanUnknown
-		_, isRefuted := a.refuted[k]
+		_, isRefuted := refuted[k]
 		for _, u := range records {
 			_, ran := tokenModels(u, d, true, isRefuted)
 			best = higherRan(best, ranTierOf(d.Harness, ran))

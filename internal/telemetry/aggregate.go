@@ -3,40 +3,20 @@
 
 package telemetry
 
-import (
-	"strings"
-)
-
 // Aggregate computes Stats from a slice of events.
 //
-// The decision/refutation index is built first (exported windows may arrive
-// out of order); one pass over the events then runs the named steps in a fixed
-// order; the whole-log tallies run last.
+// Two linear passes over events: the first indexes decisions, refutations,
+// observed links, session honor groups and respawn timestamps (exported windows
+// may arrive out of order); the second accumulates per-event counts, routing
+// tokens, surface tallies and duplicate tool_use hashes; finalization folds
+// the indexed maps without rescanning events.
 func Aggregate(events []Event) Stats {
 	a := newAggregator()
-	a.indexDecisions(events)
+	a.indexEvents(events)
 	for _, ev := range events {
-		if a.countChildEnd(ev) {
-			continue // how a child ended: an observation, not a decision or cost
-		}
-		if ev.Outcome == OutcomeWorkerEnded || ev.Outcome == OutcomeMCPTool {
-			continue // a delegated worker's end: tokens for the worker budget, not a routed spawn
-		}
-		if ev.Outcome == OutcomeResolved {
-			continue // an observation about an earlier decision, not a cost or a decision
-		}
-		if ev.Outcome == OutcomeDCI {
-			continue // a line left by the removed code intelligence: not a decision
-		}
-		if IsCostOnlyOutcome(ev.Outcome) {
-			a.countCostOnly(ev)
-			continue
-		}
-		a.countDecision(ev)
+		a.processEvent(ev)
 	}
-	a.tallyLogWide(events)
-	a.s.Routing = RoutingTokens(events)
-	a.s.DuplicateToolUse = DuplicateToolUseCount(events)
+	a.finalize(events)
 	return a.s
 }
 
@@ -45,8 +25,7 @@ type linkKey struct {
 	harness, decision string
 }
 
-// aggregator accumulates Stats over one Aggregate call. Each method is one
-// concern of the single pass.
+// aggregator accumulates Stats over one Aggregate call.
 type aggregator struct {
 	s         Stats
 	decisions map[linkKey]Event
@@ -54,11 +33,16 @@ type aggregator struct {
 	// not run: they are not applied and save nothing. The value is the model
 	// that record reports ("" when it names none).
 	refuted map[linkKey]string
-	// unrouted holds paused decisions and baseline lines older binaries wrote
-	// (outcome baseline): spawns the router left alone. They are not in decisions.
-	unrouted map[linkKey]bool
 	// linked marks usage records already matched to a decision.
 	linked map[linkKey]bool
+
+	honorObserved    map[linkKey]bool
+	usageObserved    map[linkKey]bool
+	honorIdx         *honorIndex
+	respawnIdx       *respawnIndex
+	routingDecisions map[linkKey]Event
+	routingSpawns    map[string]*spawnPlacement
+	dupToolUse       map[linkKey]int
 }
 
 func newAggregator() *aggregator {
@@ -72,165 +56,90 @@ func newAggregator() *aggregator {
 			EffortMix:    make(map[string]int),
 			ByAgentType:  make(map[string]AgentTypeCount),
 		},
-		decisions: make(map[linkKey]Event),
-		refuted:   make(map[linkKey]string),
-		unrouted:  make(map[linkKey]bool),
-		linked:    make(map[linkKey]bool),
+		decisions:        make(map[linkKey]Event),
+		refuted:          make(map[linkKey]string),
+		linked:           make(map[linkKey]bool),
+		honorObserved:    make(map[linkKey]bool),
+		usageObserved:    make(map[linkKey]bool),
+		honorIdx:         newHonorIndex(),
+		respawnIdx:       newRespawnIndex(),
+		routingDecisions: make(map[linkKey]Event),
+		routingSpawns:    make(map[string]*spawnPlacement),
+		dupToolUse:       make(map[linkKey]int),
 	}
 }
 
-// indexDecisions builds the decision and refuted-rewrite indexes before any
-// counting.
-func (a *aggregator) indexDecisions(events []Event) {
-	for _, ev := range events {
+// indexEvents builds all lookup indexes in a single pass before counting.
+func (a *aggregator) indexEvents(events []Event) {
+	for i, ev := range events {
 		if !IsCostOnlyOutcome(ev.Outcome) && !IsFailureOutcome(ev.Outcome) {
 			a.decisions[linkKey{ev.Harness, DecisionKey(ev)}] = ev
 		}
-		if ev.Outcome == OutcomeBaseline {
-			a.unrouted[linkKey{ev.Harness, DecisionKey(ev)}] = true
+		if IsDecisionRow(ev) {
+			a.routingDecisions[linkKey{ev.Harness, DecisionKey(ev)}] = ev
 		}
 		if ev.Outcome == OutcomeResolved && ev.LinkedDecision != "" && ev.RewriteHonored != nil && !*ev.RewriteHonored {
 			a.refuted[linkKey{ev.Harness, ev.LinkedDecision}] = ev.ToModel
 		}
+		if ev.Harness != "" && ev.LinkedDecision != "" {
+			k := linkKey{ev.Harness, ev.LinkedDecision}
+			if ev.Outcome == OutcomeResolved && ev.RewriteHonored != nil && *ev.RewriteHonored {
+				a.honorObserved[k] = true
+			}
+			if ev.Outcome == OutcomeUsage && hasChildTokens(ev) {
+				a.usageObserved[k] = true
+			}
+		}
+		a.honorIdx.add(i, ev)
+		a.respawnIdx.add(ev)
 	}
 }
 
-// countChildEnd tallies how a child ended and reports whether ev was such a
-// record.
-func (a *aggregator) countChildEnd(ev Event) bool {
-	if ev.Outcome == OutcomeChildEnded && ev.ChildStatus != "" {
-		a.s.ChildStatus[ev.ChildStatus]++
-		return true
+// processEvent tallies one event in the second linear pass.
+func (a *aggregator) processEvent(ev Event) {
+	if IsDecisionRow(ev) && ev.ToolUseHash != "" {
+		a.dupToolUse[linkKey{ev.Harness, ev.ToolUseHash}]++
 	}
-	return false
-}
-
-// countCostOnly handles post-hoc cost records ("usage") and unrouted
-// events ("baseline"). They are not decisions: they must not move Total,
-// verdict counts, complexity counts, or normalised units. Usage records
-// contribute real-dollar savings.
-func (a *aggregator) countCostOnly(ev Event) {
-	if ev.Outcome == OutcomeBaseline {
-		a.s.Baseline++
+	if ev.Harness != "" && !IsCostOnlyOutcome(ev.Outcome) && !IsFailureOutcome(ev.Outcome) {
+		k := linkKey{ev.Harness, DecisionKey(ev)}
+		_, isRefuted := a.refuted[k]
+		tallyEventSurface(ev, &a.s, a.honorObserved[k], a.usageObserved[k], isRefuted)
+	}
+	if ev.Outcome == OutcomeUsage {
+		if hasChildTokens(ev) {
+			a.s.ObservedChildUsage++
+			a.s.ObservedChildTokens += childTokenSum(ev)
+		}
+		accumulateRoutingSpawn(ev, a.routingDecisions, a.refuted, a.routingSpawns)
+	}
+	if a.countChildEnd(ev) {
+		return // how a child ended: an observation, not a decision or cost
+	}
+	if ev.Outcome == OutcomeWorkerEnded || ev.Outcome == OutcomeMCPTool {
+		return // a delegated worker's end: tokens for the worker budget, not a routed spawn
+	}
+	if ev.Outcome == OutcomeResolved {
+		return // an observation about an earlier decision, not a cost or a decision
+	}
+	if ev.Outcome == OutcomeDCI {
+		return // a line left by the removed code intelligence: not a decision
+	}
+	if IsCostOnlyOutcome(ev.Outcome) {
+		a.countCostOnly(ev)
 		return
 	}
-	a.s.UsageRecords++
-	key := linkKey{ev.Harness, ev.LinkedDecision}
-	a.linkUsage(ev, key)
+	a.countDecision(ev)
 }
 
-// linkUsage counts a usage record once per distinct subagent (or event) when
-// it links to a known decision in the same session.
-func (a *aggregator) linkUsage(ev Event, key linkKey) {
-	identity := "event:" + DecisionKey(ev)
-	if ev.AgentHash != "" {
-		identity = "agent:" + ev.AgentHash
+// finalize computes the post-pass tallies from the indexed maps.
+func (a *aggregator) finalize(events []Event) {
+	t := tallyHonoredFromIndex(events, a.honorIdx)
+	a.s.RewriteShifted, a.s.RewriteHonored = t.Shifted, t.Honored
+	a.s.RespawnAfterFailure = len(respawnFromIndex(a.respawnIdx, respawnWindow))
+	a.s.Routing = buildRoutingView(a.routingSpawns)
+	for _, c := range a.dupToolUse {
+		if c > 1 {
+			a.s.DuplicateToolUse++
+		}
 	}
-	unique := linkKey{ev.Harness, identity}
-	if decision, ok := a.decisions[key]; ok && ev.LinkedDecision != "" && !a.linked[unique] &&
-		(ev.SessionID == "" || decision.SessionID == "" || ev.SessionID == decision.SessionID) {
-		a.s.UsageLinked++
-		a.linked[unique] = true
-	}
-}
-
-// countDecision tallies one routing decision across all of its dimensions.
-func (a *aggregator) countDecision(ev Event) {
-	a.s.Total++
-	a.countAgentType(ev)
-	a.s.ByEntry[NormalizeEntry(ev.Entry)]++
-	if ev.PolicyFloor {
-		a.s.PolicyFloor++
-	}
-	a.s.ByComplexity[ev.Complexity]++
-	served, isRefuted := a.refuted[linkKey{ev.Harness, DecisionKey(ev)}]
-	a.countModelMix(ev, isRefuted, served)
-	if isKnownEffort(ev.FinalEffort) {
-		a.s.EffortMix[ev.FinalEffort]++
-	} else if isKnownEffort(ev.RequestedEffort) {
-		a.s.EffortMix[ev.RequestedEffort]++
-	}
-	a.countGatewayShadow(ev)
-	for _, code := range ev.ReasonCodes {
-		a.s.ReasonCodes[code]++
-	}
-	a.countFrontier(ev, isRefuted)
-	applied := AppliedRouting(ev) && !isRefuted
-	a.countVerdict(ev, applied)
-	// Self-correction: the verdict stands, the safe action applied.
-	if len(ev.Corrections) > 0 {
-		a.s.Corrected++
-	}
-}
-
-func (a *aggregator) countAgentType(ev Event) {
-	if ev.AgentType == "" {
-		return
-	}
-	c := a.s.ByAgentType[ev.AgentType]
-	c.Decisions++
-	if ev.FromModel == "" || ev.FromModel == "unknown" {
-		c.UnknownBaseline++
-	}
-	a.s.ByAgentType[ev.AgentType] = c
-}
-
-// countModelMix counts the model that actually ran. For a refuted rewrite that
-// is the model the resolved record reports, which another hook on the same call
-// may have set; the requested model only when the record names none.
-func (a *aggregator) countModelMix(ev Event, isRefuted bool, served string) {
-	ran := ev.ToModel
-	if isRefuted {
-		ran = ranOnRefute(ev, served)
-	}
-	if ran != "" && ran != "unknown" {
-		a.s.ModelMix[ShortModel(ran)]++
-	}
-}
-
-// countGatewayShadow tallies the OpenRouter allowlist shadow observation.
-func (a *aggregator) countGatewayShadow(ev Event) {
-	if ev.GatewayWould == "" {
-		return
-	}
-	a.s.GatewayObserved++
-	if a.s.GatewaySlugs == nil {
-		a.s.GatewaySlugs = make(map[string]int)
-	}
-	a.s.GatewaySlugs[ev.GatewayWould]++
-}
-
-// countFrontier counts frontier picks and the subset spent on doubt.
-func (a *aggregator) countFrontier(ev Event, isRefuted bool) {
-	if !strings.EqualFold(ev.Tier, TierFrontier) {
-		return
-	}
-	a.s.FrontierDecisions++
-	if spentOnDoubt(ev) && !isRefuted {
-		a.s.FrontierOnDoubt++
-	}
-}
-
-func (a *aggregator) countVerdict(ev Event, applied bool) {
-	switch {
-	case ev.Verdict == "DOWNSHIFT" && applied:
-		a.s.Downshifted++
-	case ev.Verdict == "UPSHIFT" && applied:
-		a.s.Upshifted++
-	case ev.Verdict == "DOWNSHIFT" || ev.Verdict == "UPSHIFT":
-		a.s.NotApplied++
-	case ev.Verdict == "OK":
-		a.s.OK++
-	default:
-		a.s.Unknown++
-	}
-}
-
-// tallyLogWide runs the tallies that need the whole event list rather than one
-// event at a time.
-func (a *aggregator) tallyLogWide(events []Event) {
-	a.s.RewriteShifted, a.s.RewriteHonored = CountInferredHonored(events)
-	tallySpawnSurface(events, &a.s)
-	a.s.ObservedChildTokens, a.s.ObservedChildUsage = ObservedChildTokens(events)
-	a.s.RespawnAfterFailure = len(RespawnAfterFailure(events, respawnWindow))
 }

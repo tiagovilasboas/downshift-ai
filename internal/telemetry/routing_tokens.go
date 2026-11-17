@@ -3,12 +3,6 @@
 
 package telemetry
 
-import (
-	"fmt"
-	"sort"
-	"strings"
-)
-
 // Tokens routing placed below the session model: the one routing figure.
 //
 // Owner decision: savings are reported only as tokens, per harness, never in
@@ -129,53 +123,63 @@ func (p *spawnPlacement) tokens() RoutingRow {
 // resumed child has several records and counts as one spawn: below when any of
 // its records ran below the baseline.
 func RoutingTokens(events []Event) RoutingView {
-	a := newAggregator()
-	a.indexDecisions(events)
+	refuted := map[linkKey]string{}
 	decisions := map[linkKey]Event{}
 	for _, ev := range events {
+		if ev.Outcome == OutcomeResolved && ev.LinkedDecision != "" && ev.RewriteHonored != nil && !*ev.RewriteHonored {
+			refuted[linkKey{ev.Harness, ev.LinkedDecision}] = ev.ToModel
+		}
 		if IsDecisionRow(ev) {
 			decisions[linkKey{ev.Harness, DecisionKey(ev)}] = ev
 		}
 	}
 	spawns := map[string]*spawnPlacement{}
 	for _, ev := range events {
-		if ev.Outcome != OutcomeUsage || !ev.HasTokenUsage() {
-			continue
+		accumulateRoutingSpawn(ev, decisions, refuted, spawns)
+	}
+	return buildRoutingView(spawns)
+}
+
+func accumulateRoutingSpawn(ev Event, decisions map[linkKey]Event, refuted map[linkKey]string, spawns map[string]*spawnPlacement) {
+	if ev.Outcome != OutcomeUsage || !ev.HasTokenUsage() {
+		return
+	}
+	c := classesOf(ev.TokenUsageOrZero())
+	if c.Total == 0 {
+		return
+	}
+	key := linkKey{ev.Harness, ev.LinkedDecision}
+	decision, found := decisions[key]
+	_, isRefuted := refuted[key]
+	id := ev.Harness + "\n" + ev.LinkedDecision
+	if !found {
+		id = ev.Harness + "\nusage:" + DecisionKey(ev)
+	}
+	sp := spawns[id]
+	if sp == nil {
+		sp = &spawnPlacement{harness: ev.Harness, agent: UntypedAgent}
+		if found && decision.AgentType != "" {
+			sp.agent = decision.AgentType
 		}
-		c := classesOf(ev.TokenUsageOrZero())
-		if c.Total == 0 {
-			continue
-		}
-		key := linkKey{ev.Harness, ev.LinkedDecision}
-		decision, found := decisions[key]
-		_, isRefuted := a.refuted[key]
-		id := ev.Harness + "\n" + ev.LinkedDecision
-		if !found {
-			id = ev.Harness + "\nusage:" + DecisionKey(ev)
-		}
-		sp := spawns[id]
-		if sp == nil {
-			sp = &spawnPlacement{harness: ev.Harness, agent: UntypedAgent}
-			if found && decision.AgentType != "" {
-				sp.agent = decision.AgentType
-			}
-			sp.rewritten = found && isShift(decision) && !isRefuted
-			spawns[id] = sp
-		}
-		sp.billable += c.Billable()
-		sp.cacheRead += c.CacheRead
-		requested, ran := tokenModels(ev, decision, found, isRefuted)
-		if found && decision.ParentModel != "" {
-			if d := directionVs(ev.Harness, decision.ParentModel, ran); d != TokenUnattributed {
-				sp.onSession = true
-				sp.belowSession = sp.belowSession || d == TokenCheaper
-			}
-		}
-		if d := directionVs(ev.Harness, requested, ran); d != TokenUnattributed {
-			sp.onRequested = true
-			sp.belowRequested = sp.belowRequested || d == TokenCheaper
+		sp.rewritten = found && isShift(decision) && !isRefuted
+		spawns[id] = sp
+	}
+	sp.billable += c.Billable()
+	sp.cacheRead += c.CacheRead
+	requested, ran := tokenModels(ev, decision, found, isRefuted)
+	if found && decision.ParentModel != "" {
+		if d := directionVs(ev.Harness, decision.ParentModel, ran); d != TokenUnattributed {
+			sp.onSession = true
+			sp.belowSession = sp.belowSession || d == TokenCheaper
 		}
 	}
+	if d := directionVs(ev.Harness, requested, ran); d != TokenUnattributed {
+		sp.onRequested = true
+		sp.belowRequested = sp.belowRequested || d == TokenCheaper
+	}
+}
+
+func buildRoutingView(spawns map[string]*spawnPlacement) RoutingView {
 	v := RoutingView{ByHarness: map[string]RoutingRow{}, ByAgentType: map[string]RoutingRow{}, bySpawn: map[string]RoutingRow{}}
 	for id, sp := range spawns {
 		t := sp.tokens()
@@ -201,58 +205,6 @@ func (v RoutingView) Only() RoutingRow {
 		return r
 	}
 	return RoutingRow{}
-}
-
-// Line is the short text every live view uses, or "" when there is no spawn:
-// "12k of 40k billable below the session model (3 of 5 spawns)". The fallback
-// part is its own clause: "against the requested model". Cache reads are not
-// in it. A lower tier is not fewer tokens: it says where tokens ran.
-func (r RoutingRow) Line() string {
-	var parts []string
-	if r.Observed() {
-		parts = append(parts, fmt.Sprintf("%s of %s billable below the session model (%d of %s)",
-			formatTokens(r.BelowBillable), formatTokens(r.Billable), r.BelowSpawns, spawnsText(r.Spawns)))
-		if r.RewrittenSpawns > 0 {
-			parts = append(parts, fmt.Sprintf("by a Downshift rewrite: %s (%s tokens)", spawnsText(r.RewrittenSpawns), formatTokens(r.RewrittenBillable)))
-		}
-	}
-	if r.FallbackObserved() {
-		parts = append(parts, fmt.Sprintf("%s of %s billable below the requested model (%s, no session model)",
-			formatTokens(r.FallbackBelowBillable), formatTokens(r.FallbackBillable), spawnsText(r.FallbackSpawns)))
-	}
-	if r.UnobservedSpawns > 0 {
-		parts = append(parts, fmt.Sprintf("%d unobserved", r.UnobservedSpawns))
-	}
-	return strings.Join(parts, " · ")
-}
-
-// spawnsText is "1 spawn" or "3 spawns".
-func spawnsText(n int) string {
-	if n == 1 {
-		return "1 spawn"
-	}
-	return fmt.Sprintf("%d spawns", n)
-}
-
-// HarnessOrder lists the harness ids of a view in print order: declared
-// harnesses first, in DeclaredHarnesses order, then any other id, sorted.
-func (v RoutingView) HarnessOrder() []string {
-	seen := map[string]bool{}
-	var out []string
-	for _, n := range DeclaredHarnesses {
-		if _, ok := v.ByHarness[n.Harness]; ok {
-			out = append(out, n.Harness)
-			seen[n.Harness] = true
-		}
-	}
-	var rest []string
-	for h := range v.ByHarness {
-		if !seen[h] {
-			rest = append(rest, h)
-		}
-	}
-	sort.Strings(rest)
-	return append(out, rest...)
 }
 
 // UntypedAgent labels spawns whose decision named no agent type.

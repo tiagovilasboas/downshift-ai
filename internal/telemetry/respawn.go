@@ -63,39 +63,56 @@ func FailedDownshiftWithin(events []Event, session string, now time.Time) bool {
 	return false
 }
 
+type stampedEvent struct {
+	ev Event
+	at time.Time
+}
+
+type respawnIndex struct {
+	all   []stampedEvent
+	byKey map[string]Event
+}
+
+func newRespawnIndex() *respawnIndex {
+	return &respawnIndex{byKey: map[string]Event{}}
+}
+
+func (r *respawnIndex) add(e Event) {
+	t, err := time.Parse(time.RFC3339Nano, e.Timestamp)
+	if err != nil || e.SessionID == "" {
+		return
+	}
+	r.all = append(r.all, stampedEvent{e, t})
+	if e.Outcome != OutcomeChildEnded {
+		r.byKey[DecisionKey(e)] = e
+	}
+}
+
 // RespawnAfterFailure scans events and returns one Retry per failed child
 // that is followed by another decision in the same session inside window.
 // Only the first following decision counts, so one failure yields at most one
 // Retry. Events without a session id cannot be attributed and are skipped.
 func RespawnAfterFailure(events []Event, window time.Duration) []Retry {
-	type stamped struct {
-		ev Event
-		at time.Time
-	}
-	var all []stamped
-	byKey := map[string]Event{}
+	idx := newRespawnIndex()
 	for _, e := range events {
-		t, err := time.Parse(time.RFC3339Nano, e.Timestamp)
-		if err != nil || e.SessionID == "" {
-			continue
-		}
-		all = append(all, stamped{e, t})
-		if e.Outcome != OutcomeChildEnded {
-			byKey[DecisionKey(e)] = e
-		}
+		idx.add(e)
 	}
-	sort.SliceStable(all, func(i, j int) bool { return all[i].at.Before(all[j].at) })
+	return respawnFromIndex(idx, window)
+}
+
+func respawnFromIndex(idx *respawnIndex, window time.Duration) []Retry {
+	sort.SliceStable(idx.all, func(i, j int) bool { return idx.all[i].at.Before(idx.all[j].at) })
 
 	var out []Retry
-	for i, s := range all {
+	for i, s := range idx.all {
 		if s.ev.Outcome != OutcomeChildEnded || !failedEnd(s.ev.ChildStatus) {
 			continue
 		}
-		failed, ok := byKey[s.ev.LinkedDecision]
+		failed, ok := idx.byKey[s.ev.LinkedDecision]
 		if !ok {
 			continue
 		}
-		for _, n := range all[i+1:] {
+		for _, n := range idx.all[i+1:] {
 			if n.at.Sub(s.at) > window {
 				break
 			}
