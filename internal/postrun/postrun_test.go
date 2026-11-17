@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/core"
+	"github.com/tiagovilasboas/downshift-ai/internal/execwrap"
 	"github.com/tiagovilasboas/downshift-ai/internal/hookport"
 )
 
@@ -202,5 +203,102 @@ func TestCompact_SearchLedCut(t *testing.T) {
 	in.Command = "cat rows.txt | head -80"
 	if res := Compact(allCaps, in, Options{Keep: keepOK, Balanced: true}); res.Replaced {
 		t.Errorf("file text cut:\n%s", res.Output.Stdout)
+	}
+}
+
+func TestCompact_PostRun4KBBand(t *testing.T) {
+	if execwrap.BalanceThreshold != 16<<10 {
+		t.Fatalf("execwrap.BalanceThreshold = %d, want 16 KiB", execwrap.BalanceThreshold)
+	}
+	if PostRunBalanceThreshold != 4<<10 {
+		t.Fatalf("PostRunBalanceThreshold = %d, want 4 KiB", PostRunBalanceThreshold)
+	}
+
+	// ~5.5 KB log with >200 lines so balanced cut saves >25%.
+	var b strings.Builder
+	for i := 0; i < 220; i++ {
+		fmt.Fprintf(&b, "step %03d ok: build check\n", i)
+	}
+	fiveKB := b.String()
+	if len(fiveKB) <= 4<<10 || len(fiveKB) >= 16<<10 {
+		t.Fatalf("fiveKB len = %d, want in (4 KiB, 16 KiB)", len(fiveKB))
+	}
+
+	opts := Options{Keep: keepOK, Balanced: true}
+	in := hookport.ToolOutput{Category: core.CategoryShell, Command: "custom-tool --run", Stdout: fiveKB, HasStdout: true, ExitCode: 0}
+	res := Compact(allCaps, in, opts)
+	if !res.Considered || !res.Replaced || !res.Compacted || !res.Folded || res.KeptID != "0123456789ab" {
+		t.Fatalf("5 KB exit 0 with CCR not compacted: %+v", res)
+	}
+	if res.EmittedBytes*4 > res.RawBytes*3 {
+		t.Errorf("5 KB compaction did not achieve 25%% gain: raw=%d emitted=%d", res.RawBytes, res.EmittedBytes)
+	}
+
+	// Nonzero exit stays whole.
+	failIn := in
+	failIn.ExitCode = 1
+	if failRes := Compact(allCaps, failIn, opts); failRes.Replaced || failRes.Output.Stdout != fiveKB {
+		t.Errorf("5 KB nonzero exit was cut: replaced=%v", failRes.Replaced)
+	}
+
+	// < 25% gain stays whole (100 lines * ~55 bytes = ~5.5 KB; balanceLog keeps 60+80 >= 100 lines).
+	var smallGain strings.Builder
+	for i := 0; i < 100; i++ {
+		fmt.Fprintf(&smallGain, "row %03d: %s\n", i, strings.Repeat("x", 45))
+	}
+	sg := smallGain.String()
+	if len(sg) <= 4<<10 {
+		t.Fatalf("smallGain len = %d, want > 4 KiB", len(sg))
+	}
+	sgIn := hookport.ToolOutput{Category: core.CategoryShell, Command: "custom-tool --run", Stdout: sg, HasStdout: true, ExitCode: 0}
+	if sgRes := Compact(allCaps, sgIn, opts); sgRes.Replaced || sgRes.Output.Stdout != sg {
+		t.Errorf("<25%% gain was cut: replaced=%v", sgRes.Replaced)
+	}
+
+	// Explicit Options.BalanceThreshold overrides PostRunBalanceThreshold.
+	highThresh := Options{Keep: keepOK, Balanced: true, BalanceThreshold: 16 << 10}
+	if highRes := Compact(allCaps, in, highThresh); highRes.Replaced || highRes.Output.Stdout != fiveKB {
+		t.Errorf("explicit 16 KiB threshold still cut 5 KB output: replaced=%v", highRes.Replaced)
+	}
+}
+
+func TestCompact_InnerAndLeadingFamily(t *testing.T) {
+	var goTestOut strings.Builder
+	for i := 0; i < 40; i++ {
+		fmt.Fprintf(&goTestOut, "=== RUN   TestCase%d\n--- PASS: TestCase%d (0.00s)\n", i, i)
+	}
+	goTestOut.WriteString("PASS\nok  \texample.com/pkg\t0.123s\n")
+
+	var gitStatusOut strings.Builder
+	gitStatusOut.WriteString("On branch main\nChanges not staged for commit:\n")
+	for i := 0; i < 30; i++ {
+		fmt.Fprintf(&gitStatusOut, "\tmodified:   internal/pkg/file_%02d.go\n", i)
+	}
+
+	opts := Options{Keep: keepOK, Balanced: true}
+	for _, tc := range []struct {
+		name       string
+		cmd        string
+		stdout     string
+		exit       int
+		wantFamily execwrap.Family
+		wantCut    bool
+	}{
+		{"cd compound go test exit 0", "cd repo && go test ./...", goTestOut.String(), 0, execwrap.FamilyGoTest, true},
+		{"cd compound go test exit 1 stays unextracted", "cd repo && go test ./...", goTestOut.String(), 1, execwrap.FamilyNone, false},
+		{"abs_path git status", "/opt/homebrew/bin/git status", gitStatusOut.String(), 0, execwrap.FamilyGitStatus, true},
+		{"quoted go test", `CGO_ENABLED=0 go test -run "TestCase" ./...`, goTestOut.String(), 0, execwrap.FamilyGoTest, true},
+		{"pipe stays unextracted", "go test ./... | tail -5", goTestOut.String(), 0, execwrap.FamilyNone, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			in := hookport.ToolOutput{Category: core.CategoryShell, Command: tc.cmd, Stdout: tc.stdout, HasStdout: true, ExitCode: tc.exit}
+			res := Compact(allCaps, in, opts)
+			if res.Family != tc.wantFamily {
+				t.Errorf("Family = %q, want %q", res.Family, tc.wantFamily)
+			}
+			if res.Replaced != tc.wantCut {
+				t.Errorf("Replaced = %v, want %v (passthrough=%q detail=%q)", res.Replaced, tc.wantCut, res.Passthrough, res.Detail)
+			}
+		})
 	}
 }

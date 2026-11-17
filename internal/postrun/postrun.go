@@ -36,6 +36,10 @@ const Entry = "post_tool_use"
 // harness's own grep or glob tool, not a shell command).
 const FamilySearchTool execwrap.Family = "search-tool"
 
+// PostRunBalanceThreshold is the default size (4 KiB) above which post-run
+// shell compaction applies the balanced cut when Options.BalanceThreshold <= 0.
+const PostRunBalanceThreshold = 4 << 10
+
 // Options are the ports and switches the runner reads at the edge.
 type Options struct {
 	// Keep stores raw output for `downshift retrieve` (CCR). Nil means
@@ -43,6 +47,8 @@ type Options struct {
 	Keep func(raw []byte) (id string, ok bool)
 	// Balanced allows the balanced cut (DOWNSHIFT_BALANCED).
 	Balanced bool
+	// BalanceThreshold overrides PostRunBalanceThreshold when positive.
+	BalanceThreshold int
 	// Session is the hashed session of the call, empty when unknown. With it
 	// the marker's hint reads `downshift retrieve --session=<ref> <id>`.
 	Session string
@@ -50,6 +56,13 @@ type Options struct {
 	// this shell command in `downshift compact`, so its output was compacted
 	// there. Nil means no pre-run wrap is known.
 	PreWrapped func(command string) bool
+}
+
+func balanceThreshold(o Options) int {
+	if o.BalanceThreshold > 0 {
+		return o.BalanceThreshold
+	}
+	return PostRunBalanceThreshold
 }
 
 // Result is what Compact did with one tool result. It carries byte counts and
@@ -114,21 +127,27 @@ func compactShell(in hookport.ToolOutput, o Options) Result {
 	res := Result{Considered: true, Family: family, ExitCode: exit, Output: in}
 	if family == execwrap.FamilyNone {
 		res.Inner, res.Kind = execwrap.CompoundShape(in.Command)
+		if fam, extractedArgv := extractPostRunFamily(in.Command, exit); fam != execwrap.FamilyNone {
+			family, argv = fam, extractedArgv
+			res.Family = fam
+		}
 	}
 	res.RawBytes = int64(len(in.Stdout) + len(in.Stderr))
 	out, cut := execwrap.Captured{}, false
 	if family == execwrap.FamilyNone && o.Balanced {
 		out, cut = execwrap.CutSearch(in.Command, []byte(in.Stdout), exit, o.Keep, o.Session)
 	}
+	balanced := o.Balanced && exit == 0
+	threshold := balanceThreshold(o)
 	if !cut {
-		out = execwrap.CompactCaptured(argv, family, []byte(in.Stdout), exit, o.Keep, o.Balanced, o.Session)
+		out = execwrap.CompactCapturedWithThreshold(argv, family, []byte(in.Stdout), exit, o.Keep, balanced, threshold, o.Session)
 	}
 	res.Compacted, res.Folded, res.Passthrough, res.Detail, res.KeptID = out.Compacted, out.Folded, out.Passthrough, out.Detail, out.KeptID
 	if out.Compacted {
 		res.Output.Stdout = string(out.Output)
 	}
-	if in.HasStderr && len(in.Stderr) > execwrap.BalanceThreshold {
-		errOut := execwrap.CompactCaptured(nil, execwrap.FamilyNone, []byte(in.Stderr), exit, o.Keep, o.Balanced, o.Session)
+	if in.HasStderr && len(in.Stderr) > threshold {
+		errOut := execwrap.CompactCapturedWithThreshold(nil, execwrap.FamilyNone, []byte(in.Stderr), exit, o.Keep, balanced, threshold, o.Session)
 		if errOut.Compacted {
 			res.Output.Stderr = string(errOut.Output)
 			res.Compacted, res.Folded, res.Passthrough, res.Detail = true, res.Folded || errOut.Folded, "", ""

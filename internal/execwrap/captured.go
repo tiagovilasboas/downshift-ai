@@ -68,6 +68,12 @@ type Captured struct {
 // returns data unchanged. session is the caller's hashed session ("" when
 // unknown): with it the marker's retrieve hint names the session (SessionRef).
 func CompactCaptured(argv []string, family Family, data []byte, exitCode int, keep func([]byte) (string, bool), balanced bool, session string) (res Captured) {
+	return CompactCapturedWithThreshold(argv, family, data, exitCode, keep, balanced, 0, session)
+}
+
+// CompactCapturedWithThreshold is CompactCaptured with an explicit balanced
+// cut threshold in bytes (<= 0 uses BalanceThreshold).
+func CompactCapturedWithThreshold(argv []string, family Family, data []byte, exitCode int, keep func([]byte) (string, bool), balanced bool, balanceThreshold int, session string) (res Captured) {
 	res = Captured{Output: data, Passthrough: PassthroughUnrecognized}
 	defer func() {
 		if recover() != nil {
@@ -85,7 +91,8 @@ func CompactCaptured(argv []string, family Family, data []byte, exitCode int, ke
 		keep = nil
 	}
 	var kept string
-	h := compactHeld(argv, data, family, exitCode, false, captureKept(keep, &kept, session), nil, balanced, balanceConfig{})
+	bal := balanceConfig{threshold: balanceThreshold}
+	h := compactHeld(argv, data, family, exitCode, false, captureKept(keep, &kept, session), nil, balanced, bal)
 	res = Captured{Output: h.out, Compacted: h.compacted, Folded: h.folded, Passthrough: h.passthrough, Detail: h.detail}
 	if h.compacted {
 		res.KeptID = kept
