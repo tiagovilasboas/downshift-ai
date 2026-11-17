@@ -162,6 +162,9 @@ func detectFormat(input []byte) (Format, bool) {
 	if isCargoBuild(input) {
 		return FormatCargoBuild, false
 	}
+	if isCargoClippy(input) {
+		return FormatCargoClippy, false
+	}
 	if isDotnetBuild(input) {
 		return FormatDotnetBuild, false
 	}

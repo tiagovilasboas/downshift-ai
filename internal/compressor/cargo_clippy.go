@@ -4,6 +4,7 @@
 package compressor
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 	"unicode/utf8"
@@ -32,12 +33,17 @@ var (
 	// "error: ..." / "warning: ..." / "error[E0308]: ..." header line.
 	reClippyHeader = lazyre.New(`^(error|warning)(?:\[[A-Za-z0-9]+\])?:\s+(.*)$`)
 	// "  --> src/main.rs:4:9"
-	reClippyLocation = lazyre.New(`^\s*-->\s+(\S+?):(\d+):(\d+)\s*$`)
+	reClippyLocation = lazyre.New(`(?m)^\s*-->\s+(\S+?):(\d+):(\d+)\s*$`)
 	// "warning: `crate` (bin "crate") generated 2 warnings" / "could not compile"
 	reClippyGenerated = lazyre.New(`(?m)^(?:error|warning):\s+.*\bgenerated\s+\d+\s+(?:warnings?|errors?)\b|^error: could not compile\b`)
+	// Code frame, note/help, and cargo progress lines inside a clippy run.
+	reClippyContext = lazyre.New(`^\s*(?:\d*\s*\||=\s+(?:note|help):|(?:Checking|Compiling|Finished|Blocking|For more information|Some errors)\b)`)
 )
 
 func isCargoClippy(input []byte) bool {
+	if reCargoTestHeader.Match(input) || bytes.Contains(input, []byte("test result:")) {
+		return false
+	}
 	return reClippyGenerated.Match(input) && reClippyLocation.Match(input)
 }
 
@@ -77,7 +83,10 @@ func compressCargoClippy(input []byte) ([]byte, bool, string) {
 			havePending = false
 			continue
 		}
-		// Code frames, notes, help, blanks: ignored context.
+		if strings.TrimSpace(line) == "" || reClippyContext.MatchString(line) {
+			continue
+		}
+		return input, false, "cargo_clippy_unrecognized_line"
 	}
 
 	if groups.fileCount() == 0 {

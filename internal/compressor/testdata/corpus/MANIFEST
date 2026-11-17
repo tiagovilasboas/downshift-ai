@@ -167,10 +167,14 @@ preserve  yarn-build     yarn_build_output.txt
 preserve  bun-test       bun_test_output.txt
 preserve  bun-build      bun_build_output.txt
 
-# PHP ecosystem (pass-through)
-preserve  composer       composer_output.txt
-preserve  artisan        artisan_output.txt
-preserve  phpstan        phpstan_output.txt
+# PHP ecosystem
+clean     composer         composer_clean.txt
+preserve  composer         composer_output.txt
+clean     artisan_migrate  artisan_migrate_clean.txt
+preserve  artisan_migrate  sail_artisan_output.txt
+clean     artisan_routes   artisan_routes_clean.txt
+preserve  artisan_routes   artisan_output.txt
+preserve  phpstan          phpstan_output.txt
 preserve  psalm          psalm_output.txt
 preserve  php-cs-fixer   php_cs_fixer_output.txt
 preserve  pint           pint_output.txt
@@ -180,18 +184,20 @@ preserve  eslint         eslint_output.txt
 preserve  prettier       prettier_output.txt
 preserve  biome          biome_output.txt
 
-# Kubernetes (pass-through)
+# Kubernetes
 preserve  kubectl-get       kubectl_get_output.txt
 preserve  kubectl-describe  kubectl_describe_output.txt
-preserve  kubectl-logs      kubectl_logs_output.txt
+clean     kubectl_logs      kubectl_logs_clean.txt
+preserve  kubectl_logs      kubectl_logs_output.txt
 
 # Helm (pass-through)
 preserve  helm-list      helm_list_output.txt
 preserve  helm-status    helm_status_output.txt
 
-# Terraform (pass-through)
-preserve  terraform-plan terraform_plan_output.txt
-preserve  terraform-fmt  terraform_fmt_output.txt
+# Terraform
+clean     terraform_plan  terraform_plan_clean.txt
+preserve  terraform_plan  terraform_plan_output.txt
+preserve  terraform-fmt   terraform_fmt_output.txt
 
 # Azure CLI (pass-through)
 preserve  az-list        az_list_output.txt
@@ -205,9 +211,10 @@ preserve  aws-s3-ls      aws_s3_ls_output.txt
 preserve  aws-s3-cp      aws_s3_cp_output.txt
 preserve  aws-logs       aws_logs_output.txt
 
-# Docker (pass-through)
+# Docker
 preserve  docker-ps      docker_ps_output.txt
-preserve  docker-logs    docker_logs_output.txt
+clean     docker_logs    docker_logs_clean.txt
+preserve  docker_logs    docker_logs_output.txt
 preserve  docker-images  docker_images_output.txt
 preserve  docker-build   docker_build_output.txt
 # GitOps (pass-through)
@@ -219,7 +226,8 @@ preserve  argocd-diff    argocd_diff_output.txt
 preserve  kustomize-build  kustomize_build_output.txt
 
 # Azure Pipelines
-preserve  az-pipelines   az_pipelines_output.txt
+clean     az_pipelines   az_pipelines_clean.txt
+preserve  az_pipelines   az_pipelines_output.txt
 
 # Database (pass-through)
 preserve  mysql-query    mysql_query_output.txt
@@ -239,7 +247,6 @@ preserve  vite-preview   vite_preview_output.txt
 preserve  turbo-run      turbo_run_output.txt
 preserve  pest           pest_output.txt
 preserve  sail-test      sail_test_output.txt
-preserve  sail-artisan   sail_artisan_output.txt
 preserve  rector         rector_output.txt
 
 # GitHub CLI (compacted) — gh-pr covers pr view/checks, gh-run covers run list/log
@@ -272,8 +279,11 @@ preserve  govulncheck    govulncheck_output.txt
 preserve  cargo-build    cargo_build_output.txt
 preserve  cargo-run      cargo_run_output.txt
 preserve  cargo-check    cargo_check_output.txt
-preserve  cargo-clippy   cargo_clippy_output.txt
-preserve  cargo-tree     cargo_tree_output.txt
+clean     cargo_clippy   cargo_clippy_clean.txt
+preserve  cargo_clippy   cargo_clippy_output.txt
+clean     cargo_tree     cargo_tree_clean.txt
+clean     cargo_tree     cargo_tree_output.txt
+preserve  cargo_tree     cargo_tree_error.txt
 
 # Python tooling (pass-through)
 preserve  pip-list   pip_list_output.txt

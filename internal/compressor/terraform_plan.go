@@ -30,6 +30,9 @@ func compressTerraformPlan(input []byte) ([]byte, bool, string) {
 	if len(input) > MaxProcessableBytes || !utf8.Valid(input) {
 		return input, false, "terraform_too_large"
 	}
+	if linesHaveDangerWord(input, nil) {
+		return input, false, "terraform_danger_preserved"
+	}
 
 	// No changes case — super compact
 	if reTerraformNoChanges.Match(input) {

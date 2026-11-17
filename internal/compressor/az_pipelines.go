@@ -40,6 +40,9 @@ func compressAzPipelines(input []byte) ([]byte, bool, string) {
 	if len(input) > MaxProcessableBytes || !utf8.Valid(input) {
 		return input, false, "az_pipelines_too_large"
 	}
+	if linesHaveDangerWord(input, nil) {
+		return input, false, "az_pipelines_danger_preserved"
+	}
 
 	// Handle JSON array output
 	if reAzPipelinesJSON.Match(input) {
@@ -121,6 +124,9 @@ func compressAzPipelinesJSON(input []byte) ([]byte, bool, string) {
 }
 
 func compressAzPipelinesTable(input []byte) ([]byte, bool, string) {
+	if strings.HasPrefix(string(input), "az pipelines:") {
+		return input, false, "az_pipelines_already_compacted"
+	}
 	lines := strings.Split(string(input), "\n")
 
 	var dataLines int
@@ -159,6 +165,9 @@ func compressAzPipelinesTable(input []byte) ([]byte, bool, string) {
 		out.WriteString(" more\n")
 	}
 
+	if len(out.Bytes()) >= len(input) {
+		return input, false, "az_pipelines_no_gain"
+	}
 	return out.Bytes(), true, "az_pipelines_table_compacted"
 }
 
