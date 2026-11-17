@@ -13,10 +13,10 @@ import "context"
 type SessionSummary struct {
 	Known             bool           `json:"known"`
 	Note              string         `json:"note,omitempty"`
-	Spawns            int            `json:"spawns"`
-	ByTier            map[string]int `json:"by_tier"`
-	ByAgentType       map[string]int `json:"by_agent_type"`
-	AboveAgentDefault int            `json:"above_agent_default"`
+	Spawns            int            `json:"spawns,omitempty"`
+	ByTier            map[string]int `json:"by_tier,omitempty"`
+	ByAgentType       map[string]int `json:"by_agent_type,omitempty"`
+	AboveAgentDefault int            `json:"above_agent_default,omitempty"`
 }
 
 // SessionHistory summarizes the current session's spawns for a harness.

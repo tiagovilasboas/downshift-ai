@@ -68,7 +68,7 @@ func decideQuoted(trimmed, exe string) Decision {
 	if len(argv) == 0 {
 		return Decision{Reason: ReasonNotAllowlisted}
 	}
-	if argv[0] == "downshift" {
+	if isWrappedDownshift(argv) {
 		return Decision{Reason: ReasonAlreadyWrapped}
 	}
 	family := FamilyOf(argv)

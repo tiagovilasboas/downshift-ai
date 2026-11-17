@@ -130,6 +130,7 @@ var expectedFormats = map[Family][]compressor.Format{
 	FamilyKnip:         {compressor.FormatGeneric},
 	FamilyDepcheck:     {compressor.FormatGeneric},
 	FamilyMadge:        {compressor.FormatGeneric},
+	FamilyDownshift:    {compressor.FormatGeneric},
 }
 
 // commandFormats are the families compacted by compressor.CompressCommandOutput.

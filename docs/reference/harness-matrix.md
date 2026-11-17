@@ -786,6 +786,7 @@ written. The family name is the only command fact telemetry keeps.
 | `mix` | `mix` | passes through |
 | `swift` | `swift` | passes through |
 | `sbt` | `sbt` | passes through |
+| `downshift` | `downshift` read-only subcommands (`stats`, `discover`, `report`, `doctor`, `version`, `help`, `session`, `models`) | compresses |
 
 Container exec (`docker exec`, `docker compose exec`, `docker-compose exec`) is wrapped when its inner command is an allowlisted family above (`phpunit`, `npm-test`, `artisan`, ...); the recorded family is the inner one. Accepted flags before the service or container: `-T`, `--no-TTY`, `-i`, `-u`/`--user`, `-w`/`--workdir`, `-e`/`--env KEY=VAL`. `-t`, `-it` and any other flag (`-d`, `--index`, `--privileged`) leave the command unwrapped, because a TTY changes the output the compressor reads. Nested docker is not wrapped.
 
