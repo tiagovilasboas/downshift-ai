@@ -6,5 +6,10 @@ claude-code  0 commands: 0 compacted, 0 compactible but bare (0 B), 0 skipped
 codex        0 commands: 0 compacted, 0 compactible but bare (0 B), 0 skipped
 all          0 commands: 0 compacted, 0 compactible but bare (0 B), 0 skipped
 
+Coverage (compacted output / total tool output):
+  bash       0 B / 0 B (0.0%)
+  non-bash   0 B / 0 B (0.0%)
+  total      0 B / 0 B (0.0%)
+
 No bare compactible commands found.
 --- stderr ---
