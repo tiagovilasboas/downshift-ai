@@ -64,6 +64,15 @@ func compressGitDiff(input []byte) ([]byte, bool, string) {
 	if reason, ok := gitDiffUnsafe(input); !ok {
 		return input, false, reason
 	}
+	if out, files, handled, reason := summarizeLargeDiff(input, false); handled {
+		if reason != "" {
+			return input, false, reason
+		}
+		if len(out) >= len(input) {
+			return input, false, "no_compression_gain"
+		}
+		return out, true, fmt.Sprintf("compressed git diff (%d files)", files)
+	}
 	out, files, ok := rewriteUnifiedDiff(input, false)
 	if !ok {
 		return input, false, "git_diff_unrecognized_structure_preserved"
@@ -82,6 +91,15 @@ func compressGitDiff(input []byte) ([]byte, bool, string) {
 func compressGitShow(input []byte) ([]byte, bool, string) {
 	if reason, ok := gitDiffUnsafe(input); !ok {
 		return input, false, reason
+	}
+	if out, files, handled, reason := summarizeLargeDiff(input, true); handled {
+		if reason != "" {
+			return input, false, reason
+		}
+		if len(out) >= len(input) {
+			return input, false, "no_compression_gain"
+		}
+		return out, true, fmt.Sprintf("compressed git show (%d files)", files)
 	}
 	out, files, ok := rewriteUnifiedDiff(input, true)
 	if !ok {

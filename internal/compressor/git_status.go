@@ -137,6 +137,13 @@ func compressDirtyGitStatus(input []byte, s string) ([]byte, bool, string) {
 	if branch == "" || len(entries) == 0 {
 		return input, false, "git_status_has_changes_preserved"
 	}
+	if len(lines) > gitStatusLargeMinLines {
+		out := formatLargeGitStatus(branch, upstream, ahead, behind, entries)
+		if len(out) >= len(input) {
+			return input, false, "no_compression_gain"
+		}
+		return out, true, fmt.Sprintf("compacted large git status (%d files)", len(entries))
+	}
 	var b strings.Builder
 	b.WriteString(formatGitBranchHeader(branch, upstream, ahead, behind))
 	b.WriteByte('\n')
@@ -152,6 +159,52 @@ func compressDirtyGitStatus(input []byte, s string) ([]byte, bool, string) {
 		return input, false, "no_compression_gain"
 	}
 	return out, true, "compacted dirty git status"
+}
+
+const (
+	gitStatusLargeMinLines = 30
+	gitStatusHeadPerGroup  = 5
+)
+
+func formatLargeGitStatus(branch, upstream string, ahead, behind int, entries []gitStatusEntry) []byte {
+	var staged, unstaged, untracked []gitStatusEntry
+	for _, e := range entries {
+		if e.staged == '?' && e.unstaged == '?' {
+			untracked = append(untracked, e)
+			continue
+		}
+		if e.staged != ' ' && e.staged != '?' {
+			staged = append(staged, e)
+		}
+		if e.unstaged != ' ' && e.unstaged != '?' {
+			unstaged = append(unstaged, e)
+		}
+	}
+	var b strings.Builder
+	b.WriteString(formatGitBranchHeader(branch, upstream, ahead, behind))
+	b.WriteByte('\n')
+	fmt.Fprintf(&b, "Summary: %d staged, %d unstaged, %d untracked\n", len(staged), len(unstaged), len(untracked))
+	writeStatusGroup(&b, "Staged", staged)
+	writeStatusGroup(&b, "Unstaged", unstaged)
+	writeStatusGroup(&b, "Untracked", untracked)
+	return []byte(b.String())
+}
+
+func writeStatusGroup(b *strings.Builder, label string, group []gitStatusEntry) {
+	if len(group) == 0 {
+		return
+	}
+	fmt.Fprintf(b, "%s (%d):\n", label, len(group))
+	limit := len(group)
+	if limit > gitStatusHeadPerGroup {
+		limit = gitStatusHeadPerGroup
+	}
+	for _, e := range group[:limit] {
+		fmt.Fprintf(b, "  %c%c %s\n", e.staged, e.unstaged, e.path)
+	}
+	if len(group) > limit {
+		fmt.Fprintf(b, "  ... (+%d more)\n", len(group)-limit)
+	}
 }
 
 func gitStatusCode(changeType string) byte {
