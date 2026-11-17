@@ -74,13 +74,14 @@ func TestCompactCaptured(t *testing.T) {
 
 func TestSimpleFamily(t *testing.T) {
 	for cmd, want := range map[string]Family{
-		"go test ./...":                       FamilyGoTest,
-		"CGO_ENABLED=0 go test ./x":           FamilyGoTest,
-		"go test ./... | tail -5":             FamilyNone,
-		"go test ./... > out.txt":             FamilyNone,
-		"downshift compact -- ls":             FamilyNone,
-		"":                                    FamilyNone,
-		"go test " + strings.Repeat("x", 600): FamilyNone,
+		"go test ./...":                        FamilyGoTest,
+		"CGO_ENABLED=0 go test ./x":            FamilyGoTest,
+		"go test ./... | tail -5":              FamilyNone,
+		"go test ./... > out.txt":              FamilyNone,
+		"downshift compact -- ls":              FamilyNone,
+		"":                                     FamilyNone,
+		"go test " + strings.Repeat("x", 600):  FamilyGoTest,
+		"go test " + strings.Repeat("x", 2050): FamilyNone,
 	} {
 		if got, _ := SimpleFamily(cmd); got != want {
 			t.Errorf("SimpleFamily(%q) = %q, want %q", cmd, got, want)

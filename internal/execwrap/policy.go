@@ -84,7 +84,7 @@ func WithSession(command, session string) string {
 
 // maxCommandBytes bounds the command the policy considers. Longer commands
 // are left alone.
-const maxCommandBytes = 512
+const maxCommandBytes = 2048
 
 // Decision is the policy answer for one shell command.
 type Decision struct {
