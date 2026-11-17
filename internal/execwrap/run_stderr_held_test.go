@@ -55,22 +55,34 @@ func makeLog(t *testing.T, n int, failAt map[int]string, code int) int {
 // every failure line and its exit code.
 func TestRun_LargeMakeWithStderrIsBalanced(t *testing.T) {
 	cases := []struct {
-		name   string
-		failAt map[int]string
-		code   int
-		want   []string
+		name     string
+		failAt   map[int]string
+		code     int
+		keepFail bool
+		want     []string
 	}{
-		{"clean run with a warning", nil, 0, nil},
-		{"failed run keeps its failure lines", map[int]string{1200: "src/x.c:12: error: unknown type foo", 2400: "FAIL: link step"}, 2,
+		{"clean run with a warning", nil, 0, false, nil},
+		{"failed run keeps its failure lines", map[int]string{1200: "src/x.c:12: error: unknown type foo", 2400: "FAIL: link step"}, 2, false,
+			[]string{"src/x.c:12: error: unknown type foo", "FAIL: link step"}},
+		{"failed run with KeepFailed keeps its failure lines", map[int]string{1200: "src/x.c:12: error: unknown type foo", 2400: "FAIL: link step"}, 2, true,
 			[]string{"src/x.c:12: error: unknown type foo", "FAIL: link step"}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			rawOut := makeLog(t, 3000, tc.failAt, tc.code)
+			rawOut := makeLog(t, 3600, tc.failAt, tc.code)
+			if rawOut < 122*1024 {
+				t.Fatalf("rawOut = %d, want >= %d", rawOut, 122*1024)
+			}
 			store := &storeKeep{ok: true}
+			opts := Options{Stdin: strings.NewReader(""), Compact: true, Balanced: true}
+			if tc.keepFail {
+				opts.KeepFailed = store.keep
+			} else {
+				opts.Keep = store.keep
+			}
 			var out, errb bytes.Buffer
-			r := Run([]string{"make"}, Options{Stdin: strings.NewReader(""), Stdout: &out, Stderr: &errb,
-				Compact: true, Keep: store.keep, Balanced: true})
+			opts.Stdout, opts.Stderr = &out, &errb
+			r := Run([]string{"make"}, opts)
 			if r.ExitCode != tc.code || !r.Compacted || (tc.code != 0 && !r.Folded) {
 				t.Fatalf("result %+v", r)
 			}
