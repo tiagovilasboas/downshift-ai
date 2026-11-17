@@ -37,41 +37,58 @@ func (t HonorTally) Unobserved() int { return t.Shifted - t.Honored - t.Refuted 
 // TallyHonored is CountInferredHonored with the refuted shifts counted apart,
 // so a miss can be told from a rewrite nobody observed.
 func TallyHonored(events []Event) HonorTally {
-	var t HonorTally
-	// A "resolved" record is the harness reporting the model it chose for the
-	// spawn. When it matches the written model it is direct observation.
-	observed := make(map[string]bool)
-	refuted := make(map[string]bool)
-	for _, ev := range events {
-		if ev.Outcome == OutcomeResolved && ev.LinkedDecision != "" && ev.RewriteHonored != nil {
-			if *ev.RewriteHonored {
-				observed[ev.LinkedDecision] = true
-			} else {
-				refuted[ev.LinkedDecision] = true
-			}
-		}
-	}
-	type key struct{ harness, session string }
-	groups := make(map[key][]int)
+	idx := newHonorIndex()
 	for i, ev := range events {
-		if IsCostOnlyOutcome(ev.Outcome) || IsFailureOutcome(ev.Outcome) || ev.Harness == "" || ev.SessionID == "" {
-			continue
-		}
-		k := key{ev.Harness, ev.SessionID}
-		groups[k] = append(groups[k], i)
+		idx.add(i, ev)
 	}
-	for _, idxs := range groups {
+	return tallyHonoredFromIndex(events, idx)
+}
+
+type honorSessionKey struct{ harness, session string }
+
+type honorIndex struct {
+	observed map[string]bool
+	refuted  map[string]bool
+	groups   map[honorSessionKey][]int
+}
+
+func newHonorIndex() *honorIndex {
+	return &honorIndex{
+		observed: make(map[string]bool),
+		refuted:  make(map[string]bool),
+		groups:   make(map[honorSessionKey][]int),
+	}
+}
+
+func (h *honorIndex) add(i int, ev Event) {
+	if ev.Outcome == OutcomeResolved && ev.LinkedDecision != "" && ev.RewriteHonored != nil {
+		if *ev.RewriteHonored {
+			h.observed[ev.LinkedDecision] = true
+		} else {
+			h.refuted[ev.LinkedDecision] = true
+		}
+	}
+	if IsCostOnlyOutcome(ev.Outcome) || IsFailureOutcome(ev.Outcome) || ev.Harness == "" || ev.SessionID == "" {
+		return
+	}
+	k := honorSessionKey{ev.Harness, ev.SessionID}
+	h.groups[k] = append(h.groups[k], i)
+}
+
+func tallyHonoredFromIndex(events []Event, h *honorIndex) HonorTally {
+	var t HonorTally
+	for _, idxs := range h.groups {
 		for a, idx := range idxs {
 			ev := events[idx]
 			if !isShift(ev) {
 				continue
 			}
 			t.Shifted++
-			if refuted[DecisionKey(ev)] && !observed[DecisionKey(ev)] {
+			if h.refuted[DecisionKey(ev)] && !h.observed[DecisionKey(ev)] {
 				t.Refuted++
 				continue
 			}
-			if (ev.RewriteHonored != nil && *ev.RewriteHonored) || observed[DecisionKey(ev)] {
+			if (ev.RewriteHonored != nil && *ev.RewriteHonored) || h.observed[DecisionKey(ev)] {
 				t.Honored++
 				continue
 			}

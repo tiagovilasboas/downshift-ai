@@ -18,19 +18,7 @@ const maxFuncsPerFile = 10
 // funcCountBaseline freezes the files above the limit when this sensor was
 // added, each with its count at that time as a ceiling: a file may go down,
 // never up. A file that falls to the limit or below must be removed.
-var funcCountBaseline = map[string]int{
-	"cmd/downshift/apply_core.go":                        12,
-	"cmd/downshift/doctor_checks.go":                     11,
-	"cmd/downshift/doctor_plugin_hooks.go":               11,
-	"internal/console/app.go":                            13,
-	"internal/console/reportview/model.go":               14,
-	"internal/contextopt/providers/headroom/headroom.go": 15,
-	"internal/contextopt/providers/native/native.go":     14,
-	"internal/telemetry/aggregate.go":                    13,
-	"internal/telemetry/panel.go":                        12,
-	"internal/telemetry/routing_tokens.go":               11,
-	"internal/telemetry/spawn_state.go":                  14,
-}
+var funcCountBaseline = map[string]int{}
 
 func topLevelFuncs(t *testing.T, path string) int {
 	t.Helper()

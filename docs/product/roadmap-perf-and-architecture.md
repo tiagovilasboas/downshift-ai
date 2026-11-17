@@ -5,7 +5,7 @@
 Downshift by Tiago Vilas Boas
 https://github.com/tiagovilasboas/downshift-ai
 
-**Status:** Phase 1 Done (W0–W5 merged in #114) · Phase 2 Planned (W6–W11)
+**Status:** Phase 1 & Phase 2 Complete (W0–W11)
 **Scope:** Hot-path performance bottlenecks, cold-start regex cost, redundant transcript I/O, targeted format detection, automated `archtest` layer enforcement, and zeroing `funcCountBaseline` SRP debt.
 
 ---
@@ -41,9 +41,9 @@ https://github.com/tiagovilasboas/downshift-ai
 | **W6** | Circuit Breaker fast-path tail read (skip `linkLateUsage` on hook hot path) | 1 SP | — | **Group A** | `internal/telemetry/tail.go`, `internal/telemetry/event_log_read.go`, `cmd/downshift/hook_circuit.go` | Done |
 | **W7** | Per-category lazy regex compilation in `risk.go` (`lazyre` behind `mayMatch`) | 1 SP | — | **Group A** | `internal/classify/risk.go` | Done |
 | **W8** | CCR Anti-Loop 24h TTL & stale `ccr-loop-*.json` pruning | 1 SP | — | **Group A** | `internal/execwrap/antiloop.go`, `internal/execwrap/antiloop_test.go` | Done (#117) |
-| **W9** | Consolidate redundant O(N) passes in `telemetry.Aggregate` | 2 SP | W6 | **Group B** | `internal/telemetry/aggregate.go` | Planned |
+| **W9** | Consolidate redundant O(N) passes in `telemetry.Aggregate` | 2 SP | W6 | **Group B** | `internal/telemetry/aggregate.go` | Done |
 | **W10** | Zero `funcCountBaseline` (Part 1: 10 files in Core, Adapters, Catalog, Discovery, Paths, Workers) | 3 SP | — | **Group A** | `internal/adapters/{claudecode,codex,kirocrew}`, `internal/catalog`, `internal/core`, `internal/discovery`, `internal/paths`, `internal/workers` | Done |
-| **W11** | Zero `funcCountBaseline` (Part 2: 11 files in Telemetry, Console, ContextOpt, Cmd; empty baseline map) | 3 SP | W9, W10 | **Group B** | `internal/telemetry`, `internal/console`, `internal/contextopt`, `cmd/downshift`, `internal/archtest/func_count_test.go` | Planned |
+| **W11** | Zero `funcCountBaseline` (Part 2: 11 files in Telemetry, Console, ContextOpt, Cmd; empty baseline map) | 3 SP | W9, W10 | **Group B** | `internal/telemetry`, `internal/console`, `internal/contextopt`, `cmd/downshift`, `internal/archtest/func_count_test.go` | Done |
 
 * **Out of Scope for Phase 2:**
   * Extracting `cmd/downshift/doctor_*.go` (26 files) into `internal/doctor` (deferred to a dedicated structural PR to avoid mixing package moves with W11 function splits).
