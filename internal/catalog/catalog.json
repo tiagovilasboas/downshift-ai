@@ -300,6 +300,37 @@
       "effort_map": { "low": "0", "medium": "10000", "high": "20000" }
     },
 
+    { "_section": "cursor — Google Gemini 4 models (Hydrogen $1.50/$7.50 per 1M, 1M context)" },
+
+    {
+      "id": "gemini-4-hydrogen",
+      "aliases": [],
+      "provider": "google",
+      "harness": "cursor",
+      "tier": "mid",
+      "effort_scale": "reasoning_effort",
+      "effort_map": { "low": "low", "medium": "medium", "high": "high" },
+      "efforts": ["low", "medium", "high", "xhigh"]
+    },
+    {
+      "id": "gemini-4-argon",
+      "aliases": [],
+      "provider": "google",
+      "harness": "cursor",
+      "tier": "frontier",
+      "effort_scale": "reasoning_effort",
+      "effort_map": { "low": "low", "medium": "medium", "high": "high" }
+    },
+    {
+      "id": "gemini-4-carbon",
+      "aliases": [],
+      "provider": "google",
+      "harness": "cursor",
+      "tier": "frontier",
+      "effort_scale": "reasoning_effort",
+      "effort_map": { "low": "low", "medium": "medium", "high": "high" }
+    },
+
     { "_section": "codex — native OpenAI models" },
 
     {
@@ -400,6 +431,37 @@
       "id": "pro",
       "aliases": ["gemini-3.8-pro", "gemini-pro"],
       "family": "gemini-premium",
+      "provider": "google",
+      "harness": "antigravity",
+      "tier": "frontier",
+      "effort_scale": "reasoning_effort",
+      "effort_map": { "low": "low", "medium": "medium", "high": "high" }
+    },
+    {
+      "id": "gemini-4-hydrogen",
+      "aliases": [],
+      "family": "gemini-4-hydrogen",
+      "provider": "google",
+      "harness": "antigravity",
+      "tier": "mid",
+      "effort_scale": "reasoning_effort",
+      "effort_map": { "low": "low", "medium": "medium", "high": "high" },
+      "efforts": ["low", "medium", "high", "xhigh"]
+    },
+    {
+      "id": "gemini-4-argon",
+      "aliases": [],
+      "family": "gemini-4-argon",
+      "provider": "google",
+      "harness": "antigravity",
+      "tier": "frontier",
+      "effort_scale": "reasoning_effort",
+      "effort_map": { "low": "low", "medium": "medium", "high": "high" }
+    },
+    {
+      "id": "gemini-4-carbon",
+      "aliases": [],
+      "family": "gemini-4-carbon",
       "provider": "google",
       "harness": "antigravity",
       "tier": "frontier",
@@ -588,6 +650,40 @@
       "provider": "opencode",
       "harness": "opencode",
       "tier": "frontier"
+    },
+
+    { "_section": "opencode — Google Gemini 4 models (Hydrogen $1.50/$7.50 per 1M, 1M context)" },
+
+    {
+      "id": "gemini-4-hydrogen",
+      "aliases": [],
+      "family": "gemini-4-hydrogen",
+      "provider": "google",
+      "harness": "opencode",
+      "tier": "mid",
+      "effort_scale": "reasoning_effort",
+      "effort_map": { "low": "low", "medium": "medium", "high": "high" },
+      "efforts": ["low", "medium", "high", "xhigh"]
+    },
+    {
+      "id": "gemini-4-argon",
+      "aliases": [],
+      "family": "gemini-4-argon",
+      "provider": "google",
+      "harness": "opencode",
+      "tier": "frontier",
+      "effort_scale": "reasoning_effort",
+      "effort_map": { "low": "low", "medium": "medium", "high": "high" }
+    },
+    {
+      "id": "gemini-4-carbon",
+      "aliases": [],
+      "family": "gemini-4-carbon",
+      "provider": "google",
+      "harness": "opencode",
+      "tier": "frontier",
+      "effort_scale": "reasoning_effort",
+      "effort_map": { "low": "low", "medium": "medium", "high": "high" }
     }
   ]
 }
