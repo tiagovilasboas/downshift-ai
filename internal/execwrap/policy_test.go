@@ -5,6 +5,7 @@ package execwrap
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -248,6 +249,33 @@ func TestDecide_TooLong(t *testing.T) {
 	}
 	if d := Decide(long, exe); d.Rewrite || d.Reason != ReasonTooLong {
 		t.Fatalf("Decide(long, exe) = %+v, want too_long", d)
+	}
+}
+
+func TestDecide_LongAllowlisted(t *testing.T) {
+	cmd := "go test -v"
+	for len(cmd) < 600 {
+		cmd += " ./pkg/sub"
+	}
+	if len(cmd) <= 512 || len(cmd) > maxCommandBytes {
+		t.Fatalf("test command length %d not in (512, %d]", len(cmd), maxCommandBytes)
+	}
+	d := Decide(cmd, exe)
+	if !d.Rewrite || d.Family != FamilyGoTest || d.Reason != ReasonAllowlisted {
+		t.Fatalf("Decide(long allowlisted) = %+v, want rewrite FamilyGoTest", d)
+	}
+	if fam, _ := SimpleFamily(cmd); fam != FamilyGoTest {
+		t.Fatalf("SimpleFamily(long allowlisted) = %q, want %q", fam, FamilyGoTest)
+	}
+
+	quoted := `go test -run "TestLongName" ` + strings.Repeat("./pkg ", 100)
+	quoted = strings.TrimSpace(quoted)
+	if len(quoted) <= 512 || len(quoted) > maxCommandBytes {
+		t.Fatalf("quoted command length %d not in (512, %d]", len(quoted), maxCommandBytes)
+	}
+	dq := Decide(quoted, exe)
+	if !dq.Rewrite || dq.Family != FamilyGoTest || dq.Reason != ReasonAllowlistedQuoted {
+		t.Fatalf("Decide(long quoted) = %+v, want rewrite allowlisted_quoted FamilyGoTest", dq)
 	}
 }
 
