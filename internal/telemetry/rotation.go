@@ -112,10 +112,12 @@ type BackupCleanupError struct{ Err error }
 func (e *BackupCleanupError) Error() string { return "pruning old log backups: " + e.Err.Error() }
 func (e *BackupCleanupError) Unwrap() error { return e.Err }
 
+const rotatedTimestampLayout = "2006-01-02T15-04-05"
+
 // rotateFile returns a rotated filename with a timestamp suffix.
 // Example: events.jsonl → events.jsonl.2026-10-01T09-44-00
 func rotateFile(path string) string {
-	now := time.Now().Format("2006-01-02T15-04-05")
+	now := time.Now().Format(rotatedTimestampLayout)
 	return path + "." + now
 }
 
@@ -162,8 +164,8 @@ func listBackups(logPath string) ([]os.DirEntry, error) {
 	return backups, nil
 }
 
-// RotatedBackupCount returns how many rotated backups sit beside the default
-// event log. ReadEvents does not read them, so stats uses this to say so.
+// RotatedBackupCount returns how many backups sit beside the default event log.
+// ReadEvents includes timestamp-rotated backups up to DefaultRotatedMaxBytes.
 func RotatedBackupCount() int {
 	backups, err := listBackups(defaultEventPath())
 	if err != nil {

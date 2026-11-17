@@ -112,3 +112,31 @@ func TestReportClearRejectsUnknownFlag(t *testing.T) {
 		t.Fatalf("exit %d, want 2", code)
 	}
 }
+
+func TestReportClearFoundIncludesRotatedBackupsAndIgnoresLock(t *testing.T) {
+	dir := clearState(t)
+	for name, body := range map[string]string{
+		"events.jsonl.2026-10-01T09-44-00": `{"outcome":"allow"}` + "\n",
+		"events.jsonl.lock":                "lock",
+		"events.jsonl.bak-manual":          `{"outcome":"allow"}` + "\n",
+	} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	found, _ := reportClearFound(dir)
+	names := make(map[string]bool, len(found))
+	for _, f := range found {
+		names[f.name] = true
+	}
+	if !names["events.jsonl.2026-10-01T09-44-00"] {
+		t.Errorf("reportClearFound should include rotated backup events.jsonl.2026-10-01T09-44-00, got %v", found)
+	}
+	if names["events.jsonl.lock"] {
+		t.Errorf("reportClearFound must ignore events.jsonl.lock, got %v", found)
+	}
+	if names["events.jsonl.bak-manual"] {
+		t.Errorf("reportClearFound must ignore manual backup events.jsonl.bak-manual, got %v", found)
+	}
+}

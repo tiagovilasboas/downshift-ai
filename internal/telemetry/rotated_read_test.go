@@ -168,3 +168,33 @@ func TestReadEventsTailUnlinked_UnaffectedByBackups(t *testing.T) {
 		}
 	}
 }
+
+func TestReadEventsWithRotated_IgnoresManualBackups(t *testing.T) {
+	dir := t.TempDir()
+	logPath := filepath.Join(dir, "events.jsonl")
+
+	writeFile := func(name, content string) {
+		t.Helper()
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	writeFile("events.jsonl.2026-10-01T09-44-00", `{"harness":"claudecode","outcome":"allow","correlation_id":"rot-1"}`+"\n")
+	writeFile("events.jsonl.bak-manual", `{"harness":"claudecode","outcome":"allow","correlation_id":"manual-1"}`+"\n")
+	writeFile("events.jsonl", `{"harness":"claudecode","outcome":"allow","correlation_id":"live-1"}`+"\n")
+
+	events, err := telemetry.ReadEventsWithRotatedFrom(logPath, telemetry.DefaultRotatedMaxBytes)
+	if err != nil {
+		t.Fatalf("ReadEventsWithRotatedFrom: %v", err)
+	}
+	want := []string{"rot-1", "live-1"}
+	if len(events) != len(want) {
+		t.Fatalf("got %d events, want %d (manual backup must be ignored)", len(events), len(want))
+	}
+	for i, id := range want {
+		if events[i].CorrelationID != id {
+			t.Errorf("events[%d].CorrelationID = %q, want %q", i, events[i].CorrelationID, id)
+		}
+	}
+}
