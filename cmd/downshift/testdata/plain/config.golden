@@ -11,6 +11,6 @@ downshift config (value, then where it comes from)
   session_models.opencode     none: rewrites held  [default]
   quota_mode                  default  [default]  no snapshot: rewrites allowed; an expired snapshot holds for 1 h, then is ignored
   quiet                       off  [default]
-  catalog                     embedded  [default]  67 entries
+  catalog                     embedded  [default]  78 entries
   semantic_boost              on (hash embedder)  [default]
 --- stderr ---

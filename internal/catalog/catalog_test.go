@@ -212,3 +212,59 @@ func TestEntries_NotEmpty(t *testing.T) {
 		t.Error("Entries() returned empty slice")
 	}
 }
+
+func TestGemini4ModelsAreRoutable(t *testing.T) {
+	c, err := parse(embeddedJSON)
+	if err != nil {
+		t.Fatalf("parse embedded catalog: %v", err)
+	}
+	harnesses := []string{"cursor", "antigravity", "opencode"}
+	cases := []struct {
+		id          string
+		wantID      string
+		wantTier    core.Tier
+		wantEfforts []string
+	}{
+		{
+			id:          "google/gemini-4-hydrogen",
+			wantID:      "gemini-4-hydrogen",
+			wantTier:    core.TierMid,
+			wantEfforts: []string{"low", "medium", "high", "xhigh"},
+		},
+		{
+			id:       "google/gemini-4-argon",
+			wantID:   "gemini-4-argon",
+			wantTier: core.TierFrontier,
+		},
+		{
+			id:       "google/gemini-4-carbon",
+			wantID:   "gemini-4-carbon",
+			wantTier: core.TierFrontier,
+		},
+	}
+
+	for _, h := range harnesses {
+		for _, tc := range cases {
+			m, ok := c.LookupByID(h, tc.id)
+			if !ok {
+				t.Fatalf("LookupByID(%q, %q) not found", h, tc.id)
+			}
+			if m.ID != tc.wantID {
+				t.Errorf("%s/%s: ID = %q, want %q", h, tc.id, m.ID, tc.wantID)
+			}
+			if m.Tier != tc.wantTier {
+				t.Errorf("%s/%s: tier = %s, want %s", h, tc.id, m.Tier, tc.wantTier)
+			}
+			efforts := c.AllowedEfforts(h, tc.id)
+			if len(efforts) != len(tc.wantEfforts) {
+				t.Errorf("%s/%s: AllowedEfforts = %v, want %v", h, tc.id, efforts, tc.wantEfforts)
+				continue
+			}
+			for i := range efforts {
+				if efforts[i] != tc.wantEfforts[i] {
+					t.Errorf("%s/%s: AllowedEfforts[%d] = %q, want %q", h, tc.id, i, efforts[i], tc.wantEfforts[i])
+				}
+			}
+		}
+	}
+}
