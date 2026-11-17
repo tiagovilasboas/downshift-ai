@@ -56,12 +56,16 @@ func parseCodex(line []byte) (event, bool) {
 	case "custom_tool_call":
 		if p.Name == "exec" {
 			ev.calls = jsCalls(p.CallID, p.Input)
+		} else if p.Name != "" && p.CallID != "" {
+			ev.calls = []call{{id: p.CallID, nonBash: true}}
 		}
 	case "function_call":
 		if codexShellTools[p.Name] {
 			if cmd := argsCommand(p.Arguments); cmd != "" {
 				ev.calls = []call{{id: p.CallID, command: cmd}}
 			}
+		} else if p.Name != "" && p.CallID != "" {
+			ev.calls = []call{{id: p.CallID, nonBash: true}}
 		}
 	case "custom_tool_call_output", "function_call_output":
 		ev.results = []result{{id: p.CallID, bytes: textBytes(p.Output)}}

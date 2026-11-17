@@ -36,7 +36,14 @@ type Options struct {
 	Since   time.Duration // window ending now
 	Label   string        // the window as the user wrote it, echoed in the report
 	Top     int
+	Dedup   bool // deduplicate tool_use and tool_result records by tool_use_id
 	Now     time.Time
+}
+
+type dedupState struct {
+	enabled     bool
+	seenCalls   map[string]struct{}
+	seenResults map[string]struct{}
 }
 
 type source struct {
@@ -95,6 +102,11 @@ func Scan(o Options) (Report, error) {
 	for _, s := range srcs {
 		t := newTally(s.harness)
 		tallies = append(tallies, t)
+		dd := &dedupState{enabled: o.Dedup}
+		if o.Dedup {
+			dd.seenCalls = map[string]struct{}{}
+			dd.seenResults = map[string]struct{}{}
+		}
 		_ = filepath.WalkDir(s.root, func(p string, d fs.DirEntry, err error) error {
 			if err != nil || d.IsDir() || !strings.HasSuffix(p, ".jsonl") {
 				return nil
@@ -103,22 +115,23 @@ func Scan(o Options) (Report, error) {
 				return nil
 			}
 			files++
-			scanFile(p, s.parse, cutoff, t)
+			scanFile(p, s.parse, cutoff, t, dd)
 			return nil
 		})
 	}
-	return merge(o.Label, files, tallies, o.Top), nil
+	return merge(o.Label, files, o.Dedup, tallies, o.Top), nil
 }
 
 // scanFile streams one transcript. Open and read errors end that file
 // quietly: a transcript being written or removed must not fail the report.
-func scanFile(path string, parse parser, cutoff time.Time, t *tally) {
+func scanFile(path string, parse parser, cutoff time.Time, t *tally, dd *dedupState) {
 	f, err := os.Open(path)
 	if err != nil {
 		return
 	}
 	defer f.Close()
 	pending := map[string][]Class{}
+	nonBash := map[string]struct{}{}
 	r := bufio.NewReaderSize(f, 64<<10)
 	var buf []byte
 	for {
@@ -126,7 +139,7 @@ func scanFile(path string, parse parser, cutoff time.Time, t *tally) {
 		buf = line[:0]
 		if !over && len(line) > 0 {
 			if ev, ok := parse(line); ok && !(ev.at.Before(cutoff) && !ev.at.IsZero()) {
-				apply(ev, pending, t)
+				apply(ev, pending, nonBash, t, dd)
 			}
 		}
 		if err != nil {
@@ -141,8 +154,23 @@ func scanFile(path string, parse parser, cutoff time.Time, t *tally) {
 }
 
 // apply classifies the calls of an event and pairs results with them.
-func apply(ev event, pending map[string][]Class, t *tally) {
+func apply(ev event, pending map[string][]Class, nonBash map[string]struct{}, t *tally, dd *dedupState) {
+	var batchIDs []string
 	for _, c := range ev.calls {
+		if dd.enabled && c.id != "" {
+			if _, dup := dd.seenCalls[c.id]; dup {
+				t.stat.DuplicatesSkipped++
+				continue
+			}
+			batchIDs = append(batchIDs, c.id)
+		}
+		if c.nonBash {
+			if len(nonBash) >= maxPending {
+				clear(nonBash)
+			}
+			nonBash[c.id] = struct{}{}
+			continue
+		}
 		if len(pending) >= maxPending {
 			for id, cs := range pending {
 				for _, k := range cs {
@@ -153,11 +181,27 @@ func apply(ev event, pending map[string][]Class, t *tally) {
 		}
 		pending[c.id] = append(pending[c.id], Classify(c.command))
 	}
+	for _, id := range batchIDs {
+		dd.seenCalls[id] = struct{}{}
+	}
 	for _, r := range ev.results {
-		cs := pending[r.id]
-		delete(pending, r.id)
-		for _, c := range cs {
-			t.add(c, r.bytes/int64(len(cs)))
+		if dd.enabled && r.id != "" {
+			if _, dup := dd.seenResults[r.id]; dup {
+				t.stat.DuplicatesSkipped++
+				continue
+			}
+			dd.seenResults[r.id] = struct{}{}
+		}
+		if cs := pending[r.id]; len(cs) > 0 {
+			delete(pending, r.id)
+			for _, c := range cs {
+				t.add(c, r.bytes/int64(len(cs)))
+			}
+			continue
+		}
+		if _, ok := nonBash[r.id]; ok {
+			delete(nonBash, r.id)
+			t.addNonBash(r.bytes)
 		}
 	}
 }

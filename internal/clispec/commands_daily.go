@@ -15,7 +15,7 @@ var dailyCommands = []Command{
 	{Name: "stats", Summary: "Decisions and the tiers spawns ran on", Flags: f("--days", "--by-harness", "--detail", "--export")},
 	{Name: "report", Summary: "Measured: routed spawns, tokens per completed task, rework per verdict", Flags: f("--days", "--json", "--text", "--markdown", "--daily", "--history", "--by")},
 	{Name: "report clear", Summary: "Move every measurement log to a backup so the measurement starts from zero", Flags: f("--dry-run", "--yes|-y")},
-	{Name: "discover", Summary: "Find commands the compactor would have changed but that ran bare", Flags: f("--since", "--harness", "--top", "--json")},
+	{Name: "discover", Summary: "Find commands the compactor would have changed but that ran bare", Flags: f("--since", "--harness", "--top", "--dedup", "--json")},
 	{Name: "export", Summary: "Counts and token totals an outside operator can share", Flags: f("--days")},
 	{Name: "session", Summary: "This session's subagents as a tree (every harness)", Flags: f("--tree", "--why", "--pause", "--resume", "--session", "--json", "--panel", "--no-report", "--brief")},
 	{Name: "watch", Summary: "Live session tree, redrawn every interval", Flags: f("--session", "--interval", "--once")},
