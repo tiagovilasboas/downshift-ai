@@ -3,17 +3,36 @@
 
 package missedsavings
 
-import "sort"
+import (
+	"math"
+	"sort"
+)
+
+// Coverage measures compacted tool output against total tool output in bytes,
+// separated into Bash and non-Bash tool calls.
+type Coverage struct {
+	BashCompactedBytes    int64   `json:"bash_compacted_bytes"`
+	BashTotalBytes        int64   `json:"bash_total_bytes"`
+	BashCoveragePct       float64 `json:"bash_coverage_pct"`
+	NonBashCompactedBytes int64   `json:"non_bash_compacted_bytes"`
+	NonBashTotalBytes     int64   `json:"non_bash_total_bytes"`
+	NonBashCoveragePct    float64 `json:"non_bash_coverage_pct"`
+	TotalCompactedBytes   int64   `json:"total_compacted_bytes"`
+	TotalOutputBytes      int64   `json:"total_output_bytes"`
+	TotalCoveragePct      float64 `json:"total_coverage_pct"`
+}
 
 // Stat counts commands for one harness or for all of them.
 type Stat struct {
-	Harness    string         `json:"harness,omitempty"`
-	Commands   int            `json:"commands"`
-	Wrapped    int            `json:"wrapped"`
-	Bare       int            `json:"bare"`
-	BareBytes  int64          `json:"bare_bytes"`
-	Skipped    int            `json:"skipped"`
-	SkipReason map[string]int `json:"skipped_by_reason"`
+	Harness           string         `json:"harness,omitempty"`
+	Commands          int            `json:"commands"`
+	Wrapped           int            `json:"wrapped"`
+	Bare              int            `json:"bare"`
+	BareBytes         int64          `json:"bare_bytes"`
+	Skipped           int            `json:"skipped"`
+	DuplicatesSkipped int            `json:"duplicates_skipped,omitempty"`
+	Coverage          Coverage       `json:"coverage"`
+	SkipReason        map[string]int `json:"skipped_by_reason"`
 	// MetacharKind splits the metachar skips by execwrap.MetacharKind.
 	MetacharKind map[string]int `json:"metachar_by_kind"`
 }
@@ -31,6 +50,7 @@ type Missed struct {
 type Report struct {
 	Since     string   `json:"since"`
 	Files     int      `json:"files_scanned"`
+	Dedup     bool     `json:"dedup,omitempty"`
 	Total     Stat     `json:"total"`
 	Harnesses []Stat   `json:"harnesses"`
 	Top       []Missed `json:"top_missed"`
@@ -54,9 +74,11 @@ func newTally(harness string) *tally {
 // add records one command with the byte size of its result (0 when unknown).
 func (t *tally) add(c Class, bytes int64) {
 	t.stat.Commands++
+	t.stat.Coverage.BashTotalBytes += bytes
 	switch c.Kind {
 	case KindWrapped:
 		t.stat.Wrapped++
+		t.stat.Coverage.BashCompactedBytes += bytes
 	case KindBare:
 		t.stat.Bare++
 		t.stat.BareBytes += bytes
@@ -77,20 +99,31 @@ func (t *tally) add(c Class, bytes int64) {
 	}
 }
 
+// addNonBash records the output bytes of one non-Bash tool call.
+func (t *tally) addNonBash(bytes int64) {
+	t.stat.Coverage.NonBashTotalBytes += bytes
+}
+
 // merge folds the tallies into a Report with the top n missed groups.
-func merge(since string, files int, tallies []*tally, n int) Report {
-	r := Report{Since: since, Files: files, Harnesses: []Stat{}, Top: []Missed{}}
+func merge(since string, files int, dedup bool, tallies []*tally, n int) Report {
+	r := Report{Since: since, Files: files, Dedup: dedup, Harnesses: []Stat{}, Top: []Missed{}}
 	r.Total.SkipReason = map[string]int{}
 	r.Total.MetacharKind = map[string]int{}
 	all := map[missKey]*Missed{}
 	for _, t := range tallies {
-		r.Harnesses = append(r.Harnesses, t.stat)
 		s := t.stat
+		finalizeCoverage(&s.Coverage)
+		r.Harnesses = append(r.Harnesses, s)
 		r.Total.Commands += s.Commands
 		r.Total.Wrapped += s.Wrapped
 		r.Total.Bare += s.Bare
 		r.Total.BareBytes += s.BareBytes
 		r.Total.Skipped += s.Skipped
+		r.Total.DuplicatesSkipped += s.DuplicatesSkipped
+		r.Total.Coverage.BashCompactedBytes += s.Coverage.BashCompactedBytes
+		r.Total.Coverage.BashTotalBytes += s.Coverage.BashTotalBytes
+		r.Total.Coverage.NonBashCompactedBytes += s.Coverage.NonBashCompactedBytes
+		r.Total.Coverage.NonBashTotalBytes += s.Coverage.NonBashTotalBytes
 		for k, v := range s.SkipReason {
 			r.Total.SkipReason[k] += v
 		}
@@ -107,6 +140,7 @@ func merge(since string, files int, tallies []*tally, n int) Report {
 			a.Bytes += m.Bytes
 		}
 	}
+	finalizeCoverage(&r.Total.Coverage)
 	for _, m := range all {
 		r.Top = append(r.Top, *m)
 	}
@@ -115,6 +149,21 @@ func merge(since string, files int, tallies []*tally, n int) Report {
 		r.Top = r.Top[:n]
 	}
 	return r
+}
+
+func finalizeCoverage(c *Coverage) {
+	c.TotalCompactedBytes = c.BashCompactedBytes + c.NonBashCompactedBytes
+	c.TotalOutputBytes = c.BashTotalBytes + c.NonBashTotalBytes
+	c.BashCoveragePct = pct(c.BashCompactedBytes, c.BashTotalBytes)
+	c.NonBashCoveragePct = pct(c.NonBashCompactedBytes, c.NonBashTotalBytes)
+	c.TotalCoveragePct = pct(c.TotalCompactedBytes, c.TotalOutputBytes)
+}
+
+func pct(num, den int64) float64 {
+	if den <= 0 {
+		return 0
+	}
+	return math.Round(float64(num)*1000/float64(den)) / 10
 }
 
 // topLess orders by bytes, then count, then name, so output is stable.

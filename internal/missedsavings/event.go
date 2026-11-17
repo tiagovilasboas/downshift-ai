@@ -19,6 +19,7 @@ type event struct {
 type call struct {
 	id      string
 	command string
+	nonBash bool
 }
 
 type result struct {
