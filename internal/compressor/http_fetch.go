@@ -39,6 +39,20 @@ var fetchSecretWords = []string{"cookie", "auth", "token", "secret", "session", 
 // Authorization, ...) is replaced by [redacted]. A response that is short, a
 // status of 400 or more, or a view that is not shorter stays raw.
 func compressHTTPFetch(input []byte, h CommandHint) ([]byte, bool, string) {
+	if !h.HTTPHeaders && len(input) >= JSONPruneMinBytes {
+		if out, ok, reason := compressJSONPrune(input); ok {
+			return out, true, reason
+		}
+	}
+	if h.HTTPHeaders && len(input) >= JSONPruneMinBytes {
+		var hb strings.Builder
+		if body, ok := writeFetchHeaders(&hb, string(input)); ok && len(body) >= JSONPruneMinBytes {
+			if pruned, ok, _ := compressJSONPrune([]byte(body)); ok && hb.Len()+len(pruned) < len(input) {
+				hb.Write(pruned)
+				return []byte(hb.String()), true, "HTTP JSON response pruned"
+			}
+		}
+	}
 	if len(input) < HTTPFetchMinBytes {
 		return input, false, "no_compression_gain"
 	}

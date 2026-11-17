@@ -20,6 +20,23 @@ var reLsRow = lazyre.New(`^([-bcdlpsDCMnP?])[-rwxsStTlL]{9}[@+.]? +\d+ +\S+ +\S+
 // reLsTotal is the first line of `ls -l` on a directory: its block count.
 var reLsTotal = lazyre.New(`^total \d+$`)
 
+// isLsLong reports whether input is an `ls -l` / `ls -la` listing (with or
+// without directories) so detectFormatTail can recognize file-only directories.
+func isLsLong(input []byte) bool {
+	lines := nonEmptyLines(input)
+	if len(lines) == 0 {
+		return false
+	}
+	start := 0
+	if reLsTotal.MatchString(lines[0]) {
+		start = 1
+	}
+	if start >= len(lines) {
+		return false
+	}
+	return allLinesMatch(lines[start:], reLsRow.MatchString)
+}
+
 type lsLongEntry struct {
 	fileType string
 	size     string
