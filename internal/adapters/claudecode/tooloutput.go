@@ -49,6 +49,11 @@ func ParseToolOutput(raw []byte) (hookport.ToolOutput, bool) {
 	out.Stdout, out.HasStdout = resp["stdout"].(string)
 	out.Stderr, out.HasStderr = resp["stderr"].(string)
 	out.Content, out.HasContent = resp["content"].(string)
+	if !out.HasContent {
+		if file, ok := resp["file"].(map[string]any); ok {
+			out.Content, out.HasContent = file["content"].(string)
+		}
+	}
 	out.Paths, out.HasPaths, out.Opaque = stringList(resp["filenames"])
 	if code, ok := exitCodeField(resp); ok {
 		out.ExitCode = code
@@ -99,7 +104,18 @@ func ReplaceToolOutput(prev any, out hookport.ToolOutput) any {
 		updated["stderr"] = out.Stderr
 	}
 	if out.HasContent {
-		updated["content"] = out.Content
+		if _, hasTop := updated["content"].(string); hasTop {
+			updated["content"] = out.Content
+		} else if file, ok := updated["file"].(map[string]any); ok {
+			fileCopy := make(map[string]any, len(file))
+			for k, v := range file {
+				fileCopy[k] = v
+			}
+			fileCopy["content"] = out.Content
+			updated["file"] = fileCopy
+		} else {
+			updated["content"] = out.Content
+		}
 	}
 	if out.HasPaths {
 		updated["filenames"] = out.Paths
