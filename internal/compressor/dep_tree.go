@@ -21,7 +21,7 @@ var (
 
 	// cargo tree
 	reCargoTree    = lazyre.New(`(?m)^[a-z_][\w-]* v[\d.]+`)
-	reCargoTreeDep = lazyre.New(`(?m)^[│├└ ]+[a-z_][\w-]* v[\d.]+`)
+	reCargoTreeDep = lazyre.New(`(?m)^[│├└─ ]+[a-z_][\w-]* v[\d.]+`)
 	reCargoTreeDup = lazyre.New(`\(\*\)`)
 
 	// go mod graph
@@ -148,6 +148,9 @@ func compressNpmLs(input []byte) ([]byte, bool, string) {
 func compressCargoTree(input []byte) ([]byte, bool, string) {
 	if len(input) > MaxProcessableBytes || !utf8.Valid(input) {
 		return input, false, "cargo_tree_too_large"
+	}
+	if linesHaveDangerWord(input, nil) {
+		return input, false, "cargo_tree_danger_preserved"
 	}
 
 	lines := bytes.Split(input, []byte("\n"))

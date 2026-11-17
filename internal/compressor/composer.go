@@ -44,8 +44,8 @@ func compressComposer(input []byte) ([]byte, bool, string) {
 		return input, false, "composer_too_large_or_invalid"
 	}
 
-	// Fail open on errors
-	if reComposerError.Match(input) {
+	// Fail open on errors or danger words
+	if reComposerError.Match(input) || linesHaveDangerWord(input, nil) {
 		return input, false, "composer_has_error"
 	}
 

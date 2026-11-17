@@ -1,0 +1,9 @@
++--------+----------+------------------+----------------+---------------------------------------+------------+
+Domain | Method   | URI              | Name           | Action                                | Middleware
++--------+----------+------------------+----------------+---------------------------------------+------------+
+GET|HEAD| api/health       | health         | App\Http\Controllers\HealthController | api
+GET|HEAD| api/users        | users.index    | App\Http\Controllers\UserController   | api,auth
+POST|     api/users        | users.store    | App\Http\Controllers\UserController   | api,auth
+PUT|      api/users/{id}   | users.update   | App\Http\Controllers\UserController   | api,auth
+DELETE|   api/users/{id}   | users.destroy  | App\Http\Controllers\UserController   | api,auth
++--------+----------+------------------+----------------+---------------------------------------+------------+

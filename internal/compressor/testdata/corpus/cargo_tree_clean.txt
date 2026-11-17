@@ -1,0 +1,9 @@
+myapp v0.1.0 (/workspace/myapp)
+├── serde v1.0.210
+│   └── serde_derive v1.0.210 (proc-macro)
+├── tokio v1.40.0
+│   ├── bytes v1.7.2
+│   ├── mio v1.0.2
+│   └── pin-project-lite v0.2.14
+└── clap v4.5.18
+    └── clap_builder v4.5.18

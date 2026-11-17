@@ -9,9 +9,15 @@ Downshift and CCR bytes include the marker line the compactor appends at runtime
 | Family | Class | Fixtures | Raw bytes | Downshift bytes | Saving % | Raw tokens~ | Downshift tokens~ | with CCR bytes | with CCR saving % |
 |---|---|--:|--:|--:|--:|--:|--:|--:|--:|
 | agent_desktop | lossless | 3 | 61032 | 26329 | 56.9 | 15258 | 6582 | 26371 | 56.8 |
+| artisan_migrate | lossless | 1 | 463 | 252 | 45.6 | 115 | 63 | 266 | 42.5 |
+| artisan_routes | lossless | 1 | 910 | 160 | 82.4 | 227 | 40 | 174 | 80.9 |
+| az_pipelines | lossless | 1 | 850 | 622 | 26.8 | 212 | 155 | 636 | 25.2 |
 | bazel | lossy | 2 | 911 | 340 | 62.7 | 227 | 85 | 368 | 59.6 |
 | cargo_build | lossy | 1 | 440 | 183 | 58.4 | 110 | 45 | 197 | 55.2 |
+| cargo_clippy | lossless | 1 | 261 | 139 | 46.7 | 65 | 34 | 153 | 41.4 |
 | cargo_test | lossless | 3 | 3660 | 284 | 92.2 | 915 | 71 | 299 | 91.8 |
+| cargo_tree | lossless | 2 | 393 | 225 | 42.7 | 98 | 56 | 253 | 35.6 |
+| composer | lossless | 1 | 405 | 104 | 74.3 | 101 | 26 | 118 | 70.9 |
 | cypress | lossless | 1 | 910 | 162 | 82.2 | 227 | 40 | 164 | 82.0 |
 | docker_build | lossy | 1 | 388 | 196 | 49.5 | 97 | 49 | 210 | 45.9 |
 | docker_images | lossy | 1 | 248 | 133 | 46.4 | 62 | 33 | 147 | 40.7 |
@@ -58,11 +64,12 @@ Downshift and CCR bytes include the marker line the compactor appends at runtime
 | rspec | lossless | 1 | 443 | 100 | 77.4 | 110 | 25 | 106 | 76.1 |
 | rubocop | lossless | 2 | 685 | 510 | 25.5 | 171 | 127 | 538 | 21.5 |
 | ruff | lossy | 2 | 492 | 357 | 27.4 | 123 | 89 | 385 | 21.7 |
+| terraform_plan | lossless | 1 | 317 | 82 | 74.1 | 79 | 20 | 96 | 69.7 |
 | tsc | lossless | 3 | 946 | 231 | 75.6 | 236 | 57 | 273 | 71.1 |
 | turbo | lossless | 1 | 494 | 110 | 77.7 | 123 | 27 | 124 | 74.9 |
 | vitest | lossless | 4 | 3624 | 967 | 73.3 | 906 | 241 | 989 | 72.7 |
 | uncompacted (CCR only) | lossy | 3 | 6150 | 6150 | 0.0 | 1537 | 1537 | 1152 | 81.3 |
-| TOTAL | - | 113 | 194873 | 92359 | 52.6 | 48718 | 23089 | 59719 | 69.4 |
+| TOTAL | - | 121 | 198472 | 93943 | 52.7 | 49618 | 23485 | 61415 | 69.1 |
 
 ## Lossless and lossy split
 
@@ -70,16 +77,16 @@ Downshift and CCR bytes include the marker line the compactor appends at runtime
 
 | Class | Fixtures | Raw bytes | Downshift bytes | Saving % |
 |---|--:|--:|--:|--:|
-| lossless | 64 | 104386 | 42439 | 59.3 |
+| lossless | 72 | 107985 | 44023 | 59.2 |
 | lossy | 49 | 90487 | 49920 | 44.8 |
 
 ## Relationship to live token savings
 
-The figures above measure raw byte reduction across a synthetic corpus of 113 compacted fixtures: command output and agent-desktop reads.
+The figures above measure raw byte reduction across a synthetic corpus of 121 compacted fixtures: command output and agent-desktop reads.
 
 - In live LLM sessions, compaction cuts verbose command outputs before they enter the prompt context, directly saving input tokens and subsequent prompt cache reads.
-- With CCR enabled, overall corpus reduction is **69.4% fewer bytes** (and **52.6%** with CCR disabled).
-- Lossless families (64 fixtures) have **59.3% fewer bytes** while keeping every failure line, exit code and stack trace.
+- With CCR enabled, overall corpus reduction is **69.1% fewer bytes** (and **52.7%** with CCR disabled).
+- Lossless families (72 fixtures) have **59.2% fewer bytes** while keeping every failure line, exit code and stack trace.
 - Compaction operates on tool output bytes, whereas model routing operates on subagent model pricing. These levers are orthogonal and multiply when combined.
 - Detailed empirical reconciliation: [anthropic-references-benchmark-reconciliation-2026-11-07.md](../evidence/anthropic-references-benchmark-reconciliation-2026-11-07.md).
 
