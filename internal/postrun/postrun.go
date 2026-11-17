@@ -106,6 +106,8 @@ func Compact(caps core.HarnessCapabilities, in hookport.ToolOutput, o Options) (
 		return compactSearch(in, o)
 	case core.CategoryRead:
 		return compactRead(in, o)
+	case core.CategoryOther:
+		return compactVerboseText(in, o)
 	}
 	return Result{}
 }

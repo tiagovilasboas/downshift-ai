@@ -874,7 +874,8 @@
       "ReplacesToolOutput": [
         "shell",
         "search",
-        "read"
+        "read",
+        "other"
       ]
     },
     "codex": {

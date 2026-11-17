@@ -171,8 +171,9 @@ var (
 	// (CanRewriteShellCommand, opt-in exec wrapper).
 	ClaudeCodeCaps = HarnessCapabilities{CanRewriteModel: true, CanApplyEffort: false, RewritePreservesInput: true, StrictModelName: true, ModelOverrideEnv: "CLAUDE_CODE_SUBAGENT_MODEL", ModelForceEnv: "CLAUDE_CODE_SUBAGENT_MODEL_FORCE", SessionFromCatalog: true, CanShowChildLine: true, CanReturnNote: true, SessionEnv: "CLAUDE_CODE_SESSION_ID", ShellEnv: "CLAUDE_CODE_ENTRYPOINT", ChildEndEvent: "SubagentStop", UsageSource: UsageTranscript, HookEntries: []string{"settings-hook", "mod"}, CanRewriteShellCommand: true, ShellDialect: ShellPOSIX, SquadAgentPrefix: "downshift:", WorkerAgent: "claude", WorkerReadOnlyVerified: true, MainToolEvent: "PostToolUse", MainToolCategories: claudeCodeToolCategories, SessionWideTranscript: true,
 		// PostToolUse updatedToolOutput replaces a built-in tool's result when
-		// the value keeps the tool's output shape (hooks reference, 2026-11-10).
-		ReplacesToolOutput: []ToolCategory{CategoryShell, CategorySearch, CategoryRead},
+		// the value keeps the tool's output shape (hooks reference, 2026-11-10),
+		// and updatedMCPToolOutput replaces an MCP tool's result.
+		ReplacesToolOutput: []ToolCategory{CategoryShell, CategorySearch, CategoryRead, CategoryOther},
 		// Explore is read-only search, Plan is design work (built-in types).
 		AgentTypeHints: map[string]Tier{"Explore": TierSmall, "Plan": TierMid}}
 
