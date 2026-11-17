@@ -59,7 +59,7 @@ The largest outputs are the ones that reach the agent whole.
 |---|---|---|---|
 | G1 | Output over the 2 MB hold limit: keep the head in memory and spool the rest to the CCR store instead of releasing it. Print the head, the tail and the retrieve id. Without CCR, behave as today. | 5 | A 13 MB `git grep` prints under 64 KB and `downshift retrieve <id>` returns all of it; memory stays bounded; exit code unchanged |
 | G2 | Stderr in a family outside `stderrIsReport`: hold both streams in write order (as the merged families do). On a clean exit compact stdout as today and print stderr after it; on any exit apply the balanced cut when CCR stored the raw output. | 5 | A 122 KB `make` run with one warning line is cut, the warning is printed, and a run that fails keeps every failure line |
-| G3 | Record why a run streamed: new passthrough reasons `too_large`, `stderr_output` and `hold_timeout`, with labels in `report`. | 2 | `report` shows no `reason not recorded` row for runs made by the new binary |
+| G3 | Record why a run streamed: new passthrough reasons `too_large`, `stderr_output` and `hold_timeout`, with labels in `report`. **Done in #71** (commit `429a8325`); rendering verified in #125 (commit `661c6893`). | 2 | `report` shows no `reason not recorded` row for runs made by the new binary |
 | G4 | Balanced limits in the config file (`balanced_threshold_kb`, per-kind line caps), read once at the edge. **Done in #71** (commit `429a8325`): `cmd/downshift/balanced_config.go` and `internal/compressor/balance_limits.go`. | 2 | A test sets each key; `doctor` prints the values in effect |
 | G5 | A failure line longer than the line cap keeps its end as well as its start (an assertion often ends the line). **Done (verified in #122):** `internal/compressor/balance_test.go` covers 900-byte failure line head+tail preservation (`300` head + `200` tail bytes) and UTF-8 safety. | 1 | A 900-byte line with a failure word keeps its first 300 and last 200 bytes |
 
@@ -117,16 +117,16 @@ the agent's own Read, Grep and Glob, where most file content enters the context.
 
 | ID | Task | Pts | Done when |
 |---|---|---|---|
-| M1 | Spike on Claude Code: answer `PostToolUse` for Bash with `updatedToolOutput` (compacted stdout, stderr kept, raw stored in CCR). Measure against the wrapper on the same commands. | 5 | A command with a pipe and a redirect is compacted and counted in `report`; a written result says whether this replaces the wrapper on Claude Code |
+| M1 | Spike on Claude Code: answer `PostToolUse` for Bash with `updatedToolOutput` (compacted stdout, stderr kept, raw stored in CCR). Measure against the wrapper on the same commands. **Done in #72** (commit `b0f374f9`): `internal/postrun/`, `cmd/downshift/hook_postrun.go`, and `internal/adapters/claudecode/tooloutput.go`; measurements and result in [post-run compaction](../design/post-run-compaction.md). | 5 | A command with a pipe and a redirect is compacted and counted in `report`; a written result says whether this replaces the wrapper on Claude Code |
 | M2 | Grep and Glob results: cap per file and in total, with a count of the rest, raw in CCR. | 3 | A 2,000-match Grep reaches the model under 16 KB |
 | M3 | Read of a large file: never rewrite a line (Edit needs the exact text). Cut only whole ranges, with line numbers kept and a marker that names the range and the retrieve id. | 5 | An Edit after a cut Read still matches; a lockfile or generated file over 64 KB is cut |
-| M4 | Correct the claim that a hook cannot rewrite tool output: `doctor`, `context status`, the context-optimization docs and the harness matrix say which harnesses allow it. | 1 | No text says it is impossible on Claude Code |
-| M5 | `replaces tool output` as a capability in `HarnessCapabilities`, so other harnesses with the same channel get it from the shared layer. | 3 | The capability is data; no adapter holds the logic |
+| M4 | Correct the claim that a hook cannot rewrite tool output: `doctor`, `context status`, the context-optimization docs and the harness matrix say which harnesses allow it. **Done in #69** (commit `7469845d`). | 1 | No text says it is impossible on Claude Code |
+| M5 | `replaces tool output` as a capability in `HarnessCapabilities`, so other harnesses with the same channel get it from the shared layer. **Done in #72** (commit `b0f374f9`): `HarnessCapabilities.ReplacesToolOutput` in `internal/core/capabilities.go`; shared policy in `internal/postrun/` and `cmd/downshift/hook_postrun.go`. | 3 | The capability is data; no adapter holds the logic |
 
 ## Order
 
-1. **Wave 1**: H1 (done), G3, M4, then the M1 spike. G1 and G2 follow M1's result: where output can be replaced after the run they may not be needed. Release L1 can follow this wave.
-2. **Wave 2**: M2, M3, M5, J1 (done), J2 (done), I3 (done), G4 (done), G5 (done).
+1. **Wave 1**: H1 (done), G3 (done), M4 (done), then the M1 spike (done). G1 and G2 follow M1's result: where output can be replaced after the run they may not be needed. Release L1 can follow this wave.
+2. **Wave 2**: M2, M3, M5 (done), J1 (done), J2 (done), I3 (done), G4 (done), G5 (done).
 3. **Wave 3**: K1 (needs the owner's decisions), then K2, K3, H2, H3.
 4. **Later**: I1 (needs a week of data), I2, J3, J4, K4, K5.
 
