@@ -8,12 +8,13 @@ var discoverHelp = map[string]string{
 	"discover": `downshift discover — Find commands the compactor would have changed but that ran bare
 
 Usage:
-  downshift discover [--since 7d] [--harness claude-code|codex|all] [--top N] [--json]
+  downshift discover [--since 7d] [--harness claude-code|codex|all] [--top N] [--dedup] [--json]
 
 Flags:
   --since D      Window to scan: 7d, 36h, 90m (default 7d)
   --harness H    claude-code, codex or all (default all)
   --top N        How many missed command groups to list (default 10)
+  --dedup        Deduplicate tool_use and tool_result records by tool_use_id
   --json         Print the report as JSON
 
 Reads the harness transcripts in memory and writes nothing. The report holds

@@ -24,9 +24,10 @@ func runDiscover(args []string, stdout, stderr io.Writer) int {
 	since := fs.String("since", "7d", "")
 	harness := fs.String("harness", missedsavings.HarnessAll, "")
 	top := fs.Int("top", 10, "")
+	dedup := fs.Bool("dedup", false, "")
 	asJSON := fs.Bool("json", false, "")
 	if err := fs.Parse(args); err != nil || fs.NArg() > 0 || *top < 0 {
-		fmt.Fprintln(stderr, "usage: downshift discover [--since 7d] [--harness claude-code|codex|all] [--top N] [--json]")
+		fmt.Fprintln(stderr, "usage: downshift discover [--since 7d] [--harness claude-code|codex|all] [--top N] [--dedup] [--json]")
 		return 2
 	}
 	window, err := missedsavings.ParseSince(*since)
@@ -39,7 +40,7 @@ func runDiscover(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "discover: cannot resolve the home directory: %v\n", err)
 		return 1
 	}
-	rep, err := missedsavings.Scan(missedsavings.Options{Home: home, Harness: *harness, Since: window, Label: *since, Top: *top})
+	rep, err := missedsavings.Scan(missedsavings.Options{Home: home, Harness: *harness, Since: window, Label: *since, Top: *top, Dedup: *dedup})
 	if err != nil {
 		fmt.Fprintf(stderr, "discover: %v\n", err)
 		return 2
@@ -58,7 +59,11 @@ func runDiscover(args []string, stdout, stderr io.Writer) int {
 
 // renderDiscover prints the report as plain text.
 func renderDiscover(w io.Writer, r missedsavings.Report) {
-	fmt.Fprintf(w, "Downshift discover: last %s, %d transcript files\n\n", r.Since, r.Files)
+	if r.Dedup {
+		fmt.Fprintf(w, "Downshift discover: last %s, %d transcript files (dedup by tool_use_id, %d duplicates skipped)\n\n", r.Since, r.Files, r.Total.DuplicatesSkipped)
+	} else {
+		fmt.Fprintf(w, "Downshift discover: last %s, %d transcript files\n\n", r.Since, r.Files)
+	}
 	for _, h := range r.Harnesses {
 		fmt.Fprintf(w, "%-12s %d commands: %d compacted, %d compactible but bare (%s), %d skipped\n",
 			h.Harness, h.Commands, h.Wrapped, h.Bare, humanBytes(h.BareBytes), h.Skipped)
@@ -66,6 +71,11 @@ func renderDiscover(w io.Writer, r missedsavings.Report) {
 	t := r.Total
 	fmt.Fprintf(w, "%-12s %d commands: %d compacted, %d compactible but bare (%s), %d skipped\n",
 		"all", t.Commands, t.Wrapped, t.Bare, humanBytes(t.BareBytes), t.Skipped)
+	c := t.Coverage
+	fmt.Fprintf(w, "\nCoverage (compacted output / total tool output):\n")
+	fmt.Fprintf(w, "  %-10s %s / %s (%.1f%%)\n", "bash", humanBytes(c.BashCompactedBytes), humanBytes(c.BashTotalBytes), c.BashCoveragePct)
+	fmt.Fprintf(w, "  %-10s %s / %s (%.1f%%)\n", "non-bash", humanBytes(c.NonBashCompactedBytes), humanBytes(c.NonBashTotalBytes), c.NonBashCoveragePct)
+	fmt.Fprintf(w, "  %-10s %s / %s (%.1f%%)\n", "total", humanBytes(c.TotalCompactedBytes), humanBytes(c.TotalOutputBytes), c.TotalCoveragePct)
 	renderCounts(w, "Skipped by reason:", t.SkipReason)
 	renderCounts(w, "Metachar skips by kind:", t.MetacharKind)
 	if len(r.Top) == 0 {

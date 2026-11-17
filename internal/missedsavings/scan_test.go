@@ -196,3 +196,82 @@ func TestJSString(t *testing.T) {
 		}
 	}
 }
+
+func claudeNonBashUse(ago time.Duration, id, name string) string {
+	return fmt.Sprintf(`{"type":"assistant","timestamp":%q,"message":{"content":[{"type":"tool_use","id":%q,"name":%q,"input":{"file_path":"a.go"}}]}}`, stamp(ago), id, name)
+}
+
+func TestScanClaudeCodeDedup(t *testing.T) {
+	home := t.TempDir()
+	h := time.Hour
+	writeLines(t, filepath.Join(home, ".claude", "projects", "p1", "s1.jsonl"),
+		claudeUse(h, "u1", "go test ./..."),
+		claudeUse(h, "u1", "go test ./..."),
+		claudeResult(h, "u1", strings.Repeat("x", 400)),
+		claudeResult(h, "u1", strings.Repeat("x", 400)),
+		claudeNonBashUse(h, "u2", "Read"),
+		claudeResult(h, "u2", strings.Repeat("r", 300)),
+		claudeResult(h, "u2", strings.Repeat("r", 300)),
+	)
+	writeLines(t, filepath.Join(home, ".claude", "projects", "p1", "s2.jsonl"),
+		claudeUse(h, "u1", "go test ./..."),
+		claudeResult(h, "u1", strings.Repeat("x", 400)),
+	)
+
+	noDedup, err := Scan(Options{Home: home, Harness: HarnessClaudeCode, Since: 24 * h, Label: "1d", Top: 10, Now: testNow})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if noDedup.Total.Commands != 3 {
+		t.Fatalf("without dedup: commands = %d, want 3", noDedup.Total.Commands)
+	}
+
+	dedup, err := Scan(Options{Home: home, Harness: HarnessClaudeCode, Since: 24 * h, Label: "1d", Top: 10, Dedup: true, Now: testNow})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !dedup.Dedup {
+		t.Fatal("want Dedup = true")
+	}
+	if dedup.Total.Commands != 1 || dedup.Total.Bare != 1 || dedup.Total.BareBytes != 400 {
+		t.Fatalf("with dedup: total = %+v", dedup.Total)
+	}
+	if dedup.Total.DuplicatesSkipped != 5 {
+		t.Fatalf("DuplicatesSkipped = %d, want 5", dedup.Total.DuplicatesSkipped)
+	}
+	cov := dedup.Total.Coverage
+	if cov.BashTotalBytes != 400 || cov.NonBashTotalBytes != 300 || cov.TotalOutputBytes != 700 {
+		t.Fatalf("coverage = %+v", cov)
+	}
+}
+
+func TestScanCoverageBashAndNonBash(t *testing.T) {
+	home := t.TempDir()
+	h := time.Hour
+	writeLines(t, filepath.Join(home, ".claude", "projects", "p1", "s.jsonl"),
+		claudeUse(h, "b1", "downshift compact -- go test ./..."),
+		claudeResult(h, "b1", strings.Repeat("c", 200)),
+		claudeUse(h, "b2", "go test ./..."),
+		claudeResult(h, "b2", strings.Repeat("b", 600)),
+		claudeUse(h, "b3", "echo hello"),
+		claudeResult(h, "b3", strings.Repeat("s", 200)),
+		claudeNonBashUse(h, "n1", "Read"),
+		claudeResult(h, "n1", strings.Repeat("n", 700)),
+		claudeNonBashUse(h, "n2", "Grep"),
+		claudeResult(h, "n2", strings.Repeat("g", 300)),
+	)
+	r, err := Scan(Options{Home: home, Harness: HarnessClaudeCode, Since: 24 * h, Label: "1d", Top: 10, Dedup: true, Now: testNow})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cov := r.Total.Coverage
+	if cov.BashCompactedBytes != 200 || cov.BashTotalBytes != 1000 || cov.BashCoveragePct != 20.0 {
+		t.Fatalf("bash coverage = %+v", cov)
+	}
+	if cov.NonBashCompactedBytes != 0 || cov.NonBashTotalBytes != 1000 || cov.NonBashCoveragePct != 0.0 {
+		t.Fatalf("non-bash coverage = %+v", cov)
+	}
+	if cov.TotalCompactedBytes != 200 || cov.TotalOutputBytes != 2000 || cov.TotalCoveragePct != 10.0 {
+		t.Fatalf("total coverage = %+v", cov)
+	}
+}
