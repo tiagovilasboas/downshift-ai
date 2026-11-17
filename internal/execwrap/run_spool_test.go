@@ -10,7 +10,9 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/tiagovilasboas/downshift-ai/internal/ccr"
 	"github.com/tiagovilasboas/downshift-ai/internal/compressor"
 )
 
@@ -179,5 +181,84 @@ func TestGate_SpoolBoundsMemory(t *testing.T) {
 	}
 	if _, err := os.Lstat(name); err == nil {
 		t.Errorf("spool file %s was not removed", name)
+	}
+}
+
+// G1 integration: a 13 MB git grep output prints under 64 KB with its head,
+// tail, and retrieve id, keeps the exit code unchanged, and stores every byte
+// in the real CCR store so retrieve returns all 13 MB.
+func TestRun_G1_13MBGitGrepSpoolsToCCRAndRetrievesAll(t *testing.T) {
+	const (
+		headLine = "src/first.go:1:HEAD_SENTINEL_LINE\n"
+		midLine  = "src/mid.go:42:middle match text here\n"
+		tailLine = "src/last.go:999:TAIL_SENTINEL_LINE\n"
+		midCount = 380000 // ~14 MB total (> 13 MB, well above 2 MB hold limit)
+	)
+	for _, wantCode := range []int{0, 2} {
+		name := "exit_0"
+		extra := ""
+		if wantCode != 0 {
+			name = "exit_2"
+			extra = "exit 2"
+		}
+		t.Run(name, func(t *testing.T) {
+			fakeBin(t, "git", "printf '"+headLine+"'; yes '"+strings.TrimSuffix(midLine, "\n")+"' | head -n "+itoa(midCount)+"; printf '"+tailLine+"'; "+extra)
+			store := ccr.Store{
+				Dir:           t.TempDir(),
+				TTL:           time.Hour,
+				MaxEntryBytes: ccr.DefaultMaxEntryBytes,
+				MaxTotalBytes: ccr.DefaultMaxTotalBytes,
+			}
+			keep := func(raw []byte) (string, bool) {
+				id, err := store.Put(raw)
+				return id, err == nil
+			}
+			var out, errb bytes.Buffer
+			r := Run([]string{"git", "grep", "match"}, Options{
+				Stdin:    strings.NewReader(""),
+				Stdout:   &out,
+				Stderr:   &errb,
+				Compact:  true,
+				Keep:     keep,
+				Balanced: true,
+			})
+			wantRaw := int64(len(headLine) + midCount*len(midLine) + len(tailLine))
+			if wantRaw <= 13<<20 {
+				t.Fatalf("test fixture too small: %d bytes", wantRaw)
+			}
+			if r.ExitCode != wantCode {
+				t.Fatalf("ExitCode = %d, want %d", r.ExitCode, wantCode)
+			}
+			if r.RawBytes != wantRaw {
+				t.Fatalf("RawBytes = %d, want %d", r.RawBytes, wantRaw)
+			}
+			if out.Len() >= 64<<10 {
+				t.Fatalf("printed %d bytes, want < 64 KB", out.Len())
+			}
+			if !r.Compacted || !r.Folded || !ccr.ValidID(r.KeptID) || r.Passthrough != "" {
+				t.Fatalf("unexpected result: %+v", r)
+			}
+			printed := out.String()
+			for _, want := range []string{
+				headLine,
+				tailLine,
+				"bytes cut (downshift retrieve " + r.KeptID + ")",
+				"downshift retrieve " + r.KeptID + "]",
+			} {
+				if !strings.Contains(printed, want) {
+					t.Errorf("printed output missing %q", want)
+				}
+			}
+			retrieved, err := store.Get(r.KeptID)
+			if err != nil {
+				t.Fatalf("store.Get(%q): %v", r.KeptID, err)
+			}
+			if int64(len(retrieved)) != wantRaw {
+				t.Fatalf("retrieved %d bytes, want %d", len(retrieved), wantRaw)
+			}
+			if !bytes.HasPrefix(retrieved, []byte(headLine)) || !bytes.HasSuffix(retrieved, []byte(tailLine)) {
+				t.Errorf("retrieved content missing head or tail sentinel")
+			}
+		})
 	}
 }
