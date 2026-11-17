@@ -833,7 +833,7 @@
       "CanShowChildLine": true,
       "CanReturnNote": true,
       "SessionEnv": "CLAUDE_CODE_SESSION_ID",
-      "ShellEnv": "",
+      "ShellEnv": "CLAUDE_CODE_ENTRYPOINT",
       "AgentEnv": null,
       "ChildEndEvent": "SubagentStop",
       "UsageSource": "transcript",
