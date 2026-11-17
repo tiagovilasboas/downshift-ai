@@ -266,5 +266,24 @@ func TestGemini4ModelsAreRoutable(t *testing.T) {
 				}
 			}
 		}
+
+		if frontier := c.ModelFor(h, core.TierFrontier); frontier.ID == "gemini-4-carbon" {
+			t.Errorf("ModelFor(%q, TierFrontier) returned explicit_only model gemini-4-carbon", h)
+		}
+	}
+
+	wantAntigravityNative := map[string]string{
+		"google/gemini-4-hydrogen": "flash",
+		"google/gemini-4-argon":    "pro",
+		"google/gemini-4-carbon":   "pro",
+	}
+	for id, wantNative := range wantAntigravityNative {
+		m, ok := c.LookupByID("antigravity", id)
+		if !ok {
+			t.Fatalf("LookupByID(antigravity, %q) not found", id)
+		}
+		if m.Native != wantNative {
+			t.Errorf("antigravity/%s: Native = %q, want %q", id, m.Native, wantNative)
+		}
 	}
 }
