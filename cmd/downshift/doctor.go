@@ -74,22 +74,28 @@ func runDoctor(args []string, w, errW io.Writer, cat *catalog.Catalog) int {
 	checkLatest := fs.Bool("check-latest", false, "also ask GitHub for the latest release (one request, cached 24 h)")
 	harness := fs.String("harness", "", "check only this harness alongside global checks")
 	selfTest := fs.Bool("self-test", false, "run isolated component checks")
+	verify := fs.String("verify", "", "guide one real spawn and one shell command in NAME, then confirm both events arrived")
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
 	if fs.NArg() > 0 {
-		fmt.Fprintln(errW, "usage: downshift doctor [--verbose] [--quiet] [--json] [--check-latest] [--harness NAME]")
+		fmt.Fprintln(errW, "usage: downshift doctor [--verbose] [--quiet] [--json] [--check-latest] [--harness NAME] [--self-test] [--verify NAME]")
 		return 2
 	}
-	if *harness != "" {
-		found := false
-		for _, nc := range core.AllHarnessCaps() {
-			found = found || nc.Harness == *harness
-		}
-		if !found {
-			fmt.Fprintf(errW, "unknown harness: %s\n", *harness)
+	if *harness != "" && !isSupportedHarness(*harness) {
+		fmt.Fprintf(errW, "unknown harness: %s\n", *harness)
+		return 2
+	}
+	if *verify != "" {
+		if !isSupportedHarness(*verify) {
+			fmt.Fprintf(errW, "unknown harness: %s\n", *verify)
 			return 2
 		}
+		if *harness != "" && *harness != *verify {
+			fmt.Fprintf(errW, "--verify %s conflicts with --harness %s\n", *verify, *harness)
+			return 2
+		}
+		return runDoctorVerify(*verify, *asJSON, w, errW, defaultVerifyEnv())
 	}
 	if *selfTest && *harness == "" {
 		fmt.Fprintln(errW, "--self-test requires --harness NAME")
