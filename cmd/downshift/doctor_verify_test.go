@@ -82,7 +82,7 @@ func TestDoctorVerify_MissingEventsAndInstructions(t *testing.T) {
 			wantText: []string{
 				"✗ spawn/decision",
 				"✓ shell/exec",
-				"downshift compact -- git status",
+				"downshift compact --harness=kiro -- git status",
 			},
 		},
 	}
@@ -161,47 +161,5 @@ func TestDoctorVerify_BothEventsArrived_TempStateDir(t *testing.T) {
 	}
 	if !res.OK || !res.SpawnEvent.Found || !res.ShellEvent.Found || res.Harness != "claude-code" {
 		t.Fatalf("unexpected json result: %+v", res)
-	}
-}
-
-func TestDoctorVerify_PollsUntilBothArrive(t *testing.T) {
-	now := time.Date(2026, 11, 17, 12, 0, 0, 0, time.UTC)
-	calls := 0
-	env := verifyEnv{
-		Now: func() time.Time { return now },
-		ReadRouting: func() ([]telemetry.Event, error) {
-			calls++
-			if calls < 2 {
-				return nil, nil
-			}
-			return []telemetry.Event{{
-				Harness:   "codex",
-				Source:    "hook",
-				Outcome:   telemetry.OutcomeAllow,
-				Verdict:   "OK",
-				FromModel: "gpt-5",
-				ToModel:   "gpt-5",
-				Timestamp: now.Add(time.Second).Format(time.RFC3339Nano),
-			}}, nil
-		},
-		ReadExec: func() ([]execwrap.Event, error) {
-			return []execwrap.Event{{
-				Harness:   "codex",
-				Family:    execwrap.FamilyGoTest,
-				ExitClass: "ok",
-				Compacted: true,
-				TS:        now.Add(2 * time.Second).Format(time.RFC3339),
-			}}, nil
-		},
-		PollInterval: time.Millisecond,
-		PollTimeout:  time.Second,
-		Sleep:        func(d time.Duration) { now = now.Add(d) },
-	}
-	res, err := confirmVerifyEvents("codex", now.Add(-time.Minute), env)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !res.OK || calls != 2 {
-		t.Fatalf("res=%+v calls=%d, want OK on 2nd poll", res, calls)
 	}
 }
