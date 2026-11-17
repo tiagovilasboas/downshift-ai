@@ -268,18 +268,31 @@ func TestRiskScanEquivalence_SplitExhaustive(t *testing.T) {
 // rune r under (?i) exactly when foldRiskText(r) is that char. This is the claim
 // the literal prefilter depends on, including the Kelvin sign and long s.
 func TestFoldMatchesRegexCaseFolding(t *testing.T) {
-	lit := "abcdefghijklmnopqrstuvwxyz0123456789-. @_"
-	for _, c := range lit {
-		re := regexp.MustCompile(`(?i)` + regexp.QuoteMeta(string(c)))
-		for r := rune(0); r <= 0x1FFFF; r++ {
-			if r >= 0xD800 && r <= 0xDFFF {
-				continue
-			}
-			s := string(r)
-			if re.MatchString(s) != (foldRiskText(s) == string(c)) {
-				t.Fatalf("(?i)%q vs rune U+%04X: regexp=%v fold=%q", c, r, re.MatchString(s), foldRiskText(s))
-			}
+	const lit = "abcdefghijklmnopqrstuvwxyz0123456789-. @_"
+	type runeFold struct {
+		r    rune
+		s    string
+		fold string
+	}
+	entries := make([]runeFold, 0, 0x20000-0x800)
+	for r := rune(0); r <= 0x1FFFF; r++ {
+		if r >= 0xD800 && r <= 0xDFFF {
+			continue
 		}
+		s := string(r)
+		entries = append(entries, runeFold{r: r, s: s, fold: foldRiskText(s)})
+	}
+	for _, c := range lit {
+		c := string(c)
+		t.Run(c, func(t *testing.T) {
+			t.Parallel()
+			re := regexp.MustCompile(`(?i)` + regexp.QuoteMeta(c))
+			for _, e := range entries {
+				if re.MatchString(e.s) != (e.fold == c) {
+					t.Fatalf("(?i)%q vs rune U+%04X: regexp=%v fold=%q", c, e.r, re.MatchString(e.s), e.fold)
+				}
+			}
+		})
 	}
 }
 
