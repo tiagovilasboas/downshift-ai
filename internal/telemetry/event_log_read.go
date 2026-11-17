@@ -11,10 +11,11 @@ import (
 	"time"
 )
 
-// ReadEvents reads all events from the default event log. Returns an empty
-// slice (not an error) when the file does not exist.
+// ReadEvents reads events from rotated backups and the default event log in
+// chronological order, bounded by DefaultRotatedMaxBytes. Returns an empty
+// slice (not an error) when no log files exist.
 func ReadEvents() ([]Event, error) {
-	return ReadEventsFrom(defaultEventPath())
+	return ReadEventsWithRotatedFrom(defaultEventPath(), DefaultRotatedMaxBytes)
 }
 
 // ReadEventsFrom reads all events from path.
