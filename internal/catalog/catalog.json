@@ -327,6 +327,7 @@
       "provider": "google",
       "harness": "cursor",
       "tier": "frontier",
+      "routing": "explicit_only",
       "effort_scale": "reasoning_effort",
       "effort_map": { "low": "low", "medium": "medium", "high": "high" }
     },
@@ -441,6 +442,7 @@
       "id": "gemini-4-hydrogen",
       "aliases": [],
       "family": "gemini-4-hydrogen",
+      "native_name": "flash",
       "provider": "google",
       "harness": "antigravity",
       "tier": "mid",
@@ -452,6 +454,7 @@
       "id": "gemini-4-argon",
       "aliases": [],
       "family": "gemini-4-argon",
+      "native_name": "pro",
       "provider": "google",
       "harness": "antigravity",
       "tier": "frontier",
@@ -462,9 +465,11 @@
       "id": "gemini-4-carbon",
       "aliases": [],
       "family": "gemini-4-carbon",
+      "native_name": "pro",
       "provider": "google",
       "harness": "antigravity",
       "tier": "frontier",
+      "routing": "explicit_only",
       "effort_scale": "reasoning_effort",
       "effort_map": { "low": "low", "medium": "medium", "high": "high" }
     },
@@ -682,6 +687,7 @@
       "provider": "google",
       "harness": "opencode",
       "tier": "frontier",
+      "routing": "explicit_only",
       "effort_scale": "reasoning_effort",
       "effort_map": { "low": "low", "medium": "medium", "high": "high" }
     }
