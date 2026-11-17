@@ -68,11 +68,12 @@ func decideQuoted(trimmed, exe string) Decision {
 	if len(argv) == 0 {
 		return Decision{Reason: ReasonNotAllowlisted}
 	}
-	if isWrappedDownshift(argv) {
+	normArgv, resolved := normalizeBinaryPath(argv)
+	if isWrappedDownshift(normArgv) {
 		return Decision{Reason: ReasonAlreadyWrapped}
 	}
-	family := FamilyOf(argv)
-	if family == FamilyNone || (n > 0 && isDBClient(argv[0])) {
+	family := FamilyOf(normArgv)
+	if family == FamilyNone || (n > 0 && isDBClient(normArgv[0])) {
 		return Decision{Reason: ReasonNotAllowlisted}
 	}
 	quoted, ok := QuoteExecutable(exe)
@@ -86,9 +87,15 @@ func decideQuoted(trimmed, exe string) Decision {
 		Argv:    strings.Join(raw, " "),
 		Reason:  ReasonAllowlistedQuoted,
 	}
-	// A deny or ask rule may be written either way: as typed, or unquoted.
+	// A deny or ask rule may be written either way: as typed, unquoted, or
+	// with the resolved binary basename.
 	if unquoted := strings.Join(argv, " "); unquoted != d.Argv {
-		d.Segments = []string{unquoted}
+		d.Segments = append(d.Segments, unquoted)
+	}
+	if resolved {
+		if norm := strings.Join(normArgv, " "); norm != d.Argv && (len(d.Segments) == 0 || norm != d.Segments[0]) {
+			d.Segments = append(d.Segments, norm)
+		}
 	}
 	return d
 }

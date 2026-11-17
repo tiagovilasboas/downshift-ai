@@ -33,7 +33,8 @@ func TestSkipReasonByShape(t *testing.T) {
 		{name: "deny rule", enabled: true, command: "go test ./...", blocked: denyAll, want: execwrap.SkipDenied},
 		{name: "kill switch", enabled: true, env: map[string]string{execwrap.KillSwitchEnv: "0"}, command: "go test ./...", blocked: never, want: execwrap.SkipDisabled},
 		{name: "config off", enabled: false, command: "go test ./...", blocked: never, want: execwrap.SkipDisabled},
-		{name: "absolute path to allowlisted binary", enabled: true, command: "/opt/homebrew/bin/gh pr list", blocked: never, want: execwrap.SkipAbsPath},
+		{name: "known binary path is wrapped", enabled: true, command: "/opt/homebrew/bin/gh pr list", blocked: never, want: ""},
+		{name: "untrusted absolute path to allowlisted binary", enabled: true, command: "/Users/someone/bin/gh pr list", blocked: never, want: execwrap.SkipAbsPath},
 		{name: "absolute path to unknown binary", enabled: true, command: "/usr/bin/vim x", blocked: never, want: execwrap.SkipNotAllowlisted},
 	}
 	for _, c := range cases {

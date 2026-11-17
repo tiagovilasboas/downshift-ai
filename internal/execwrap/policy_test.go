@@ -187,7 +187,8 @@ func TestDecide(t *testing.T) {
 
 		{"go build", "go build ./...", true, FamilyGoBuild, "'/opt/ds/downshift' compact -- go build ./...", ReasonAllowlisted},
 		{"bare go", "go", false, "", "", ReasonNotAllowlisted},
-		{"path to git", "/usr/bin/git status", false, "", "", ReasonNotAllowlisted},
+		{"known bin path to git", "/usr/bin/git status", true, FamilyGitStatus, "'/opt/ds/downshift' compact -- /usr/bin/git status", ReasonAllowlisted},
+		{"untrusted abs path to git", "/tmp/evil/git status", false, "", "", ReasonNotAllowlisted},
 		{"git global option first", "git -C /tmp status", false, "", "", ReasonNotAllowlisted},
 		{"git config injection", "git -c core.pager=evil log", false, "", "", ReasonNotAllowlisted},
 		{"git exec path", "git --exec-path=/tmp/x status", false, "", "", ReasonNotAllowlisted},

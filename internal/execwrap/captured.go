@@ -116,10 +116,11 @@ func SimpleFamily(command string) (Family, []string) {
 		}
 	}
 	_, argv := splitEnvAssignments(strings.Fields(trimmed))
-	if len(argv) == 0 || argv[0] == "downshift" {
+	if len(argv) == 0 || isDownshiftBinary(argv[0]) {
 		return FamilyNone, nil
 	}
-	return FamilyOf(argv), argv
+	normArgv, _ := normalizeBinaryPath(argv)
+	return FamilyOf(normArgv), normArgv
 }
 
 // IsWrapped reports whether command is already a `downshift compact` call (the

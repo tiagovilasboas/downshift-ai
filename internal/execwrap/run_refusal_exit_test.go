@@ -34,7 +34,7 @@ func TestRun_RefusesNonAllowlisted(t *testing.T) {
 		{"tool"},
 		{"rm", "-rf", marker},
 		{"downshift", "exec", "--", "go", "test"}, // recursion
-		{"/usr/bin/git", "status"},
+		{"/tmp/evil/git", "status"},
 		{"git", "--version"},
 		{"git", "-c", "core.pager=x", "log"},
 		{"sudo", "rm", "-rf", "/"},

@@ -177,11 +177,12 @@ func decideSimple(command, exe string) Decision {
 	if len(argv) == 0 {
 		return Decision{Reason: ReasonNotAllowlisted}
 	}
-	if isWrappedDownshift(argv) {
+	normArgv, resolved := normalizeBinaryPath(argv)
+	if isWrappedDownshift(normArgv) {
 		return Decision{Reason: ReasonAlreadyWrapped}
 	}
-	family := FamilyOf(argv)
-	if family == FamilyNone || (len(assigns) > 0 && isDBClient(argv[0])) {
+	family := FamilyOf(normArgv)
+	if family == FamilyNone || (len(assigns) > 0 && isDBClient(normArgv[0])) {
 		return Decision{Reason: ReasonNotAllowlisted}
 	}
 	quoted, ok := QuoteExecutable(exe)
@@ -192,13 +193,17 @@ func decideSimple(command, exe string) Decision {
 	if len(assigns) > 0 {
 		wrapped = strings.Join(assigns, " ") + " " + wrapped
 	}
-	return Decision{
+	d := Decision{
 		Rewrite: true,
 		Command: wrapped,
 		Argv:    strings.Join(argv, " "),
 		Family:  family,
 		Reason:  ReasonAllowlisted,
 	}
+	if resolved {
+		d.Segments = []string{strings.Join(normArgv, " ")}
+	}
+	return d
 }
 
 // SplitSingleWord is for the direct `downshift compact -- "go test ./..."`
@@ -222,8 +227,9 @@ func SplitSingleWord(argv []string) []string {
 // cross-cutting git family is handled here because git spans every domain and
 // has its own global-option rules.
 func FamilyOf(argv []string) Family {
-	family := routeFamily(argv)
-	if refusedShape(family, argv) {
+	norm, _ := normalizeBinaryPath(argv)
+	family := routeFamily(norm)
+	if refusedShape(family, norm) {
 		return FamilyNone
 	}
 	return family
