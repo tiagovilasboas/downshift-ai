@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/core"
 	"github.com/tiagovilasboas/downshift-ai/internal/routing/agenttier"
@@ -46,7 +47,7 @@ type providersData struct {
 }
 
 // providersNext is the step after choosing: the hint the spawn hook reads, and the dry run.
-const providersNext = "For mechanical work (a search, a read, a rename, running one command and reporting it, or a small well-specified edit), start the spawn's prompt with [tier=small]; the hint only moves down, a pinned model or a declared policy wins, and you choose by tier, not by name. Call apply to check a choice first."
+const providersNext = "For mechanical work, start the spawn's prompt with [tier=small]; hints only move down, pinned/policy wins. Call apply to check a choice first."
 
 func (d Deps) providersTool() Tool {
 	fields := []string{"harness", "models"}
@@ -84,10 +85,17 @@ func (d Deps) providers(ctx context.Context, harness string, ids []string) (outc
 	if err != nil {
 		return outcome{}, errors.New("could not read the models for this harness")
 	}
+	return outcome{data: providersData{ModelList: slimModelList(list), Reported: reported, AgentPrefix: squadPrefix(harness), AgentDefaultTiers: agenttier.List(), Session: d.sessionSummary(ctx, harness)}, harnesses: []string{harness}, shrink: shrinkModels, next: providersNext}, nil
+}
+
+// slimModelList strips the discovery cache timestamp that a spawner does not
+// use so the providers payload stays compact.
+func slimModelList(list ModelList) ModelList {
+	list.CacheWrittenAt = time.Time{}
 	if list.Models == nil {
 		list.Models = []Model{}
 	}
-	return outcome{data: providersData{ModelList: list, Reported: reported, AgentPrefix: squadPrefix(harness), AgentDefaultTiers: agenttier.List(), Session: d.sessionSummary(ctx, harness)}, harnesses: []string{harness}, shrink: shrinkModels, next: providersNext}, nil
+	return list
 }
 
 // report hands the ids to the Reporter; it never fails the call.

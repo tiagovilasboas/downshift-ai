@@ -177,10 +177,10 @@ func decideSimple(command, exe string) Decision {
 	if len(argv) == 0 {
 		return Decision{Reason: ReasonNotAllowlisted}
 	}
-	if isDownshiftBinary(argv[0]) {
+	normArgv, resolved := normalizeBinaryPath(argv)
+	if isWrappedDownshift(normArgv) {
 		return Decision{Reason: ReasonAlreadyWrapped}
 	}
-	normArgv, resolved := normalizeBinaryPath(argv)
 	family := FamilyOf(normArgv)
 	if family == FamilyNone || (len(assigns) > 0 && isDBClient(normArgv[0])) {
 		return Decision{Reason: ReasonNotAllowlisted}

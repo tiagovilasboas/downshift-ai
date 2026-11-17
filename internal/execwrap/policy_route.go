@@ -38,5 +38,8 @@ func routeFamily(argv []string) Family {
 	if family := desktopFamily(argv); family != FamilyNone {
 		return family
 	}
+	if family := downshiftFamily(argv); family != FamilyNone {
+		return family
+	}
 	return FamilyNone
 }
