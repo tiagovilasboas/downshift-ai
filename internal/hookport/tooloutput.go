@@ -15,6 +15,10 @@ type ToolOutput struct {
 	// Category is the tool's category from the harness capabilities
 	// (core.HarnessCapabilities.CategoryOf).
 	Category core.ToolCategory
+	// VerboseKind names a non-shell/non-search/non-read verbose tool kind
+	// ("mcp" or "fetch") when Category is CategoryOther. Empty for tools
+	// whose output must not be compacted.
+	VerboseKind string
 	// Session is the harness's raw session id, or "". The runner hashes it
 	// before anything is logged.
 	Session string

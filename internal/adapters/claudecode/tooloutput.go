@@ -5,6 +5,7 @@ package claudecode
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/core"
 	"github.com/tiagovilasboas/downshift-ai/internal/hookport"
@@ -12,13 +13,17 @@ import (
 
 // Claude Code's PostToolUse payload carries the finished tool's result in
 // tool_response, in that tool's own output shape, and the hook may answer
-// hookSpecificOutput.updatedToolOutput with a value of the same shape (hooks
-// reference, "PostToolUse decision control", read 2026-11-10). Bash's shape is
-// documented: {stdout, stderr, interrupted, isImage, ...}. Grep's and Glob's
-// are not; this adapter reads only the fields their results carry (Grep:
-// content in content mode, filenames in file mode; Glob: filenames) and
-// leaves every other field, counts included, exactly as received. Nothing
-// here decides what to cut: internal/postrun does.
+// hookSpecificOutput.updatedToolOutput (built-in tools) or
+// hookSpecificOutput.updatedMCPToolOutput (mcp__* tools) with a value of the
+// same shape (hooks reference, "PostToolUse decision control"). Nothing here
+// decides what to cut: internal/postrun does.
+
+const (
+	rawShapeKey    = "__downshiftRawShape"
+	rawShapeString = "string"
+	rawShapeArray  = "array"
+	rawShapeJSON   = "json"
+)
 
 // ParseToolOutput reads a PostToolUse payload into the shared ToolOutput.
 func ParseToolOutput(raw []byte) (hookport.ToolOutput, bool) {
@@ -29,23 +34,24 @@ func ParseToolOutput(raw []byte) (hookport.ToolOutput, bool) {
 	if ev, ok := payload["hook_event_name"].(string); ok && ev != "PostToolUse" {
 		return hookport.ToolOutput{}, false
 	}
+	toolName := stringFieldAny(payload, "tool_name", "toolName")
 	out := hookport.ToolOutput{
-		Category: core.ClaudeCodeCaps.CategoryOf(stringFieldAny(payload, "tool_name", "toolName")),
-		Session:  stringFieldAny(payload, "session_id", "sessionId"),
-		ExitCode: -1,
+		Category:    core.ClaudeCodeCaps.CategoryOf(toolName),
+		VerboseKind: verboseKindOf(toolName),
+		Session:     stringFieldAny(payload, "session_id", "sessionId"),
+		ExitCode:    -1,
 	}
 	if out.Session == "" {
 		out.Session = sessionFromTranscript(stringFieldAny(payload, "transcript_path"))
 	}
-	resp, ok := payload["tool_response"].(map[string]any)
-	if !ok {
-		out.Opaque = true
-		return out, true
-	}
-	out.Native = resp
 	if input, ok := payload["tool_input"].(map[string]any); ok {
 		out.Command, _ = input["command"].(string)
 	}
+	resp, ok := payload["tool_response"].(map[string]any)
+	if !ok {
+		return parseNonMapToolResponse(out, payload["tool_response"]), true
+	}
+	out.Native = resp
 	out.Stdout, out.HasStdout = resp["stdout"].(string)
 	out.Stderr, out.HasStderr = resp["stderr"].(string)
 	out.Content, out.HasContent = resp["content"].(string)
@@ -64,7 +70,95 @@ func ParseToolOutput(raw []byte) (hookport.ToolOutput, bool) {
 	if b, _ := resp["isImage"].(bool); b {
 		out.Opaque = true
 	}
+	if b, _ := resp["isError"].(bool); b {
+		out.ExitCode = 1
+	}
+	if out.VerboseKind != "" && !out.HasContent && !out.Opaque {
+		out = parseVerboseMapFields(out, resp)
+	}
 	return out, true
+}
+
+func verboseKindOf(tool string) string {
+	switch {
+	case strings.HasPrefix(tool, "mcp__"):
+		return "mcp"
+	case tool == "WebFetch":
+		return "fetch"
+	default:
+		return ""
+	}
+}
+
+func parseNonMapToolResponse(out hookport.ToolOutput, raw any) hookport.ToolOutput {
+	if out.VerboseKind == "" {
+		out.Opaque = true
+		return out
+	}
+	switch v := raw.(type) {
+	case string:
+		out.Content = v
+		out.HasContent = true
+		out.Native = map[string]any{rawShapeKey: rawShapeString}
+	case []any:
+		text, opaque := extractContentBlocks(v)
+		if opaque {
+			out.Opaque = true
+			return out
+		}
+		out.Content = text
+		out.HasContent = true
+		out.Native = map[string]any{rawShapeKey: rawShapeArray}
+	default:
+		out.Opaque = true
+	}
+	return out
+}
+
+func parseVerboseMapFields(out hookport.ToolOutput, resp map[string]any) hookport.ToolOutput {
+	if blocks, ok := resp["content"].([]any); ok {
+		text, opaque := extractContentBlocks(blocks)
+		if opaque {
+			out.Opaque = true
+			return out
+		}
+		out.Content, out.HasContent = text, true
+		return out
+	}
+	if t, ok := resp["text"].(string); ok {
+		out.Content, out.HasContent = t, true
+		return out
+	}
+	if r, ok := resp["result"].(string); ok {
+		out.Content, out.HasContent = r, true
+		return out
+	}
+	if len(resp) > 0 {
+		if b, err := json.MarshalIndent(resp, "", "  "); err == nil {
+			out.Content, out.HasContent = string(b), true
+			out.Native = map[string]any{rawShapeKey: rawShapeJSON}
+		}
+	}
+	return out
+}
+
+func extractContentBlocks(blocks []any) (string, bool) {
+	var parts []string
+	for _, b := range blocks {
+		m, ok := b.(map[string]any)
+		if !ok {
+			return "", true
+		}
+		if typ, _ := m["type"].(string); typ == "image" {
+			return "", true
+		}
+		text, ok := m["text"].(string)
+		if !ok {
+			return "", true
+		}
+		parts = append(parts, text)
+	}
+	return strings.Join(parts, "\n"), false
 }
 
 // stringList reads a JSON array of strings. A missing field is (nil, false,
@@ -85,13 +179,27 @@ func stringList(v any) (list []string, has, opaque bool) {
 	return list, true, false
 }
 
-// ReplaceToolOutput answers PostToolUse with updatedToolOutput: the tool's
-// own result object with only the text fields the result already carried
-// replaced, so it keeps the tool's shape. prev is kept (a systemMessage, for
-// one). A result that cannot be encoded leaves prev unchanged.
+// ReplaceToolOutput answers PostToolUse with updatedToolOutput (built-in
+// tools) or updatedMCPToolOutput (mcp__* tools), preserving the tool's own
+// result shape. prev is kept (a systemMessage, for one). A result that cannot
+// be encoded leaves prev unchanged.
 func ReplaceToolOutput(prev any, out hookport.ToolOutput) any {
 	if out.Native == nil {
 		return prev
+	}
+	switch shape, _ := out.Native[rawShapeKey].(string); shape {
+	case rawShapeString, rawShapeJSON:
+		encoded, err := json.Marshal(out.Content)
+		if err != nil {
+			return prev
+		}
+		return setUpdatedToolOutput(prev, out.VerboseKind, encoded)
+	case rawShapeArray:
+		encoded, err := json.Marshal([]any{map[string]any{"type": "text", "text": out.Content}})
+		if err != nil {
+			return prev
+		}
+		return setUpdatedToolOutput(prev, out.VerboseKind, encoded)
 	}
 	updated := make(map[string]any, len(out.Native))
 	for k, v := range out.Native {
@@ -104,18 +212,7 @@ func ReplaceToolOutput(prev any, out hookport.ToolOutput) any {
 		updated["stderr"] = out.Stderr
 	}
 	if out.HasContent {
-		if _, hasTop := updated["content"].(string); hasTop {
-			updated["content"] = out.Content
-		} else if file, ok := updated["file"].(map[string]any); ok {
-			fileCopy := make(map[string]any, len(file))
-			for k, v := range file {
-				fileCopy[k] = v
-			}
-			fileCopy["content"] = out.Content
-			updated["file"] = fileCopy
-		} else {
-			updated["content"] = out.Content
-		}
+		replaceMapContent(updated, out.Content)
 	}
 	if out.HasPaths {
 		updated["filenames"] = out.Paths
@@ -124,12 +221,49 @@ func ReplaceToolOutput(prev any, out hookport.ToolOutput) any {
 	if err != nil {
 		return prev
 	}
+	return setUpdatedToolOutput(prev, out.VerboseKind, encoded)
+}
+
+func replaceMapContent(updated map[string]any, content string) {
+	if _, ok := updated["content"].(string); ok {
+		updated["content"] = content
+		return
+	}
+	if _, ok := updated["content"].([]any); ok {
+		updated["content"] = []any{map[string]any{"type": "text", "text": content}}
+		return
+	}
+	if file, ok := updated["file"].(map[string]any); ok {
+		fileCopy := make(map[string]any, len(file))
+		for k, v := range file {
+			fileCopy[k] = v
+		}
+		fileCopy["content"] = content
+		updated["file"] = fileCopy
+		return
+	}
+	if _, ok := updated["text"].(string); ok {
+		updated["text"] = content
+		return
+	}
+	if _, ok := updated["result"].(string); ok {
+		updated["result"] = content
+		return
+	}
+	updated["content"] = content
+}
+
+func setUpdatedToolOutput(prev any, verboseKind string, encoded json.RawMessage) any {
 	answer, _ := prev.(Output)
 	hso := HookSpecificOutput{HookEventName: "PostToolUse"}
 	if answer.HookSpecificOutput != nil {
 		hso = *answer.HookSpecificOutput
 	}
-	hso.UpdatedToolOutput = encoded
+	if verboseKind == "mcp" {
+		hso.UpdatedMCPToolOutput = encoded
+	} else {
+		hso.UpdatedToolOutput = encoded
+	}
 	answer.HookSpecificOutput = &hso
 	return answer
 }

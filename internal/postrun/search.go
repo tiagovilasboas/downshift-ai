@@ -34,14 +34,15 @@ func compactSearch(in hookport.ToolOutput, o Options) Result {
 	if !o.Balanced || o.Keep == nil {
 		return settle(res, in)
 	}
-	if in.HasContent && len(in.Content) > execwrap.BalanceThreshold {
-		if cut, id, ok := cutMatches(in.Content, o.Keep); ok {
+	threshold := balanceThreshold(o)
+	if in.HasContent && len(in.Content) > threshold {
+		if cut, id, ok := cutMatches(in.Content, o.Keep, o.Session); ok {
 			res.Output.Content, res.KeptID = cut, id
 			emitted += len(cut) - len(in.Content)
 		}
 	}
-	if in.HasPaths && len(strings.Join(in.Paths, "\n")) > execwrap.BalanceThreshold {
-		if cut, id, ok := cutPaths(in.Paths, o.Keep); ok {
+	if in.HasPaths && len(strings.Join(in.Paths, "\n")) > threshold {
+		if cut, id, ok := cutPaths(in.Paths, searchPathBudget(threshold), o.Keep, o.Session); ok {
 			before := len(strings.Join(in.Paths, "\n")) + 1
 			res.Output.Paths = cut
 			emitted += len(strings.Join(cut, "\n")) + 1 - before
@@ -57,8 +58,19 @@ func compactSearch(in hookport.ToolOutput, o Options) Result {
 	return settle(res, in)
 }
 
+func searchPathBudget(threshold int) int {
+	if threshold >= SearchBudget {
+		return SearchBudget
+	}
+	b := threshold * 3 / 4
+	if b < 2<<10 {
+		return 2 << 10
+	}
+	return b
+}
+
 // cutMatches cuts match lines and stores the raw text first.
-func cutMatches(text string, keep func([]byte) (string, bool)) (string, string, bool) {
+func cutMatches(text string, keep func([]byte) (string, bool), session string) (string, string, bool) {
 	cut, applied := compressor.Balance(compressor.BalanceMatches, []byte(text))
 	if !applied {
 		return "", "", false
@@ -80,13 +92,14 @@ func cutMatches(text string, keep func([]byte) (string, bool)) (string, string, 
 	if !ok {
 		return "", "", false
 	}
-	body = append(body, strings.TrimSuffix(execwrap.MarkerWithID(len(text), len(strings.Join(body, "\n")), id), "\n"))
+	arg := readRetrieveArg(session, id)
+	body = append(body, strings.TrimSuffix(execwrap.MarkerWithID(len(text), len(strings.Join(body, "\n")), arg), "\n"))
 	return strings.Join(body, "\n") + "\n", id, true
 }
 
 // cutPaths keeps the head of a file list and stores the whole list first.
-func cutPaths(paths []string, keep func([]byte) (string, bool)) ([]string, string, bool) {
-	body := fitLines(paths, "files", SearchBudget)
+func cutPaths(paths []string, budget int, keep func([]byte) (string, bool), session string) ([]string, string, bool) {
+	body := fitLines(paths, "files", budget)
 	if len(body) >= len(paths) {
 		return nil, "", false
 	}
@@ -95,7 +108,8 @@ func cutPaths(paths []string, keep func([]byte) (string, bool)) ([]string, strin
 	if !ok {
 		return nil, "", false
 	}
-	return append(body, strings.TrimSuffix(execwrap.MarkerWithID(len(full), len(strings.Join(body, "\n")), id), "\n")), id, true
+	arg := readRetrieveArg(session, id)
+	return append(body, strings.TrimSuffix(execwrap.MarkerWithID(len(full), len(strings.Join(body, "\n")), arg), "\n")), id, true
 }
 
 // fitLines keeps whole lines while they fit in budget bytes and ends with one
