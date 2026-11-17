@@ -14,8 +14,9 @@
 // command led by a search keeps the first rows of each file instead, at any
 // size, with the raw output stored (execwrap.CutSearch). Search results
 // (matches and file lists) are cut only when larger than the balanced
-// threshold, with the raw text stored first. File reads are never touched:
-// an edit needs the file's exact text.
+// threshold, with the raw text stored first. Large file reads (> ReadThreshold)
+// cut only whole middle ranges with the raw text stored first, keeping head
+// and tail lines verbatim so subsequent edits still match.
 package postrun
 
 import (
@@ -90,8 +91,10 @@ func Compact(caps core.HarnessCapabilities, in hookport.ToolOutput, o Options) (
 		return compactShell(in, o)
 	case core.CategorySearch:
 		return compactSearch(in, o)
+	case core.CategoryRead:
+		return compactRead(in, o)
 	}
-	return Result{} // core.CategoryRead stays whole: an edit needs the exact text
+	return Result{}
 }
 
 // compactShell compacts stdout as the wrapper would, and stderr only by the

@@ -258,14 +258,30 @@ func TestPostRun_GrepAndGlobKeepShape(t *testing.T) {
 }
 
 // Only the fields a result carries are written: a Glob result has no
-// content, so none is added; a Read result is never touched.
-func TestPostRun_NoFieldAddedAndReadUntouched(t *testing.T) {
+// content, so none is added; a Read result under 64 KiB stays untouched, and
+// one over 64 KiB cuts only middle ranges while preserving sibling fields.
+func TestPostRun_NoFieldAddedAndReadThreshold(t *testing.T) {
 	postRunEnv(t, true)
+	small := strings.Repeat("line of a normal file that the agent read\n", 1000)
+	smallRead := postPayload(t, "Read", map[string]any{"file_path": "/p/small.txt"},
+		map[string]any{"type": "text", "file": map[string]any{"filePath": "/p/small.txt", "content": small, "numLines": 1000}})
+	if answer, got := honorAnswer(t, portFor("claude-code"), smallRead); got != nil {
+		t.Errorf("a Read result <= 64 KiB was replaced: %q", answer[:80])
+	}
+
 	big := strings.Repeat("line of a large file that the agent read\n", 2000)
-	read := postPayload(t, "Read", map[string]any{"file_path": "/p/big.txt"},
+	bigRead := postPayload(t, "Read", map[string]any{"file_path": "/p/big.txt"},
 		map[string]any{"type": "text", "file": map[string]any{"filePath": "/p/big.txt", "content": big, "numLines": 2000}})
-	if answer, got := honorAnswer(t, portFor("claude-code"), read); got != nil {
-		t.Errorf("a Read result was replaced: %q", answer[:80])
+	if _, got := honorAnswer(t, portFor("claude-code"), bigRead); got == nil {
+		t.Fatalf("a Read result > 64 KiB was not replaced")
+	} else {
+		f, _ := got["file"].(map[string]any)
+		if got["type"] != "text" || f["filePath"] != "/p/big.txt" || f["numLines"] != float64(2000) {
+			t.Errorf("Read siblings changed: %v", got)
+		}
+		if c, _ := f["content"].(string); !strings.Contains(c, "downshift retrieve ") || len(c) >= len(big) {
+			t.Errorf("Read content not properly range-cut (len=%d vs raw=%d)", len(c), len(big))
+		}
 	}
 	var paths []any
 	for i := 0; i < 1500; i++ {
