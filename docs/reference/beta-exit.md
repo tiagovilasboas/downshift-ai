@@ -100,7 +100,7 @@ Replaces directional normalised units with a production comparison in tokens.
 
 **Earlier P3 status (2026-10-31; superseded 2026-11-02):** open. The pillar no longer measures money; Downshift does not control cost and routing does not use price. The control group is on by default (`DOWNSHIFT_CONTROL_SHARE`, default 0.10). `downshift report` compares routed and control tokens per completed task and rework. P3.7 is now a real seven-day routed-versus-control comparison in tokens on three metrics (effect, Guard 1 tokens per completed task with a 95% bootstrap interval and a 20-per-group floor, Guard 2 rework rate), published at `docs/evidence/real-seven-day-<date>.md` and tracked in issue #103. It is not a provider-billing comparison. The controlled routed-versus-control run at list prices (one operator, 2026-10-15) in [evidence/subagent-routing-ab-2026-10-15.md](../evidence/subagent-routing-ab-2026-10-15.md) is historical and does not close P3.7. ~~Earlier status (2026-10-15/2026-10-20): P3.7 required a same-period comparison with the provider dashboard using the billing comparison template; that criterion was retired on 2026-10-31.~~
 
-Historical P3.4 finding (2026-10-06; superseded counts and current provenance in the [2026-10-09 audit](../evidence/billing-gap-audit.md)): the Claude Code PostToolUse payload for an async `Agent` launch carries no token usage (`tool_response` is launch metadata only, `duration_ms` is a few ms), which is why the log has no `usage` events. The subagent transcript at `tool_response.outputFile` does carry per-message `message.model` and `message.usage` (input, output, cache creation/read; the same message id repeats while streaming, so take the last per id). It is not complete at launch time, so usage is read when the subagent stops: the SubagentStop hook (`downshift claude-code-subagent-stop`, payload `agent_id` + `agent_transcript_path`) prices it from that transcript and links it to the decision through the hashed agent id. Verified 2026-10-06 against a real transcript (18 input, 311 output, 82,900 cache tokens). It is not enabled in the maintainer `settings.json` yet, and savings stay zero while the decision's `requested_model` is `unknown`. The launch payload does carry `resolvedModel`, now recorded as an `outcome: "resolved"` honor observation (P1.7).
+Historical P3.4 finding (2026-10-06; superseded when `SubagentStop` was enabled and P3.4 closed on 2026-11-01 — see row P3.4 above and the [2026-10-09 audit](../evidence/billing-gap-audit.md)): the Claude Code PostToolUse payload for an async `Agent` launch carries no token usage (`tool_response` is launch metadata only, `duration_ms` is a few ms), which is why the early log had no `usage` events. The subagent transcript at `tool_response.outputFile` does carry per-message `message.model` and `message.usage` (input, output, cache creation/read; the same message id repeats while streaming, so take the last per id). It is not complete at launch time, so usage is read when the subagent stops: the SubagentStop hook (`downshift claude-code-subagent-stop`, payload `agent_id` + `agent_transcript_path`) prices it from that transcript and links it to the decision through the hashed agent id. Verified 2026-10-06 against a real transcript (18 input, 311 output, 82,900 cache tokens). At that time it was not enabled in the maintainer `settings.json` yet, and savings stayed zero while the decision's `requested_model` was `unknown`. The launch payload does carry `resolvedModel`, now recorded as an `outcome: "resolved"` honor observation (P1.7).
 
 ---
 
@@ -150,8 +150,7 @@ is in [benchmark/report.md](../benchmark/report.md) (sections A/B, runs
 2026-10-03). Shared-shape aggregation **underperforms** the classifier on that
 suite; per-task contrafactual is an upper bound only.
 
-This does **not** close beta exit: **P1.6**, **P2.3**, **P3.4**, **P3.7** stay
-open, and the product remains **beta**.
+This does **not** close beta exit: **P1.6**, **P2.3**, **P2.4**, **P4**, **P5.3**, and **P5.4** stay open (P3.4 closed 2026-11-01; P3.7 is non-runnable since the 2026-11-02 control-arm removal), and the product remains **beta**.
 
 ---
 
@@ -174,6 +173,16 @@ open, and the product remains **beta**.
 2. **Dogfood now:** P3.7 is not runnable since 2026-11-02 (control arm removed). P3.4 was met on 2026-11-01. P3.5 technical token-derived criterion passed on 2026-10-09; the period exit remains open.
 3. **Community:** P2.3–P2.4 exports from other operators.
 4. **Before label removal:** P1.6, P5.3–P5.4, all five pillar exit checks signed in a release note. P5.5 observed 2026-10-09 on desktop 2.21.1; Codex P1.5 remains inferred, recorded 2026-10-02.
+
+---
+
+## Runtime and validation snapshot (2026-11-18, v0.18.1)
+
+Runtime capabilities landed through `v0.18.1` (`1df38a25`, `2026-11-18`) without closing any open beta exit gate:
+
+- **Claude Code post-run compaction:** `Bash`, `Grep`/`Glob`, `WebFetch` (`updatedToolOutput`), and `mcp__*` (`updatedMCPToolOutput`) compact above 4 KB (`PostRunBalanceThreshold`), `Read` compacts middle ranges above 64 KiB (`ReadThreshold`), and `postrun` evaluates full `WouldRewriteEvent` so suppressed permission modes (`auto`, `dontAsk`, `bypassPermissions`) and background runs still compact and record in `PostToolUse`.
+- **`agent-desktop` CLI & `ponytail` telemetry:** `agent-desktop` CLI was verified locally at `1.3.1` with live Finder delta compaction (`snapshot`/`find` added to `readOnlyFamilies`; `agent-desktop` MCP remains outside the `agent-desktop` view/delta compressor). `ponytail` `OutcomeSkillUsed` telemetry (`Skill` PostToolUse matcher, strict allowlist) passed a live smoke check on Claude Code; `SkillsDir` installs the five embedded skills across all 7 code harnesses (`v0.18.1`), while non-Claude harnesses have no `Skill` hook.
+- **Open beta gates unchanged:** **P1.6** (Cursor Pro/Ultra honor), **P2.3** / **P2.4** (2+ independent operator exports), **P4** (unseen blind generalization suite), and **P5.3** / **P5.4** (quarterly Cursor/Codex revalidation) stay open; **P3.7** stays unmeasurable since the 2026-11-02 control-arm removal.
 
 ---
 

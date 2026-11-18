@@ -1,6 +1,8 @@
 # Roadmap — Downshift (execução interna)
 
-**Atualizado:** 2026-10-24  
+> **Snapshot histórico (2026-10-24, superado em `v0.18.1`, 2026-11-18).** Para o estado atual, consulte [`docs/roadmap.md`](../roadmap.md), [`docs/reference/beta-exit.md`](../reference/beta-exit.md) e [`docs/internal/gap-tasks.md`](gap-tasks.md). Desde este registro: o dashboard web (`downshift serve`, Trilha B), o DCI (`D-3`) e o grupo de controle (`D-5` / `DOWNSHIFT_NO_ROUTE`) foram removidos; `internal/archtest.TestImportGraph` (`F-5`) roda no CI; e `v0.18.0`–`v0.18.1` entregaram compactação post-run (`Bash`/`Grep`/`Glob`/`WebFetch`/`mcp__*` > 4 KB, `Read` > 64 KiB, modos `auto`/background), `agent-desktop` read-only, telemetria `OutcomeSkillUsed` (`ponytail`) e paridade de `SkillsDir` nos 7 harnesses de código.
+
+**Atualizado:** 2026-10-24 (arquivo histórico)  
 **Autor:** Tiago Vilas Boas  
 **Fonte pública:** [`docs/roadmap.md`](../roadmap.md) — este doc detalha fases, pontos e dependências por trilha.
 

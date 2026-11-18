@@ -5,14 +5,18 @@
 Downshift by Tiago Vilas Boas
 https://github.com/tiagovilasboas/downshift-ai
 
-Owner-facing plan. Status as of 2026-10-13. The public summary stays in
+Owner-facing plan. Status as of 2026-11-18 (`v0.18.1`, [release notes](../releases/v0.18.1.md)). The public summary stays in
 [roadmap.md](../roadmap.md).
 Staff review follow-up checklist: [review-2026-10-20.md](review-2026-10-20.md).
-Context protection & reasoning roadmap (empirical evolution): [roadmap-context-and-reasoning.md](roadmap-context-and-reasoning.md).
+Context protection & reasoning roadmap (empirical evolution, **Done**): [roadmap-context-and-reasoning.md](roadmap-context-and-reasoning.md).
 Performance & architecture hardening roadmap (waves W0–W5): [roadmap-perf-and-architecture.md](roadmap-perf-and-architecture.md).
-Impact roadmap (code review of 2026-11-10: Compactor blind spots, latency, proof in real use): [impact-roadmap.md](impact-roadmap.md).
+Value roadmap (compaction, proof, cheaper workers): [value-roadmap.md](value-roadmap.md).
+Impact roadmap (compactor blind spots, latency, proof in real use): [impact-roadmap.md](impact-roadmap.md).
+Compaction expansion roadmap (C1–C5, **Done in v0.18.0**): [roadmap-compaction-expansion.md](roadmap-compaction-expansion.md).
 
 **2026-11-02:** the built-in control group (P1.1) was removed by owner decision, so every spawn is routed. Where this plan says "routed vs control", that comparison is the original design and cannot be measured now. `downshift report` is routed-only.
+
+**2026-11-18 (`v0.18.0`–`v0.18.1`, `#137`–`#153`):** Compaction expansion (`C1`–`C5`), context protection (`P1`–`P3`), 4 KB post-run cut (`Bash`, `WebFetch`, `mcp__*`, `Grep`, `Glob`, `Read` > 64 KB), `agent-desktop` read-only pre-run + delta, `ponytail` + `OutcomeSkillUsed` skill telemetry, 6-gen log retention, `discover --dedup`, cross-harness `SkillsDir` parity (Claude Code, Codex, Cursor, OpenCode, Antigravity), and `web-motion` shipped. Remaining beta exit & product focus: multi-operator beta evidence ([beta-exit.md](../reference/beta-exit.md) P2), Cursor paid-plan rewrite honor (P1.6), post-`v0.18.0` 7-day compaction measurement against the [2026-11-17 projection](../evidence/compaction-projection-2026-11-17.md), and the blind outcome suite (`GAP-SUITE`).
 
 ## Positioning
 
@@ -40,12 +44,12 @@ session).
 
 | # | Milestone | Outcome | Gate to exit |
 |---|-----------|---------|--------------|
-| M0 | Trustworthy core | No silent overspend; metrics can show a loss | done 2026-10-13, see "Done" |
-| MX | Visible in the flow | The developer sees subagents and routing live, inside the harness | U1-U2 live, U3-U4 next |
-| M1 | Proof of value | "Saved $X, quality unchanged" with a CI, automatically | 2 weeks of real data, control group, report |
-| M2 | Self-correcting | Downshift raises its own tier when cheap fails | retry-rate guard live, explainable decisions |
-| M3 | Zero config, every harness | Install and it works; session models and capability learned from public data | S1-S4 live, discovery at session start |
-| M4 | Covers where the money goes | Main session and workflow agents, not only subagents | plan/execute split where the harness allows |
+| M0 | Trustworthy core | No silent overspend; metrics can show a loss | **done** 2026-10-13, see "Done" |
+| MX | Visible in the flow | The developer sees subagents, compaction, and routing live | PX.1–PX.2 & PX.4 (`downshift watch`) live; `/ds-agents` panel shipped in plugin |
+| M1 | Proof of value | Verified token savings and quality parity across operators | control arm removed 2026-11-02; remaining: multi-operator exports ([beta-exit](../reference/beta-exit.md) P2), blind outcome suite, post-`v0.18.0` 7-day check |
+| M2 | Self-correcting | Downshift raises its own tier when cheap fails | retry-rate guard & CCR anti-loop guard (`P3`) live; explainable decisions & learned scorer open |
+| M3 | Zero config, every harness | Install and it works; consistent skills, hooks, and discovery | `SkillsDir` parity (Cursor, OpenCode, Antigravity) & `kiro`/`antigravity` wiring shipped in `v0.18.1`; Cursor paid honor & session-start discovery open |
+| M4 | Covers where the money goes | Main session and workflow agents, not only subagents | Read/Grep/Glob/WebFetch/MCP post-run compaction shipped (`v0.14.0`–`v0.18.0`); main-session plan/execute & workflow hooks open |
 | M5 | Team and company | Central policy, budgets, aggregated prompt-free reporting | first team pilot |
 
 ## M0: trustworthy core (done)
@@ -70,8 +74,8 @@ each subagent's model, cost and redo inside the harness is what builds trust.
 |----|------|------------|------|---------|
 | PX.1 | Statusline session summary (U1) | live line, < 50 ms, never breaks the statusline | S | T3 |
 | PX.2 | Subagent end line (U2) | one line with model, tokens, cost, would-be cost | S | — |
-| PX.3 | `/downshift` command: session tree, why, pause (U3) | tree shows redo (↻) per subagent | M | PX.2 |
-| PX.4 | `downshift watch` replaces the `dsmon` build (U4) | same binary, every harness | M | PX.3 |
+| PX.3 | `/ds-agents` session tree & `/downshift` command (U3) | `/ds-agents` live in Claude Code mod; unified `/downshift` pending | M | PX.2 |
+| PX.4 | `downshift watch` replaces the `dsmon` build (U4) | **done** (`cmd/downshift/watch.go`), same binary, every harness | M | PX.3 |
 
 ## M1: proof of value
 
@@ -81,11 +85,13 @@ later milestone needs its numbers.
 | ID | Task | Acceptance | Size | Depends |
 |----|------|------------|------|---------|
 | P1.1 | **Removed 2026-11-02 (owner decision).** Built-in control group: a configurable share of spawns (default 10%) is classified and logged but not rewritten, chosen by a hash of the spawn id | control share within 1 pp of target over 500 spawns; `outcome: baseline`; prompt-free | M | — |
-| P1.2 | Cost per completed task: link decision, usage and child status into one task record; mark retry/respawn within the window as rework | `stats` prints cost per completed task, routed vs control, with rework counted | M | P1.1 |
-| P1.3 | Savings report with a confidence interval (bootstrap over tasks) | `downshift report --days=14` prints "saved $X (CI a..b), rework +/-y pp" | S | P1.2 |
-| P1.4 | Billing reconciliation when an admin usage key exists (Anthropic, OpenAI) | report shows catalog-priced vs provider-billed delta | M | P1.3 |
-| P1.5 | Dogfood: two weeks on the maintainer Mac with P1.1 on | report committed to `downshift-labs/research/results/` | S | P1.3 |
+| P1.2 | ~~Cost per completed task: link decision, usage and child status into one task record; mark retry/respawn within the window as rework~~ | superseded by 2026-10-31 (no money) & 2026-11-02 (no control arm); `downshift report` is tokens-only and routed-only | M | P1.1 |
+| P1.3 | ~~Savings report with a confidence interval (bootstrap over tasks)~~ | superseded with P1.1/P1.2; `downshift report --daily` / `--history` shipped in tokens | S | P1.2 |
+| P1.4 | Billing reconciliation when an admin usage key exists (Anthropic, OpenAI) | deferred / out of tokens-only scope | M | P1.3 |
+| P1.5 | ~~Dogfood: two weeks on the maintainer Mac with P1.1 on~~ | superseded; see [compaction-token-study-2026-11-16.md](../evidence/compaction-token-study-2026-11-16.md) & [post-o8-mechanical-study-2026-11-16.md](../evidence/post-o8-mechanical-study-2026-11-16.md) | S | P1.3 |
 | P1.6 | Gate the eval pin in CI (T6, option 2: vendored prompt-free summary) | CI fails when the 37/40 floor regresses | S | owner decision |
+| P1.7 | Post-`v0.18.0` 7-day compaction measurement (`downshift stats` + `discover --dedup --since=7d`) | verify [2026-11-17 projection](../evidence/compaction-projection-2026-11-17.md) (~3.5M–4.5M tokens/month projected) | S | — |
+| P1.8 | Multi-operator beta evidence ([beta-exit.md](../reference/beta-exit.md) P2) | ≥2 non-maintainer exports (`downshift export --days=7`) | M | community |
 
 ## M2: self-correcting
 
@@ -101,12 +107,13 @@ later milestone needs its numbers.
 
 | ID | Task | Acceptance | Size | Depends |
 |----|------|------------|------|---------|
-| P3.1 | Public score index (S1): Epoch AI + OpenRouter, single source per comparison, id map as data | removed with the scoreindex package (2877d995); `downshift models scores` is not in the binary | M | removed |
-| P3.2 | Setup + daily refresh (S2) | detached, never blocks a hook, `DOWNSHIFT_SCORES=off` | S | done, uncommitted |
-| P3.3 | Capability selection (S3), shadow by default | `score_would` in stats; live with `DOWNSHIFT_SCORE_ROUTING=1` | M | done, uncommitted |
-| P3.4 | Promote capability selection to live | shadow data shows lower cost per completed task, no rework increase | S | P1.2, P3.3 |
+| P3.1 | Public score index (S1): Epoch AI + OpenRouter, single source per comparison, id map as data | removed with the `scoreindex` package (`2877d995`); `downshift models scores` is not in the binary | M | removed |
+| P3.2 | Setup + daily refresh (S2) | superseded/removed with `scoreindex` (`2877d995`) | S | removed |
+| P3.3 | Capability selection (S3), shadow by default | superseded/removed with `scoreindex` (`2877d995`) | M | removed |
+| P3.4 | Promote capability selection to live | superseded with `scoreindex` removal | S | — |
 | P3.5 | Session-start discovery for Codex, Cursor, Kiro (their session-start hooks) | lists refreshed per session; `SessionFromCatalog` enabled only with evidence | M | per-harness evidence |
-| P3.6 | Docs for scores (S4) | `docs/reference/scores.md`, attribution, privacy note | S | P3.1 |
+| P3.6 | Docs for scores (S4) | superseded/removed with `scoreindex` (`2877d995`) | S | removed |
+| P3.7 | Cross-harness `SkillsDir`, `SessionIdentifier`, and `PostToolUse` parity | **done** in `v0.18.1` (`#149`, `#150`): `SkillsDir` for Cursor, OpenCode, Antigravity; `antigravity` `SessionIdentifier`; `kiro.HandlePostToolUse` | S | — |
 
 ## M4: cover where the money goes
 
@@ -130,13 +137,9 @@ later milestone needs its numbers.
 1. **P2.3** Upshift target: last id in the list (today) or smallest model that
    meets the tier (recommended).
 2. **P1.6/T6** CI gate for the eval pin: option 2 recommended.
-3. **P2.4** Spend plan usage to measure Haiku/Sonnet 5.5 (80 short calls).
+3. **P2.4** Spend plan usage to measure Haiku/Sonnet 5.5 (80 short calls) alongside the blind outcome suite (`GAP-SUITE`).
 4. `downshift-labs` suite freeze ("Congelo?").
-5. Network: the daily refresh is the first outbound call triggered by a hook
-   (anonymous GET, no user data). Keep on by default with `DOWNSHIFT_SCORES=off`,
-   or make it opt-in.
-6. **OpenRouter parts 4–6** — owner 2026-10-24: last in queue; finish M1 path,
-   compactor, harness honor, and 0.1.4 before D-1/D-2.
+5. **OpenRouter parts 4–6** — owner 2026-10-24: last in queue; finish multi-operator beta evidence, post-`v0.18.0` compaction verification, and Cursor paid-plan honor first.
 
 ## What not to do now
 
@@ -144,5 +147,4 @@ later milestone needs its numbers.
   proof and trust are.
 - Do not let a public index decide a task's tier: it measures models, not tasks.
 - Do not turn capability selection live before M1 numbers exist.
-- Do not start OpenRouter parts 4–6 before M1, compactor P1 items, and harness
-  honor land (owner 2026-10-24).
+- Do not start OpenRouter parts 4–6 before multi-operator beta evidence, post-`v0.18.0` compaction verification, and Cursor paid-plan honor land (owner 2026-10-24, updated 2026-11-18).

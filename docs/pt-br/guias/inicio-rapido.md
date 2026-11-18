@@ -11,7 +11,7 @@ Configure o **Downshift** no seu ambiente de desenvolvimento em menos de 5 minut
 ## Pré-requisitos
 
 - **Sistema Operacional:** macOS, Linux ou Windows (via WSL ou nativo)
-- **Harness de IA:** Pelo menos um agente suportado instalado no ambiente (Claude Code, Codex, Cursor, OpenCode, Antigravity ou KiroCrew)
+- **Harness de IA:** Pelo menos um agente suportado instalado no ambiente (Claude Code, Codex, Cursor, OpenCode, Antigravity, Kiro IDE ou KiroCrew)
 - **Terminal:** `bash`, `zsh` ou shell equivalente
 
 ---
@@ -52,8 +52,8 @@ downshift setup
 ```
 
 ### O que o `setup` faz:
-1. **Varredura de Harnesses:** Detecta automaticamente instalações ativas do Claude Code, Codex, Cursor, OpenCode, Antigravity e KiroCrew.
-2. **Exibição Prévia de Diff:** Mostra exatamente o que será alterado ou adicionado nos arquivos de configuração do seu usuário (por exemplo, ganchos de `PreToolUse`, registro do servidor MCP e skills de orquestração).
+1. **Varredura de Harnesses:** Detecta automaticamente instalações ativas do Claude Code, Codex, Cursor, OpenCode, Antigravity, Kiro IDE e KiroCrew.
+2. **Exibição Prévia de Diff:** Mostra exatamente o que será alterado ou adicionado nos arquivos de configuração do seu usuário (por exemplo, ganchos de `PreToolUse` / `PostToolUse`, registro do servidor MCP e skills como `ponytail` nos harnesses que declaram `SkillsDir`).
 3. **Confirmação Explícita:** Nada é gravado em disco sem o seu consentimento.
 4. **Criação de Backup:** Antes de qualquer alteração, o Downshift cria um backup dos arquivos originais permitindo restauração imediata com `downshift setup --undo`.
 
@@ -75,7 +75,7 @@ downshift doctor
 
 O `doctor` realiza um diagnóstico detalhado:
 - ✅ **Binário:** Verifica se o executável `downshift` está acessível no `PATH`.
-- ✅ **Hooks:** Inspeciona se os ganchos interceptores estão instalados e configurados corretamente para cada harness ativo.
+- ✅ **Hooks:** Inspeciona se os ganchos interceptores estão instalados e configurados corretamente para cada harness ativo (e exibe os limiares do compactor, como `outputs over 16 KB (post-run over 4 KB)`).
 - ✅ **Diretório de Estado:** Valida permissões de leitura e escrita em `~/.downshift/`.
 - ✅ **Servidor MCP:** Testa a prontidão das 13 ferramentas nativas expostas pelo Downshift.
 
@@ -181,5 +181,5 @@ Agora que seu ambiente está configurado e validado, aprofunde-se nos recursos a
 
 - 📦 [Guia de Compactação e CCR](compactacao-e-ccr.md) — Saiba como customizar regras de compactação e retenção de logs.
 - 🔀 [Guia de Roteamento de Modelos](roteamento-de-modelos.md) — Aprenda a criar regras personalizadas em `policy.json`.
-- 📊 [Referência de Benchmarks](../referencia/benchmarks.md) — Veja os dados oficiais de performance e economia em 113 fixtures.
+- 📊 [Referência de Benchmarks](../referencia/benchmarks.md) — Veja os dados oficiais de performance e economia em 121 fixtures.
 - 📖 [Hub Principal PT-BR](../README.md) — Voltar à página principal de documentação.

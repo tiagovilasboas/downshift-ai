@@ -5,24 +5,29 @@
 Downshift by Tiago Vilas Boas\
 https://github.com/tiagovilasboas/downshift-ai
 
-Follows the [impact roadmap](impact-roadmap.md). Targets the remaining compaction
-gaps across `execwrap` (command allowlist & compressor wiring) and `postrun`
-(`PostToolUse` shell extraction, large `Read` range-cuts, and CCR-backed fallback
-compaction).
+**Status: Done in `v0.18.0` (`2026-11-17`, `#137`–`#147`) with follow-on fixes in `v0.18.1` (`2026-11-18`, `#149`–`#150`).**
 
-Every task is capped at **5 story points**, ships as one independent PR passing
-`make check`, and any binary change fills [coverage.md](../contrib/coverage.md)
-first. At most three PRs are open at once.
+Follows the [impact roadmap](impact-roadmap.md). Targeted the compaction
+gaps across `execwrap` (command allowlist & compressor wiring) and `postrun`
+(`PostToolUse` shell extraction, large `Read` range-cuts, `WebFetch`/`mcp__*`,
+and CCR-backed fallback compaction from 4 KB).
+
+- **Shipped (`v0.18.0`):** `C1` (`#144`), `C2` (`#137`, widened further in `#142`/`#147`), `C3` (`#140`), `C4 / M3` (`#138`), and `C5` (`#140`, `#143`, `#145`, `#146`, `#147`).
+- **Follow-on (`v0.18.1`):** `WouldRewriteEvent` evaluation for `PostToolUse` in suppressed permission modes and background runs, `agent-desktop` read-only classification, `direct`/retrieval token accounting (`#149`), and 6-generation rotated log retention (`#150`).
+- **Remaining verification:** Post-release 7-day measurement (`downshift stats` and `downshift discover --dedup --since=7d`) against the [2026-11-17 compaction projection](../evidence/compaction-projection-2026-11-17.md) (~3.5M–4.5M tokens/month projected vs ~1.0M baseline; not yet measured post-release).
+
+Every task was capped at **5 story points**, shipped as independent PRs passing
+`make check` with [coverage.md](../contrib/coverage.md) filled first.
 
 ## Tasks (C1–C5)
 
-| ID | Task | Pts | Wave | Depends on |
-|---|---|---|---|---|
-| C1 | Wire 8 existing unwired compressors into `expected_format.go` | 2 | Wave 1 | — |
-| C2 | Widen `maxCommandBytes` (`512` → `2048`) in `policy.go` and `SimpleFamily` | 2 | Wave 1 | — |
-| C3 | Extract inner/leading allowlisted `Family` in `compactShell` (`PostToolUse`) | 3 | Wave 2 | C2 |
-| C4 / M3 | `Read` > 64 KB range-cut preserving verbatim lines, line numbers, and CCR `retrieve id` | 5 | Wave 1 | — |
-| C5 | Lower-threshold `PostToolUse` fallback (`BalanceLog` / `FormatGeneric`) for `FamilyNone` + high-volume cloud/gh-api/kubectl-describe compressors | 3 | Wave 2 | C3 |
+| ID | Task | Pts | Wave | Status | Shipped |
+|---|---|---|---|---|---|
+| C1 | Wire existing unwired compressors into `expected_format.go` (`terraform plan`, `cargo clippy`, `cargo tree`, `docker logs`, `kubectl logs`, `composer`, `artisan`/`sail artisan`, `az pipelines`) | 2 | Wave 1 | **Done** | `v0.18.0` (`#144`) |
+| C2 | Widen `maxCommandBytes` (`512` → `2048`) in `policy.go` and `SimpleFamily` (plus `;`/`&&`, quoted globs, known bin dirs, bare `\| head`/`\| tail`) | 2 | Wave 1 | **Done** | `v0.18.0` (`#137`, `#142`, `#147`) |
+| C3 | Extract inner/leading allowlisted `Family` in `compactShell` (`PostToolUse`) + auto-mode `WouldRewriteEvent` fix | 3 | Wave 2 | **Done** | `v0.18.0` (`#140`), `v0.18.1` (`#149`) |
+| C4 / M3 | `Read` > 64 KB range-cut preserving verbatim lines, line numbers, and CCR `retrieve id` | 5 | Wave 1 | **Done** | `v0.18.0` (`#138`) |
+| C5 | 4 KB `PostToolUse` fallback (`PostRunBalanceThreshold`), JSON pruning (`gh api`/`curl`), `gh pr checks`/`diff`, git lists/`wc`, large `git diff`/`show`/`status`, `WebFetch`/`mcp__*`, read-only `downshift` CLI, `discover --dedup` | 3 | Wave 2 | **Done** | `v0.18.0` (`#140`, `#141`, `#143`, `#145`, `#146`, `#147`) |
 
 ## Parallelization Matrix
 
@@ -40,7 +45,7 @@ predecessors land.
 
 ## Task Specifications
 
-### C1 — Wire 8 existing unwired compressors (2 SP, Wave 1)
+### C1 — Wire existing unwired compressors (2 SP, Wave 1 — **Done in `#144`, `v0.18.0`**)
 
 - **Problem:** Eight compressors already implemented in `internal/compressor` are
   not mapped in `internal/execwrap/expected_format.go`, so allowlisted runs
@@ -57,7 +62,7 @@ predecessors land.
     `internal/execwrap/expected_format.go`.
   - `make check` passes (`go test ./internal/execwrap/...` and cross-OS `go vet`).
 
-### C2 — Widen `maxCommandBytes` from `512` to `2048` (2 SP, Wave 1)
+### C2 — Widen `maxCommandBytes` from `512` to `2048` (2 SP, Wave 1 — **Done in `#137`, `v0.18.0`**)
 
 - **Problem:** Long but valid allowlisted commands (e.g., multi-flag test runs,
   long paths, or `gh`/`kubectl` invocations) exceed `maxCommandBytes = 512` and
@@ -74,11 +79,11 @@ predecessors land.
   - Commands > 2048 bytes still fail safe as `too_long`.
   - `make check` passes.
 
-### C3 — Extract inner/leading allowlisted `Family` in `compactShell` (3 SP, Wave 2)
+### C3 — Extract inner/leading allowlisted `Family` in `compactShell` (3 SP, Wave 2 — **Done in `#140`, `v0.18.0`**; `#149`, `v0.18.1`)
 
-- **Problem:** `internal/postrun/postrun.go` (`compactShell`) currently calls
-  `execwrap.SimpleFamily(in.Command)`, which rejects safe compound, quoted, or
-  absolute-path commands and falls back to `DetailNoCompressor`.
+- **Problem:** `internal/postrun/postrun.go` (`compactShell`) originally called
+  `execwrap.SimpleFamily(in.Command)`, which rejected safe compound, quoted, or
+  absolute-path commands and fell back to `DetailNoCompressor`.
 - **Target files & symbols:**
   - `internal/postrun/postrun.go`: update `compactShell(in hookport.ToolOutput, o Options) Result`
     to extract the inner or leading allowlisted `execwrap.Family` for safe
@@ -93,7 +98,7 @@ predecessors land.
   - Unsafe metacharacters or unrecognized commands still fail open safely.
   - `make check` passes.
 
-### C4 / M3 — `Read` > 64 KB range-cut (5 SP, Wave 1)
+### C4 / M3 — `Read` > 64 KB range-cut (5 SP, Wave 1 — **Done in `#138`, `v0.18.0`**)
 
 - **Problem:** Large `Read` outputs (> 64 KB) enter context whole, while
   rewriting or truncating individual lines breaks subsequent `Edit` tool
@@ -116,7 +121,7 @@ predecessors land.
     reformatted text.
   - `Read` outputs <= 64 KB pass through untouched; `make check` passes.
 
-### C5 — Lower-threshold `PostToolUse` fallback & high-volume compressors (3 SP, Wave 2)
+### C5 — Lower-threshold `PostToolUse` fallback & high-volume compressors (3 SP, Wave 2 — **Done in `#140`/`#143`/`#145`/`#146`/`#147`, `v0.18.0`**)
 
 - **Problem:** Commands classified as `other` (`execwrap.FamilyNone`) and
   high-volume cloud/API/cluster inspection outputs (`gh api`, `kubectl describe`,

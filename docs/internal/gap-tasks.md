@@ -3,7 +3,7 @@
 Downshift by Tiago Vilas Boas
 https://github.com/tiagovilasboas/downshift-ai
 
-Execution snapshot: **2026-10-09** (open items from the 2026-10-11 review are listed at the end). These are the remaining tasks from the runtime
+Execution snapshot: **2026-10-09** (synced **2026-11-18** against `v0.18.1`, `1df38a25`; open items from the 2026-10-11 review and 2026-11-11 compactor review are tracked below). These are the remaining tasks from the runtime
 and evidence review, linked to [beta exit](../reference/beta-exit.md). Code shipped, native
 data collected, rewrite emitted, and executor model observed are separate states.
 Close a task only with its acceptance evidence and a date.
@@ -22,10 +22,10 @@ dependency and next action. Fixtures do not establish a live integration.
 - [ ] GAP-CODEX-HOOK — actual native collector path. 2026-11-11: `codex exec` 0.163.0 with `hooks` and `multi_agent_v2` on ran a spawn and a shell call and fired no hook; the `^Bash$` PreToolUse group has no trust entry ([evidence](../evidence/codex-hook-payloads-2026-11-11.md)). Next: trust the hooks with `/hooks` in an interactive session and repeat.
 - [ ] GAP-CLAUDE-QUOTA — actual statusline observation.
 - [x] GAP-USAGE-COUNT — accurate linked usage and unknown baseline.
-- [ ] GAP-USAGE-50 / P3.4 — 50 genuinely linked usage records.
+- [x] GAP-USAGE-50 / P3.4 — 50 genuinely linked usage records (365 usage events linked to 315 decisions, 2026-11-01; see [beta-exit.md](../reference/beta-exit.md)).
 - [x] GAP-COST-NONZERO / P3.5 — token-derived non-zero savings.
-- [ ] GAP-CONTROL / P3.6 — comparable real control observations.
-- [ ] GAP-PERIOD-REPORT / P3.7 — dated comparison.
+- [x] GAP-CONTROL / P3.6 — shipped then removed 2026-11-02 (owner decision: no control arm / `DOWNSHIFT_NO_ROUTE` exists).
+- [ ] GAP-PERIOD-REPORT / P3.7 — dated comparison (cannot be measured as designed since 2026-11-02 control-arm removal).
 - [ ] GAP-USAGE-UPSTREAM / P3.8 — supported child usage sources.
 - [ ] GAP-EXTERNAL / P2.3 — independent operator evidence.
 
@@ -50,7 +50,7 @@ research repo. Each item closes only with dated evidence.
 - [ ] GAP-CODEX-REVALIDATE / P5.4 — dated schema/runtime recheck.
 - [x] GAP-REPORT-COUNTS — applied counts across dashboard tabs.
 - [x] GAP-FINAL-QA — local integrated gate; remote CI remains separate.
-- [ ] GAP-GRAPHIFY / P4.8 — deferred 2026-10-09; optional and out of this close-out. Not done.
+- [ ] GAP-GRAPHIFY / P4.8 — removed from product 2026-10-17; out of scope.
 
 ## Model availability, quota, and executor
 
@@ -75,10 +75,10 @@ only to their reported scope. Remaining quota does not reserve the next call.
 | ID | Status / owner | Acceptance and next action | Dependency / evidence |
 |---|---|---|---|
 | GAP-USAGE-COUNT | done 2026-10-09 / Full-stack + QA | Make `usage_linked` count actual resolved links; retain a separate raw usage count. Unknown baseline must not impersonate a measured baseline. Cover orphan, duplicate, harness/session mismatch and window boundaries. | QA PASS: `usage_records` retains 15 raw records; `usage_linked` counts 5 resolved unique agents. Unknown baselines retain actual cost without fabricating savings. Orphan, duplicate, scope and window regressions passed. |
-| GAP-USAGE-50 / P3.4 | pending / dogfood + QA | At least 50 real usage records linked to prior routing decisions, with agent deduplication and dated provenance. | Pre-fix 7-day audit: 15 usage records, **5 resolvably linked unique agents**. Collect genuine completed work; do not manufacture paid calls to meet the count. |
+| GAP-USAGE-50 / P3.4 | done 2026-11-01 / dogfood + QA | At least 50 real usage records linked to prior routing decisions, with agent deduplication and dated provenance. | Closed 2026-11-01 per [beta-exit.md](../reference/beta-exit.md) P3.4: 365 usage events linked to 315 distinct prior decisions between 2026-10-21 and 2026-11-01 in the maintainer's event log. |
 | GAP-COST-NONZERO / P3.5 | done, technical criterion, 2026-10-09 / QA | Verify non-zero savings from native tokens, known baseline/routed models and catalog pricing; preserve assumptions. | Post-fix audit preserved **$0.424866** calculated savings. Five linked records match native transcript models/tokens, including both positive-saving records. [Audit](../evidence/billing-gap-audit.md). Billing-dashboard input is not required by this calculation. |
-| GAP-CONTROL / P3.6 | pending / dogfood | Collect real `DOWNSHIFT_NO_ROUTE=1` control observations for comparable work and period. | Mechanism shipped; current 7-day audit has **0 baseline records**. Use deliberately scoped real control work; do not change defaults globally. |
-| GAP-PERIOD-REPORT / P3.7 | pending / dogfood + docs | Run a real seven-day routed-versus-control comparison in tokens (effect, Guard 1 tokens per completed task with a 95% bootstrap interval and a 20-per-group floor, Guard 2 rework rate) and publish `docs/evidence/real-seven-day-<date>.md`. No money is measured. | Tracked in the seven-day comparison issue and [beta-exit.md](../reference/beta-exit.md) P3.7. Controlled before/after claims need GAP-CONTROL. Changed 2026-10-31 (owner decision): was a provider-dashboard/invoice reconciliation. |
+| GAP-CONTROL / P3.6 | removed 2026-11-02 / owner decision | Collect real `DOWNSHIFT_NO_ROUTE=1` control observations for comparable work and period. | Shipped then removed 2026-11-02 (owner decision): every spawn is routed and `DOWNSHIFT_CONTROL_SHARE` / `DOWNSHIFT_NO_ROUTE` do nothing. |
+| GAP-PERIOD-REPORT / P3.7 | unmeasurable since 2026-11-02 / dogfood + docs | Run a real seven-day routed-versus-control comparison in tokens (effect, Guard 1 tokens per completed task with a 95% bootstrap interval and a 20-per-group floor, Guard 2 rework rate) and publish `docs/evidence/real-seven-day-<date>.md`. No money is measured. | Cannot be measured as designed since the 2026-11-02 control-arm removal (issue #103 closed); `downshift report` is routed-only. See [beta-exit.md](../reference/beta-exit.md) P3.7. |
 | GAP-USAGE-UPSTREAM / P3.8 | blocked / Full-stack | Consume native Codex/Cursor child token usage when a supported actual source exposes it and can be linked to a decision. | Track native schemas and add fixtures plus live linkage evidence. Quota percentages are not per-child token usage. |
 
 `internal/telemetry/cost.go` prices provider-reported tokens at catalog list rates;
@@ -99,7 +99,7 @@ this computation; the separate beta period-report criterion remains tracked.
 | GAP-CODEX-REVALIDATE / P5.4 | pending / Full-stack + QA | Revalidate actual `multi_agent_v2` hook schema and spawn behavior quarterly and after relevant changes. | Schema fixtures are sensors; a dated runtime sample of hook schema and spawn behavior is needed before refreshing the matrix. [2026-10-09 recheck](../evidence/closeout-recheck-2026-10-09.md) records spawn input keys only. Hook stdin was not observed, so the matrix row stays at 2026-10-02. |
 | GAP-REPORT-COUNTS | done 2026-10-09 / QA | Confirm All and per-harness tabs count applied shifts consistently and held verdicts do not inflate savings. | Fix shipped: server `applied` flag and dashboard filter. Current API/renderer regressions PASS, including held exclusion and empty harness. Historical browser evidence used the old verdict count; no new browser E2E is claimed. |
 | GAP-FINAL-QA | done, local only, 2026-10-09 / QA | Run Go/race/vet, native bridge decoder, precedence/freshness/isolation/tier regressions and adversarial evidence-sensor tests; return PASS/BLOCK with runtime limits. | [Final report](../evidence/final-gap-qa.md): PASS for bounded implementation and evidence. Local results do not establish remote CI success or beta graduation. |
-| GAP-GRAPHIFY / P4.8 | deferred 2026-10-09 / optional | Keep optional graph command/MCP work separate and measure routing effect before claiming it. | Deferred, not done. Not a dependency for quota routing, discovery or executor acknowledgement. No expansion in this close-out. |
+| GAP-GRAPHIFY / P4.8 | removed 2026-10-17 / out of scope | Keep optional graph command/MCP work separate and measure routing effect before claiming it. | Graphify removed from the product on 2026-10-17; out of scope. |
 
 ## Execution record and closure
 
@@ -156,3 +156,14 @@ An audit of the compactor against five failure classes (savings overstated, exit
 - [x] CMP-MARKER-FLOOR (P3, 2 pts) — no byte floor: an output is compacted whenever summary plus marker is shorter (`compact.go`), and the marker (61 to 70 bytes) is most of a short summary (12-package `go test`: 279 to 101 bytes). Decide between a shorter marker for small outputs and leaving outputs raw below a floor; measure both on the bench corpus and keep the one that cuts more tokens. Done: closed, not built. Over the 113 bench fixtures and 528 real compacted rows: a raw floor always adds bytes (an output is compacted only when summary plus marker is already shorter; floor 300 B: 93,941 to 95,384 corpus, 2,762,431 to 2,767,872 real, and 15 real rows lose their retrieve hint); a shorter marker saves 2.9% on the corpus but 0.6% on real rows, and the marker prefix and retrieve hint are parsed by the post-run skip, the desktop delta and the transcript scan. The marker stays.
 - [x] CMP-LINE-CAP (P2, 2 pts to decide) — measured, closed, not built (2026-11-12). Shell output without a file read, 14 days of Claude Code transcripts: bytes past 300 per line are the largest shape left that no family or task covers. A per-line cap under 16 KB was simulated against a proxy: a token of 12 or more characters, found only in the cut part, that one of the next 10 calls or replies uses. A 300-byte cap cuts 5,050 outputs and saves 3.23 MB, but 262 of them (5.2%) were needed later. Longer caps save less and are needed more often: 600 bytes 1.65 MB and 8.6%, 1,200 bytes 0.92 MB and 10.9%, 2,400 bytes 0.52 MB and 13.5%. Long lines are JSON, script dumps and search rows that carry the identifier the agent looks for. This misses the bar the search cut met (no needed row at 25 per file), so the line cap stays above 16 KB only. In the same data, exact repeats of a result inside one session were 0.2% once copied histories of resumed sessions were dropped, and `cd dir && <one plain command>` was 3.4%, mostly file reads.
 - Closed, not built (2026-11-11): line or commit caps on `git diff` and `git log` (an edit needs every changed line; the balanced cut bounds size); Read-tool compaction of lockfiles and large JSON (none in a 14-day sample of 300 transcripts); injecting flags such as `-json` into the user's command.
+
+## Sync update (2026-11-18, v0.18.1)
+
+Runtime and parity changes landed through `v0.18.1` (`1df38a25`, `2026-11-18`):
+
+- **Claude Code post-run compaction (`v0.18.0`–`v0.18.1`):** balanced post-run threshold lowered from 16 KB to 4 KB (`Bash`, `Grep`/`Glob`, `WebFetch` via `updatedToolOutput`, `mcp__*` via `updatedMCPToolOutput`), `Read` > 64 KiB middle-range cut (`postrun.ReadThreshold`), and `WouldRewriteEvent` evaluation in `postrun` so commands skipped as `not_read_only` in `auto`/`dontAsk`/`bypassPermissions` or background runs still compact and record in `PostToolUse`.
+- **Accounting and log retention (`v0.18.1`):** `DirectCompactor` classifies by `Entry == "direct"`, secondary CCR `KeptIDs` and `RoutingTokensWithLookup` preserve cross-window linkage, and rotated `exec-events.jsonl` retains 6 generations (`.1`..`.6`).
+- **`agent-desktop` CLI verified locally at `1.3.1`:** live Finder delta compaction verified via CLI, and `agent-desktop` (`snapshot`/`find`) added to `readOnlyFamilies` (`v0.18.1`). `agent-desktop` MCP remains outside the `agent-desktop` view/delta compressor.
+- **`ponytail` / skills parity (`v0.18.1`):** `OutcomeSkillUsed` (`Skill` PostToolUse matcher, strict allowlist, `Adoption.Skills` count display) verified via live smoke on Claude Code; `SkillsDir` installs the five embedded skills (`downshift-audit`, `downshift-orchestrator`, `downshift-effort`, `downshift-squad`, `ponytail`) across all 7 code harnesses (`claude-code`, `cursor`, `opencode`, `codex`, `kiro`, `antigravity`, `kirocrew`), with `Skill` telemetry wired on Claude Code only.
+- **Cross-harness adapter parity (`v0.18.1`):** `kiro.HandlePostToolUse` (`MainToolEvent`, context sensor, child-end parsing; live PostToolUse capture still open under `GAP-PAYLOADS`) and `antigravity.SessionIdentifier` wired (`conversationId`/`sessionId`/`session_id`).
+- **Open beta gates unchanged:** `GAP-CURSOR-HONOR` (`P1.6`), `GAP-EXTERNAL` (`P2.3`), `GAP-README-DATA` (`P2.4`), `GAP-GENERALIZATION` (`P4`), `GAP-CURSOR-REVALIDATE` (`P5.3`), and `GAP-CODEX-REVALIDATE` (`P5.4`) remain strictly open.

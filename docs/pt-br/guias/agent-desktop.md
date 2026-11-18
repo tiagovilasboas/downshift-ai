@@ -40,9 +40,9 @@ lidos de volta com `downshift retrieve` são descontados, como em qualquer famí
 
 | Onde | O que fazer |
 | --- | --- |
-| Claude Code com o hook do Downshift | Nada. `agent-desktop snapshot ...` e `agent-desktop find ...` são reescritos para `downshift compact` com a sessão. |
+| Claude Code (e harnesses com reescrita pré-execução somente leitura) | Nada. Desde a v0.18.1, `agent-desktop snapshot` e `agent-desktop find` pertencem às famílias somente leitura e são reescritos para `downshift compact` com a sessão. |
 | Qualquer outro harness, ou um script | Rode `downshift compact -- agent-desktop snapshot --app Files -i`. Os dois passos valem; o delta usa o diretório de trabalho como escopo. |
-| `agent-desktop mcp` (ferramentas MCP) | Não compacta: o Downshift não vê o resultado de ferramentas MCP. Use a forma de linha de comando. |
+| `agent-desktop mcp` (ferramentas MCP) | Não recebe a compactação por esquema nem o delta do `agent-desktop` (no Claude Code, saídas `mcp__*` acima de 4 KB passam apenas pelo corte balanceado pós-execução). Use a forma de linha de comando. |
 
 Só `snapshot` e `find` são reescritos, com o subcomando primeiro. Ações (`click`, `type`, ...) nunca. Uma
 leitura que falhou (`"ok": false`, saída 1) passa byte a byte.

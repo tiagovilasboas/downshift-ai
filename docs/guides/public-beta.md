@@ -10,12 +10,12 @@ a real operator. It is not a release announcement.
 
 | Surface | Claim that matches the code |
 |---------|-----------------------------|
-| Claude Code | Primary path. PreToolUse can rewrite a subagent model. Honor evidence exists for one paid session (2026-10-06) via the child transcript model, not an invoice. `SubagentStop` records transcript token counts and model; current Downshift reports show no dollar amount (`internal/adapters/claudecode/subagentstop_test.go`). |
-| Codex | Functional wire path. Honor write-up is inferred (2026-10-02), not a billing receipt. |
-| Cursor | Experimental wire path. **Rewrite honored is not closed** (beta-exit P1.6). Do not treat a hook JSON rewrite as proof the child ran that model. |
-| KiroCrew, Antigravity | Experimental. Matrix rows stay honest when a plan drops the rewrite. |
+| Claude Code | Primary path (`Supported` tier, `Completed` status). PreToolUse can rewrite a subagent model and allowlisted commands; `PostToolUse` compacts shell, search, `WebFetch`, and `mcp__*` outputs over 4 KB and `Read` over 64 KB (including suppressed permission modes and background runs). Honor evidence exists for one paid session (2026-10-06) via the child transcript model, not an invoice. `SubagentStop` records transcript token counts and model; current Downshift reports show no dollar amount (`internal/adapters/claudecode/subagentstop_test.go`). |
+| Codex | `Beta` tier (`Functional` status). Rewrite emitted; honor write-up is inferred (2026-10-02), not a billing receipt. Needs the hooks feature flag and `/hooks` trust. |
+| OpenCode, KiroCrew, Kiro IDE | `Beta` tier. OpenCode routes and reports child usage via the bridge plugin; KiroCrew (`Functional`) enforces policy blocks/retries (no in-place rewrite); Kiro IDE (`Functional`) is observation-only (`PostToolUse` wired). |
+| Cursor, Antigravity | `Experimental` tier. **Cursor rewrite honored is not closed** (beta-exit P1.6); Antigravity has one observed child on one build and session IDs wired. Do not treat a hook JSON rewrite as proof the child ran that model. |
 | Classifier | Deterministic regex (EN + PT) plus an in-process FNV hash boost. No Graphify, no E5, no external MiniLM command. |
-| Usage reporting | `stats`, `report` and `stats --export` report observed tokens; they show no dollar amount. `report` shows routed spawns only: billable tokens per completed task and rework. It is not a billing comparison and shows no saving. |
+| Usage reporting | `stats`, `report` and `stats --export` report observed tokens and `ponytail` skill adoption (`downshift stats`); they show no dollar amount. `report` shows routed spawns only: billable tokens per completed task and rework. It is not a billing comparison and shows no saving. |
 
 Local checks that do not spend provider credit:
 

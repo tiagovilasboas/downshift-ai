@@ -3,11 +3,13 @@
 Public direction for the open-source project. Timelines are indicative.
 
 **Status:** beta — exit criteria in [docs/reference/beta-exit.md](reference/beta-exit.md).  
+**Latest release:** [v0.18.1](releases/v0.18.1.md) (2026-11-18) · [v0.18.0](releases/v0.18.0.md) (2026-11-17).  
 **Product roadmap (owner, milestones and tasks):** [docs/product/roadmap.md](product/roadmap.md) · [Context & reasoning](product/roadmap-context-and-reasoning.md)  
 **Value roadmap (compaction, proof, cheaper workers, 2026-11):** [docs/product/value-roadmap.md](product/value-roadmap.md)  
 **Impact roadmap (blind spots, latency, proof in real use, 2026-11-10):** [docs/product/impact-roadmap.md](product/impact-roadmap.md)  
+**Compaction expansion (C1–C5, shipped in v0.18.0):** [docs/product/roadmap-compaction-expansion.md](product/roadmap-compaction-expansion.md)  
 **Maintainer execution:** [docs/internal/launch-waves.md](internal/launch-waves.md) (see [publishing boundaries](reference/publishing-boundaries.md)).  
-**Latest handoff (open PRs, findings, next steps):** 2026-11-02, routing, compactor and MCP ([milestone](https://github.com/tiagovilasboas/downshift-ai/milestone/1)).
+**Milestone tracker:** [milestone 1](https://github.com/tiagovilasboas/downshift-ai/milestone/1).
 
 Downshift by Tiago Vilas Boas\
 https://github.com/tiagovilasboas/downshift-ai
@@ -36,15 +38,16 @@ product priorities, not a claim of equal release readiness across the three.
 
 | Theme | Deliverable |
 |-------|-------------|
-| Harness routing | Stable PreToolUse rewrites + adapter coverage |
-| Honest telemetry | `rewrite_emitted` vs harness-reported honor (`resolved`) |
+| Harness routing | Stable PreToolUse rewrites + adapter coverage; cross-harness `SkillsDir` parity (Claude Code, Codex, Cursor, OpenCode, Antigravity) and `kiro` `PostToolUse` wiring (`v0.18.1`) |
+| Compaction & CCR | Native `downshift compact` + Claude Code `PostToolUse` compaction from 4 KB (`Bash`, `WebFetch`, `mcp__*`, `Grep`, `Glob`, and `Read` > 64 KB), 2 MB CCR spooling + `retrieve`, 6-gen log retention, `agent-desktop` snapshot/delta, and `discover --dedup` (`v0.18.0`–`v0.18.1`) |
+| Honest telemetry | `rewrite_emitted` vs harness-reported honor (`resolved`), `doctor` post-run honor check, and `OutcomeSkillUsed` skill telemetry (`ponytail`, `v0.18.1`) |
 | Project controls | Optional per-project tier floor (`.downshift/policy.json`), counted in `stats`; how a child ended (`child_ended`) |
 | Session discovery | `downshift models discover` per harness ([session-discovery.md](reference/session-discovery.md)); Cursor and Antigravity sources, catalog as an opt-in fallback |
 | Safe by default | Doubt never spends money (R7, R8, semantic boost capped); inferred session on Claude Code; `SEMANTIC_BOOST` provenance and a frontier-on-doubt alarm in `stats` |
-| Real cost | SubagentStop usage linkage (Claude Code); expand as harnesses expose usage |
-| Tokens first | Live views show tokens moved to cheaper models (work and cache apart), per agent, agent type and session; `downshift report` compares routed and control tokens per completed task, with no dollar output |
+| Real cost | SubagentStop usage linkage (Claude Code); OpenCode step usage; expand as other harnesses expose usage |
+| Tokens first | Live views show tokens moved to cheaper models (work and cache apart), per agent, agent type and session; `downshift report` is routed-only (per harness, `--daily`, `--history`, Compactor net of `retrieve`, no dollar output) |
 | Evaluation | Public [benchmark/report.md](benchmark/report.md); full regression in maintainer downshift-labs; shadow observation |
-| Docs | User docs (install, session models), [classifier contrib](contrib/classifier.md), misroute workflow |
+| Docs | User docs (install, session models, `ponytail`, `web-motion`), PT-BR hub, [classifier contrib](contrib/classifier.md), misroute workflow |
 | Eval rigor | [router-generalization](design/router-generalization.md) summary; detailed study in labs |
 
 **Beta exit blockers (community / dogfood):** see [beta-exit.md](reference/beta-exit.md)
@@ -60,14 +63,17 @@ pillars P2 (multi-user exports) and P3 (routed-versus-control token comparison).
 | P0 | ~~State directory `~/.downshift`~~ — done ([config.md](guides/config.md)) |
 | P1 | ~~Condensed docs~~ — [WHEN-TO-USE](guides/when-to-use.md), trimmed [ROUTING-V2](design/routing-v2.md) |
 | ~~P0~~ | ~~Opt-in `downshift exec`~~ — superseded: the native compactor (`downshift compact`) is on by default with the plugin, `"exec": false` turns it off. Families: go test, git status, pytest, vitest, jest, tsc, cargo test, playwright, phpunit, next build, Gradle, Maven, Flutter/Dart. The conformance suite gates every family. |
-| P1 | Child-token payloads for Cursor, Codex, OpenCode, KiroCrew and Antigravity so tokens-first views cover them (today `stats` shows all five as unobserved); Codex tier order decision |
-| P1 | More harness matrix rows (Cursor paid plans, etc.) |
+| ~~P0~~ | ~~Compaction expansion (`v0.18.0`–`v0.18.1`, `#137`–`#153`)~~ — done: 4 KB post-run cut, `WebFetch`/`mcp__*`/`Read` > 64 KB compaction, 9 additional command families (`terraform plan`, `cargo clippy`, `cargo tree`, `docker logs`, `kubectl logs`, `composer`, `artisan`/`sail artisan`, `az pipelines`), JSON pruning (`gh api`/`curl`), `gh pr checks`/`diff`, git lists/`wc`, large `git diff`/`show`/`status`, `downshift` read-only CLI compaction, `discover --dedup`, `agent-desktop` read-only pre-run/compact+delta, `ponytail` + `OutcomeSkillUsed`, 6-gen log retention, cross-harness `SkillsDir` parity, and `web-motion` skill |
+| P1 | Multi-operator beta evidence ([beta-exit.md](reference/beta-exit.md) P2): 2+ independent operators running hooks 1 week and sharing `downshift export --days=7` |
+| P1 | Post-release 7-day compaction check against the [2026-11-17 projection](evidence/compaction-projection-2026-11-17.md) (~3.5M–4.5M tokens/month projected vs ~1.0M baseline; unmeasured post-release) |
+| P1 | Child-token payloads for Cursor, Codex, KiroCrew and Antigravity so tokens-first views cover them (today `stats` shows them as unobserved); Codex tier order decision |
+| P1 | More harness matrix rows (Cursor Pro/Ultra usage-based rewrite honor proof — beta-exit P1.6, etc.) |
 | ~~P1~~ | **OpenRouter parts 4–6 deferred (owner 2026-10-24):** shadow routing, OpenCode wiring (`openrouter/<slug>`), live rewrite behind a flag — after M1 proof, compactor backlog, and harness honor. Parts 1–3 merged or in review |
 | ~~P1~~ | ~~DCI hook through the shared runner~~ — dropped: code intelligence (DCI) was removed on 2026-11-01 (#720) |
 | P1 | Optional: container image on GHCR |
-| P1 | Control group: 14 completed tasks against a minimum of 20 per group (`downshift report`), before any routing-cost claim |
+| ~~P1~~ | ~~Control group: 14 completed tasks against a minimum of 20 per group (`downshift report`), before any routing-cost claim~~ — removed 2026-11-02 by owner decision (every spawn is routed; `downshift report` is routed-only; see [beta-exit.md](reference/beta-exit.md#pillar-3--routed-versus-control-comparison-tokens-only)) |
 | P1 | Publish the real-use measurement behind the "up to ~53% fewer tokens per task" figure as a file under `docs/evidence/` (1 pt): KiroCrew, 2026-10-21, routing and compactor combined, 6 control tasks, one session, plus the routing-only ~24% from the four-arm Claude Code test (46 runs). Third parties already quote the figure (the Montanha Tech site), so it needs a durable source with method and sample size, and it keeps the "directional, not definitive" qualifier |
-| P1 | Independent outcome suite and cost per completed task before any tier-memory promotion ([gap-tasks](internal/gap-tasks.md): GAP-SUITE, GAP-MEMORY-COUNTS) |
+| P1 | Independent blind outcome suite and cost per completed task before any tier-memory promotion ([gap-tasks](internal/gap-tasks.md): GAP-SUITE, GAP-MEMORY-COUNTS) |
 | P1 | Real hook payloads for Cursor, Codex, Kiro, Antigravity, and the Claude Code failure event (GAP-PAYLOADS, GAP-CHILD-FAILURE) |
 | P1 | Learned complexity scorer for EN and PT-BR (hashed word and char n-grams plus structural features, embedded JSON under 1 MB, shadow first, abstain to MEDIUM). Needs about 2,400 labelled prompts, at least 40% PT-BR |
 | P1 | Confident upshift targets the smallest model that meets the tier, not the last id in the list (decision pending; `explicit_upshift` keeps the strongest) |
@@ -106,8 +112,8 @@ pillars P2 (multi-user exports) and P3 (routed-versus-control token comparison).
 - Competing with OpenRouter on catalog breadth or hosted billing
 - LLM-in-the-loop routing on the production hot path
 - Storing prompts in telemetry or training on raw task text
-- Line or commit caps on `git diff` and `git log`: an edit needs every changed line, and the balanced cut with `downshift retrieve` already bounds the size
-- Compacting large lockfile or JSON reads through the Read tool: none in a 14-day sample of 300 transcripts (2026-11-11), and an edit needs the exact text
+- Line or commit caps on `git log`: `downshift retrieve` and the balanced cut already bound the size (note: `git diff`, `git show`, and `gh pr diff` over 120 lines summarise to per-file stats and hunk headers in `v0.18.0`, keeping the full diff in CCR)
+- Compacting `Read` results at or below 64 KB: smaller reads stay verbatim (`Read` over 64 KB cuts whole middle line ranges in `v0.18.0` `#138`, keeping head/tail verbatim and raw text in CCR so `Edit` still matches)
 - Injecting flags (`-json`, `--porcelain`) into the user's command: the command runs as written
 
 ---
