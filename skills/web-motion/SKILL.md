@@ -23,6 +23,8 @@ is original.
 4. **Banned in a frame loop:** animated CSS mask gradients, `getClientRects` or
    `getBoundingClientRect` polling, a full-viewport canvas with `shadowBlur`.
 5. **`will-change` only on the few nodes moving right now**, removed when done.
+   The unit is the agent's active period, not each move: toggling it on every
+   cursor move rebuilt and re-rasterised the layer (4x-CPU p95 16.8 to 33.3 ms).
 6. **Hide until built** with `visibility:hidden`, not `display:none`: the space
    stays, CLS stays 0.
 7. **Progressive enhancement.** Content is visible if JS fails. The script adds
@@ -82,7 +84,15 @@ Keep each stage in its own small module (overlay, agent, build queue, fills).
    scales every duration through one shared factor. Replay bumps the generation
    token and rebuilds.
 10. **Mobile.** At 375 px use about a third of the agents, no conga on touch,
-    no nudge-drag, shorter boot.
+    no nudge-drag, shorter boot. Spawn cursors inside the viewport or from the
+    bottom (edge entries get clipped), flip a name label to the cursor's left
+    near the right edge, and never park one over the primary CTAs.
+11. **Slim pill.** About 32 px high, icon buttons with a 24 px hit area and
+    accessible names, about 75% resting opacity, bottom-right on mobile,
+    collapsing to a replay icon when done. Fixed widths per part (a
+    `max-content` pill shifted layout, CLS about 0.002, as "8 agents" became
+    "10 agents"); hide with `visibility`, not `hidden`/`display:none`; swap
+    states by opacity.
 
 ## UX rules on a product page
 
@@ -97,6 +107,9 @@ A portfolio can make the visitor wait; a product page cannot.
   Replay control. Keep query switches to force or skip it for demos and QA.
 - Focus never lands in a hidden block: focusing one finishes its section.
   Announce "building" and "ready" once, not per block.
+- Building only as the user scrolls is fine, but QA must reach "ready": the
+  test driver scrolls slowly to the bottom, and click, key or scroll finishes
+  the current section within 300 ms.
 - Idle motion stops by itself after about 20 s. Nothing moves forever on a page
   people read.
 - Let the motion tell the product's story, once, subtly; decoration alone is

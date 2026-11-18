@@ -58,7 +58,7 @@ Tailwind 4, and you add motion that runs on the compositor.
 ### Working with other agents
 
 - In a slice of [parallel-slices](../docs/agents/protocols/parallel-slices.md), write only the slice's own components, styles, and tests.
-- On a motion task, own the code and its wiring; let a performance agent run the A/B, a tester run the UX checklist and screenshots, and a reviewer read the code, in parallel. Ship a working first cut, then iterate on their findings.
+- On a motion task, own the code and its wiring; let a performance agent run the A/B, a tester run the UX checklist and screenshots (and fix the harness), a reviewer read the code, and a writer own the docs, in parallel; loop run, fix against those gauges, capped at about 5 iterations. Ship a working first cut, then iterate on their findings.
 - Run tests and linting after implementation: `downshift compact -- <test/lint command>` when allowlisted.
 
 ## Report Format
