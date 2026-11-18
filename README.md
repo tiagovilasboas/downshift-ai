@@ -43,16 +43,17 @@ downshift update
 
 [![Interactive setup detects harnesses, lets you choose components and review changes, writes after confirmation, then the user verifies the setup](docs/brand/readme-media/setup-flow.svg)](docs/brand/readme-media/setup-flow.png)
 
-## New in v0.18.0: compaction reaches far more of what agents run
+## New in v0.18 (latest: v0.18.1): compaction reaches far more of what agents run
 
 **Projected 3.5x to 4.5x more tokens cut per month on the same workload**, from about 1.0M to about 3.5M to 4.5M (saved bytes / 4). This is a projection over one operator's last 30 days of Claude Code transcripts (69,341 tool results), not yet measured after the release: [method and limits](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/evidence/compaction-projection-2026-11-17.md).
 
-- **Post-run cut from 4 KB** (was 16 KB) on Claude Code, with the raw output kept for `downshift retrieve`.
-- **WebFetch and MCP results compacted** after the run. Read stays untouched under 64 KB.
-- **More commands wrapped before the run**: `;` / `&&` chains, quoted globs, `/opt/homebrew/bin/gh`-style paths, bare `| head` / `| tail`.
+- **Post-run cut from 4 KB** (was 16 KB) on Claude Code, including suppressed permission modes and background runs (`v0.18.1`), with raw output kept for `downshift retrieve` and 6 rotated compactor log generations retained.
+- **WebFetch, MCP, and large Read results compacted** after the run: `WebFetch` and `mcp__*` outputs over 4 KB pass through balanced compaction; `Read` stays untouched up to 64 KB (above 64 KB keeps head and tail verbatim).
+- **More commands wrapped before the run**: `;` / `&&` chains, quoted globs, `/opt/homebrew/bin/gh`-style paths, bare `| head` / `| tail`, and `agent-desktop` (`snapshot`/`find`) classified as read-only (`v0.18.1`).
 - **New compressors**: JSON from `gh api` / `curl`, `gh pr checks`, `gh pr diff`, git lists, large `git diff` / `show` / `status`, plus nine families (terraform plan, cargo clippy and tree, docker and kubectl logs, composer, artisan, az pipelines).
+- **Cross-harness skills parity & telemetry (`v0.18.1`)**: `downshift setup --yes` installs `ponytail` and Downshift skills across Claude Code, Codex, Cursor, OpenCode, Antigravity, and Kiro/KiroCrew (`SkillsDir`), wires `antigravity` session IDs and `kiro.HandlePostToolUse`, tracks `ponytail` skill adoption in `downshift stats`, and ships the compositor-first `web-motion` skill in the Claude Code plugin.
 
-[Release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.18.0.md) · After updating, run `downshift setup --yes` (and `claude plugin update downshift@downshift` with the plugin) to get the new matcher.
+[v0.18.0 release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.18.0.md) · [v0.18.1 release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.18.1.md) · After updating, run `downshift setup --yes` (and `claude plugin update downshift@downshift` with the plugin) to get the new matcher and refreshed skills.
 
 ## Token optimization for AI coding agents
 
@@ -102,7 +103,7 @@ An agent that drives desktop apps with `agent-desktop` reads the app's accessibi
 
 - **First read of a window:** one line per element, every field kept (a test decodes it back to the same JSON).
 - **Repeat read of the same window:** only the lines that changed, with the full read one `downshift retrieve` away.
-- **Every harness:** automatic in Claude Code; elsewhere through `downshift compact -- agent-desktop snapshot ...`.
+- **Every harness:** automatic in Claude Code (and in read-only pre-run rewrites where supported); elsewhere through `downshift compact -- agent-desktop snapshot ...`.
 
 On synthetic fixtures, a first read had 53–60% fewer bytes, a repeat read after one action 97% fewer, and a read, act, verify loop of three reads 84.9% fewer. Not yet measured on a live desktop.
 
@@ -139,7 +140,7 @@ In your coding harness chat, describe your task and type:
 - `downshift full-power` (alias `potencia-total`): activates the domain leads within your session capacity ceiling.
 - `downshift shift <squad>`: activates a specific domain squad (`core`, `quality`, `security`, `leadership`).
 
-[Agent guide](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/guides/agents.md) · [Agent catalog](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/agents/README.md)
+[Agent guide](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/guides/agents.md) · [Agent catalog](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/agents/README.md) · [Skills](https://github.com/tiagovilasboas/downshift-ai/blob/main/skills/README.md)
 
 ## Works with your coding harness
 

@@ -2,11 +2,15 @@
 
 # Impact roadmap: close the gap between the bench and real use
 
-Owner direction, 2026-11-10. Downshift by Tiago Vilas Boas\
+Owner direction, 2026-11-10 (status updated 2026-11-18 for `v0.18.1`). Downshift by Tiago Vilas Boas\
 https://github.com/tiagovilasboas/downshift-ai
 
 Follows the [value roadmap](value-roadmap.md). It comes from a code review of
 the whole repository on 2026-11-10 and from one maintainer's 30-day exec log.
+Waves `G`, `H`, `J`, `L`, and `M` (including `M3` in `#138`) plus the follow-on
+[Compaction Expansion Roadmap (C1–C5)](roadmap-compaction-expansion.md) shipped
+through `v0.18.0` (`#137`–`#148`) and `v0.18.1` (`#149`–`#153`). Open items: `I1`
+(post-`v0.18.0` 7-day measurement), `I2` (full 3-arm routing protocol), and `K1`/`K2`/`K4`.
 
 ## Why
 
@@ -77,8 +81,8 @@ Every Bash call pays the process start twice: the hook, then the wrapper.
 
 | ID | Task | Pts | Done when |
 |---|---|---|---|
-| I1 | After one week on a binary with balanced on, publish the real-use cut next to the bench in the README, with the window and run count. | 1 | README states a real-use figure and how to reproduce it with `downshift report` |
-| I2 | Run the routing study again on the implementation after decision O8, same protocol as the 46-run study. | 5 | A dated evidence document; the README routing row cites it or says the effect is not established |
+| I1 | After one week on a binary with balanced on, publish the real-use cut next to the bench in the README, with the window and run count. **Open (post-`v0.18.0` check pending):** pre-`v0.18.0` 48-run study ([compaction-token-study-2026-11-16.md](../evidence/compaction-token-study-2026-11-16.md)) saw ~1% cut and motivated `v0.18.0`; [compaction-projection-2026-11-17.md](../evidence/compaction-projection-2026-11-17.md) projects ~3.5x–4.5x more tokens cut, unmeasured post-release. | 1 | README states a real-use figure and how to reproduce it with `downshift report` |
+| I2 | Run the routing study again on the implementation after decision O8, same protocol as the 46-run study. **Partial:** two-arm mechanical check done ([post-o8-mechanical-study-2026-11-16.md](../evidence/post-o8-mechanical-study-2026-11-16.md): acceptance held, tokens did not drop); full 3-arm multi-category [post-o8-benchmark-protocol-2026-11-07.md](../evidence/post-o8-benchmark-protocol-2026-11-07.md) remains open. | 5 | A dated evidence document; the README routing row cites it or says the effect is not established |
 | I3 | One source for cited figures: a test compares the numbers in README (EN/PT), `llms.txt`, true north and the evidence guide with `bench.md`. **Done in #70:** `TestCitedBenchFiguresMatchBenchMd` in `internal/docscheck`. | 3 | Changing `bench.md` without the citations fails `make check` |
 
 ### J. Harness depth before breadth
@@ -90,7 +94,7 @@ Seven harnesses are wired; one works end to end on the maintainer's machine.
 | J1 | `doctor` for Codex: read `config.toml` for `[features] hooks = true`, and warn with the exact fix when hooks are installed and no hook event was ever recorded. **Done in #69** (commit `7469845d`). | 3 | On a machine with the hook untrusted, `doctor` names `/hooks` as the fix |
 | J2 | Support tiers with criteria in the harness matrix: Supported (hook verified in a real session by `doctor`), Beta, Experimental. The README table follows it. **Done in #69** (commit `7469845d`): [harness-matrix.md](../reference/harness-matrix.md#support-tiers), `README.md`, and `docs/pt-br/README.md` list every harness with its tier and evidence. | 2 | Every harness has a tier and the evidence for it |
 | J3 | `doctor --verify <harness>`: guide one real spawn and one shell command, then confirm both events arrived. **Done in #128.** | 5 | Passing output for Claude Code and Codex is attached to the PR |
-| J4 | Runs from the desktop app's Code tab: find what identifies them and attribute them. **Done in #135.** | 2 | A run from that surface is not `unknown` |
+| J4 | Runs from the desktop app's Code tab: find what identifies them and attribute them. **Done in #135.** (Follow-on `v0.18.1` `#149`/`#150` added `antigravity` `SessionIdentifier`, `kiro.HandlePostToolUse`, `agent-desktop` read-only pre-run classification, and `SkillsDir` parity for Cursor, OpenCode, and Antigravity.) | 2 | A run from that surface is not `unknown` |
 
 ### K. Weight
 
@@ -106,7 +110,7 @@ Seven harnesses are wired; one works end to end on the maintainer's machine.
 
 | ID | Task | Pts | Done when |
 |---|---|---|---|
-| L1 | Release the work above in the version the Author names, per the [release policy](../contrib/release-policy.md). | 1 | Published release, verified on three operating systems |
+| L1 | Release the work above in the version the Author names, per the [release policy](../contrib/release-policy.md). **Done through `v0.18.1` (`2026-11-18`).** | 1 | Published release, verified on three operating systems |
 
 ### M. Replace tool output after the run
 
@@ -118,30 +122,29 @@ the agent's own Read, Grep and Glob, where most file content enters the context.
 | ID | Task | Pts | Done when |
 |---|---|---|---|
 | M1 | Spike on Claude Code: answer `PostToolUse` for Bash with `updatedToolOutput` (compacted stdout, stderr kept, raw stored in CCR). Measure against the wrapper on the same commands. **Done in #72** (commit `b0f374f9`): `internal/postrun/`, `cmd/downshift/hook_postrun.go`, and `internal/adapters/claudecode/tooloutput.go`; measurements and result in [post-run compaction](../design/post-run-compaction.md). | 5 | A command with a pipe and a redirect is compacted and counted in `report`; a written result says whether this replaces the wrapper on Claude Code |
-| M2 | Grep and Glob results: cap per file and in total, with a count of the rest, raw in CCR. **Done in #133.** | 3 | A 2,000-match Grep reaches the model under 16 KB |
-| M3 | Read of a large file: never rewrite a line (Edit needs the exact text). Cut only whole ranges, with line numbers kept and a marker that names the range and the retrieve id. | 5 | An Edit after a cut Read still matches; a lockfile or generated file over 64 KB is cut |
+| M2 | Grep and Glob results: cap per file and in total, with a count of the rest, raw in CCR. **Done in #133.** (Expanded in `v0.18.0` `#145`/`#147` to `WebFetch` and `mcp__*` outputs over 4 KB via `WebFetch\|mcp__.*`, and fixed in `v0.18.1` `#149` for suppressed permission modes and background runs.) | 3 | A 2,000-match Grep reaches the model under 16 KB |
+| M3 | Read of a large file: never rewrite a line (Edit needs the exact text). Cut only whole ranges, with line numbers kept and a marker that names the range and the retrieve id. **Done in #138 (`v0.18.0`).** (`internal/postrun/read.go`, `internal/adapters/claudecode/tooloutput.go`; `Read` <= 64 KB passes untouched.) | 5 | An Edit after a cut Read still matches; a lockfile or generated file over 64 KB is cut |
 | M4 | Correct the claim that a hook cannot rewrite tool output: `doctor`, `context status`, the context-optimization docs and the harness matrix say which harnesses allow it. **Done in #69** (commit `7469845d`). | 1 | No text says it is impossible on Claude Code |
 | M5 | `replaces tool output` as a capability in `HarnessCapabilities`, so other harnesses with the same channel get it from the shared layer. **Done in #72** (commit `b0f374f9`): `HarnessCapabilities.ReplacesToolOutput` in `internal/core/capabilities.go`; shared policy in `internal/postrun/` and `cmd/downshift/hook_postrun.go`. | 3 | The capability is data; no adapter holds the logic |
 
 ## Order
 
-1. **Wave 1**: H1 (done), G3 (done), M4 (done), then the M1 spike (done). G1 (done) and G2 (done) follow M1's result: where output can be replaced after the run they may not be needed. Release L1 can follow this wave.
-2. **Wave 2**: M2 (done), M3, M5 (done), J1 (done), J2 (done), I3 (done), G4 (done), G5 (done).
-3. **Wave 3**: K1 (needs the owner's decisions), then K2, K3, H2, H3.
-4. **Later**: I1 (needs a week of data), I2, J3 (done), J4 (done), K4, K5.
-
-See [Compaction Expansion Roadmap (C1–C5)](roadmap-compaction-expansion.md) for the follow-on compaction waves.
+1. **Wave 1**: **Done** — H1 (`#68`), G3 (`#71`/`#125`), M4 (`#69`), M1 (`#72`), G1 (`#129`), G2 (`#134`), L1 (`v0.14.0`–`v0.18.1`).
+2. **Wave 2**: **Done** — M2 (`#133`), M3 (`#138`), M5 (`#72`), J1 (`#69`), J2 (`#69`), I3 (`#70`), G4 (`#71`), G5 (`#122`).
+3. **Wave 3**: H2 (`#70`, done), H3 (`#70`, done), K3 (`#70`, done); K1 (needs owner decisions) then K2 remain **open**.
+4. **Compaction Expansion (C1–C5)**: **Done** in `v0.18.0` (`#137`–`#147`), with follow-on accounting, parity, and skill telemetry fixes in `v0.18.1` (`#149`–`#153`). See [Compaction Expansion Roadmap (C1–C5)](roadmap-compaction-expansion.md).
+5. **Later / Open**: I1 (awaiting 7-day post-`v0.18.0` measurement), I2 (full 3-arm protocol), J3 (done, `#128`), J4 (done, `#135`), K4 (open), K5 (done, `#70`).
 
 At most three PRs open at once.
 
 ## Targets
 
-| Target | Today | Goal |
-|---|---|---|
-| Bytes cut in real use, 7-day window | 4.6% | 40% or more |
-| Runs with no recorded reason | 213 in 30 days | 0 on the new binary |
-| Process start | 44 ms (about 5 ms after H1 to H3: `version` 4.6 ms, Bash hook 5.5 ms, median of 30 on one machine) | 20 ms or less |
-| Harnesses with a `doctor`-verified hook | 1 | 2 |
+| Target | 2026-11-10 baseline | Current status (`2026-11-18`) | Goal |
+|---|---|---|---|
+| Bytes cut in real use, 7-day window | 4.6% | Pre-`v0.18.0` 30d: ~3.6% (4.0 of 110.5 MB); `v0.18.0` projects ~12%–16% (~3.5M–4.5M tokens/30d), unmeasured post-release | 40% or more |
+| Runs with no recorded reason | 213 in 30 days | `G3` shipped (`#71`/`#125`) | 0 on the new binary |
+| Process start | 44 ms | **Met** (`H1`–`H3` done: `version` 4.6 ms, Bash hook 5.5 ms, median of 30 on one machine) | 20 ms or less |
+| Harnesses with a `doctor`-verified hook | 1 | Claude Code verified; Codex / OpenCode / Cursor paid-plan honor / Antigravity remain open for live verification | 2 |
 
 Goals are checked with `downshift report` on the maintainer's log, not on the
 synthetic corpus.

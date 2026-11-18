@@ -61,9 +61,12 @@ O Compactor suporta dezenas de utilitários populares do ecossistema de software
 - `dotnet test`
 - `rspec`
 
-### Controle de Versão e Ferramentas GitHub
-- `git status`, `git diff`, `git log`, `git show`, `git stash`, `git branch`, etc.
-- `gh pr`, `gh run`, `gh checks`, `gh issue`, `gh repo`, `gh api`
+### Controle de Versão, GitHub e Utilitários
+- `git status`, `git diff`, `git show`, `git log`, `git stash`, `git branch`, `git ls-files`, `git ls-tree`, `git worktree`, `git remote` (incluindo resumo por arquivo e hunk headers em diffs acima de 120 linhas e agrupamento em `git status` acima de 30 linhas)
+- `gh pr` (inclui `checks` e `diff`), `gh run`, `gh issue`, `gh repo`, `gh api` e `curl` (poda de JSON acima de 512 bytes preservando IDs, nomes, títulos e estados)
+- `wc` (acima de 40 linhas mantém as 25 primeiras linhas, contagem e `total`)
+- `downshift` subcomandos somente leitura (`stats`, `discover`, `report`, `doctor`, `version`, `help`, `session`, `models`)
+- `agent-desktop snapshot` e `agent-desktop find` (classificados como somente leitura desde a v0.18.1)
 
 ### Compiladores e Linters
 - `tsc` (TypeScript Compiler)
@@ -73,16 +76,20 @@ O Compactor suporta dezenas de utilitários populares do ecossistema de software
 - `eslint`, `prettier --check`, `biome check`
 - `rubocop`, `phpstan`
 
-### Ferramentas de Build e Gerenciadores de Pacote
-- `npm install`, `npm audit`, `pnpm`, `yarn`, `bun`
+### Ferramentas de Build, Infra e Gerenciadores de Pacote
+- `npm install`, `npm audit`, `pnpm`, `yarn`, `bun`, `composer`
+- `artisan` e `sail artisan`
 - `pip install`, `uv pip`, `poetry`
-- `cargo clean`, `cargo check`, `cargo clippy`
+- `cargo clean`, `cargo check`, `cargo clippy`, `cargo tree`
 - `maven`, `gradle`, `make`, `ninja`, `bazel`
 - `turbo run`, `nx run`
-- `docker build`, `docker images`, `docker ps`
+- `terraform plan`, `az pipelines`
+- `docker build`, `docker images`, `docker ps`, `docker logs`
 - `kubectl get/describe/logs`, `helm status`
 
 Qualquer comando fora das famílias permitidas é recusado pelo compactor (código de saída 126), garantindo que comandos arbitrários ou scripts desconhecidos não sejam alterados.
+
+Desde a v0.18.0, a reescrita pré-execução também cobre cadeias com `;` e `&&`, globs entre aspas, binários em diretórios padrão (como `/opt/homebrew/bin/gh`) e `| head` / `| tail` sem número, com limite de até 2.048 bytes por comando (antes 512). No Claude Code, o corte pós-execução (`PostToolUse`, inclusive em modos de permissão suprimidos e execuções em background desde a v0.18.1) compacta saídas de shell, busca, `WebFetch` e `mcp__*` acima de **4 KB** (antes 16 KB) e `Read` acima de **64 KB** (mantendo início e fim literais; leituras até 64 KB permanecem intactas).
 
 ---
 

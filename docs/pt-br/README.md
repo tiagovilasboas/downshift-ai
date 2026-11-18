@@ -43,16 +43,17 @@ downshift update
 
 [![O assistente interativo detecta harnesses, permite escolher componentes e revisar alterações, grava após a confirmação e depois o usuário verifica a configuração](../brand/readme-media/setup-flow.svg)](../brand/readme-media/setup-flow.png)
 
-## Novo na v0.18.0: a compactação alcança muito mais do que os agentes rodam
+## Novo na v0.18 (última: v0.18.1): a compactação alcança muito mais do que os agentes rodam
 
 **Projeção de 3,5 a 4,5 vezes mais tokens cortados por mês com a mesma carga de trabalho**, de cerca de 1,0M para algo entre 3,5M e 4,5M (bytes economizados / 4). É uma projeção calculada sobre os transcripts dos últimos 30 dias de um operador no Claude Code (69.341 resultados de ferramentas), ainda não medida depois da release: [método e limites](../evidence/compaction-projection-2026-11-17.md).
 
-- **Corte depois da execução a partir de 4 KB** (antes 16 KB) no Claude Code, com a saída bruta guardada para `downshift retrieve`.
-- **Resultados de WebFetch e MCP compactados** depois da execução. O Read continua intacto abaixo de 64 KB.
-- **Mais comandos envolvidos antes da execução**: cadeias com `;` / `&&`, globs entre aspas, caminhos como `/opt/homebrew/bin/gh` e `| head` / `| tail` sem número.
+- **Corte depois da execução a partir de 4 KB** (antes 16 KB) no Claude Code, inclusive em modos de permissão suprimidos e execuções em background (`v0.18.1`), com a saída bruta guardada para `downshift retrieve` e retenção de 6 gerações rotacionadas do log do compactor.
+- **Resultados de WebFetch, MCP e Read grandes compactados** depois da execução: `WebFetch` e `mcp__*` acima de 4 KB passam pelo corte balanceado; o `Read` continua intacto até 64 KB (acima de 64 KB mantém início e fim literais).
+- **Mais comandos envolvidos antes da execução**: cadeias com `;` / `&&`, globs entre aspas, caminhos como `/opt/homebrew/bin/gh`, `| head` / `| tail` sem número e `agent-desktop` (`snapshot`/`find`) classificado como somente leitura (`v0.18.1`).
 - **Novos compressores**: JSON de `gh api` / `curl`, `gh pr checks`, `gh pr diff`, listas do git, `git diff` / `show` / `status` grandes e mais nove famílias (terraform plan, cargo clippy e tree, docker e kubectl logs, composer, artisan, az pipelines).
+- **Paridade de skills entre harnesses e telemetria (`v0.18.1`)**: `downshift setup --yes` instala `ponytail` e as skills do Downshift em Claude Code, Codex, Cursor, OpenCode, Antigravity e Kiro/KiroCrew (`SkillsDir`), liga a identificação de sessão no `antigravity` e `kiro.HandlePostToolUse`, registra a adoção de `ponytail` no `downshift stats` e entrega a skill `web-motion` (focada em compositor) no plugin do Claude Code.
 
-[Notas da release](../releases/v0.18.0.md) · Depois de atualizar, rode `downshift setup --yes` (e `claude plugin update downshift@downshift` se usar o plugin) para receber o novo matcher.
+[Notas da v0.18.0](../releases/v0.18.0.md) · [Notas da v0.18.1](../releases/v0.18.1.md) · Depois de atualizar, rode `downshift setup --yes` (e `claude plugin update downshift@downshift` se usar o plugin) para receber o novo matcher e as skills atualizadas.
 
 ## Otimização de tokens para agentes de programação
 
@@ -101,7 +102,7 @@ Um agente que controla apps do desktop com o `agent-desktop` lê a árvore de ac
 
 - **Primeira leitura de uma janela:** uma linha por elemento, sem perder campo (um teste decodifica de volta para o mesmo JSON).
 - **Releitura da mesma janela:** só as linhas que mudaram, com a leitura completa a um `downshift retrieve` de distância.
-- **Todo harness:** automático no Claude Code; nos outros, por `downshift compact -- agent-desktop snapshot ...`.
+- **Todo harness:** automático no Claude Code (e em reescritas pré-execução somente leitura onde suportado); nos outros, por `downshift compact -- agent-desktop snapshot ...`.
 
 Em fixtures sintéticos, a primeira leitura teve de 53% a 60% menos bytes, uma releitura depois de uma ação 97% menos, e um ciclo ler, agir, conferir de três leituras 84,9% menos. Ainda não foi medido num desktop real.
 
@@ -138,7 +139,7 @@ No chat do seu harness de programação, descreva sua tarefa e digite:
 
 *Ilustração sanitizada baseada em um screenshot de uma sessão Claude Code. Nomes de tarefas, modelos e métricas da sessão foram ocultados. Esta é uma prévia visual editada, não um benchmark ou screenshot sem alterações.*
 
-[Guia de agentes](../guides/agents.md) · [Catálogo de agentes](../agents/README.md)
+[Guia de agentes](../guides/agents.md) · [Catálogo de agentes](../agents/README.md) · [Skills](../../skills/README.md)
 
 ## Funciona com seu harness de programação
 
