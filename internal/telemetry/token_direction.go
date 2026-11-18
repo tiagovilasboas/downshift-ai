@@ -36,42 +36,29 @@ var DirectionCatalog ModelCatalog
 // the session model or, as a labelled fallback, the requested model (RoutingTokens); a
 // model the catalog does not know is unattributed, never a guess.
 func directionVs(harness, baseline, ran string) string {
+	base, got, ok := tiersVs(harness, baseline, ran)
+	if !ok {
+		return TokenUnattributed
+	}
+	return rankTiers(base, got)
+}
+
+// tiersVs returns the catalog tier ranks of a baseline model and of the model
+// that ran: a native run by its catalog row, a gateway run by the tier of its
+// allowlisted row. ok is false when either is unknown, never a guess.
+func tiersVs(harness, baseline, ran string) (base, got int, ok bool) {
+	if DirectionCatalog == nil {
+		return 0, 0, false
+	}
+	if _, base, ok = DirectionCatalog.Lookup(harness, baseline); !ok {
+		return 0, 0, false
+	}
 	if IsGatewayModel(ran) {
-		return gatewayDirection(harness, baseline, ran)
+		got, ok = DirectionCatalog.GatewayTier(ran)
+	} else {
+		_, got, ok = DirectionCatalog.Lookup(harness, ran)
 	}
-	return tierDirection(harness, baseline, ran)
-}
-
-// tierDirection ranks a ran model against a requested one by catalog tier.
-// A model the catalog does not know is unattributed, never a guess.
-func tierDirection(harness, requested, ran string) string {
-	if DirectionCatalog == nil {
-		return TokenUnattributed
-	}
-	_, req, okReq := DirectionCatalog.Lookup(harness, requested)
-	_, got, okRan := DirectionCatalog.Lookup(harness, ran)
-	if !okReq || !okRan {
-		return TokenUnattributed
-	}
-	return rankTiers(req, got)
-}
-
-// gatewayDirection ranks a run that went through a gateway by the tier of its
-// allowlisted row, under the same rule as a native run. An id no allowlisted
-// row names is unattributed, never a guess.
-func gatewayDirection(harness, requested, ran string) string {
-	if DirectionCatalog == nil {
-		return TokenUnattributed
-	}
-	_, req, ok := DirectionCatalog.Lookup(harness, requested)
-	if !ok {
-		return TokenUnattributed
-	}
-	tier, ok := DirectionCatalog.GatewayTier(ran)
-	if !ok {
-		return TokenUnattributed
-	}
-	return rankTiers(req, tier)
+	return base, got, ok
 }
 
 // rankTiers is the one ranking rule for native and gateway runs: a ran tier
@@ -84,4 +71,19 @@ func rankTiers(requested, ran int) string {
 		return TokenPricier
 	}
 	return TokenUnchanged
+}
+
+// tierDirection ranks a ran model against a requested one by native catalog
+// tier only (the live line). A model the catalog does not know is
+// unattributed, never a guess.
+func tierDirection(harness, requested, ran string) string {
+	if DirectionCatalog == nil {
+		return TokenUnattributed
+	}
+	_, req, okReq := DirectionCatalog.Lookup(harness, requested)
+	_, got, okRan := DirectionCatalog.Lookup(harness, ran)
+	if !okReq || !okRan {
+		return TokenUnattributed
+	}
+	return rankTiers(req, got)
 }

@@ -89,6 +89,15 @@ for native and gateway ids. A harness with no spawn is absent: read it as unobse
 harness, or `tokens not observed yet` when no priced usage exists; `--detail` adds the same rows with
 their fallback, unobserved and cache-read lines. `observed_child_tokens` still counts every record.
 
+Under each harness line, `downshift stats` adds a `<harness>: quota estimate: ...` line when spawns were placed
+against the session model. It weighs the same tokens twice, at the session model's tier and at the tier they ran
+on, with the weights of the routing study (small 0.05, cache read 0.1, mid 1, frontier 2; ratio of the Claude API
+public list rates read 2026-11-16, [protocol](../evidence/routing-quota-study-protocol-2026-11-16.md)). Quota units
+are unitless. The estimate assumes the session model would have spent the same tokens, which the controlled
+[routing study](../evidence/routing-quota-study-2026-11-16.md) did not confirm, so the line says so. A tier outside
+the table is not weighted. `downshift report --json` carries the same figures as `routing_tokens.quota_by_harness`
+(`session` and `ran` units per harness, never summed).
+
 ## Routing note and tokens per harness (`downshift report`)
 
 `downshift report` (text and `--json`) carries two sections with no money in them, built from the
