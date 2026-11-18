@@ -60,3 +60,23 @@ func TestQuotaUnitsLine(t *testing.T) {
 		t.Fatalf("line %q should read higher", higher)
 	}
 }
+
+func TestQuotaUnitsShort(t *testing.T) {
+	cases := []struct {
+		name string
+		q    QuotaUnits
+		want string
+	}{
+		{"unobserved", QuotaUnits{}, ""},
+		{"lower", QuotaUnits{Session: 93_000_000, Ran: 54_870_000}, "41.0% lower (38.1M of 93.0M mid units)"},
+		{"higher", QuotaUnits{Session: 1000, Ran: 1500}, "50.0% higher (500 of 1.0k mid units)"},
+		{"same tier", QuotaUnits{Session: 1700, Ran: 1700}, "0.0% lower (0 of 1.7k mid units)"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := tc.q.Short(); got != tc.want {
+				t.Fatalf("Short() = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}

@@ -167,6 +167,9 @@ export type BelowSessionRow = {
   fallbackBelowBillable: number
   unobservedSpawns: number
   cacheRead: number
+  quotaEstimate?: { session: number; ran: number }
+  quotaShort?: string
+  quotaLine?: string
 }
 
 /** Spawns of one harness by the tier each ran on (Downshift's counts). */
@@ -208,6 +211,8 @@ export type DownshiftSnapshot =
       tokensSavedScope: string
       belowSession: BelowSessionRow[]
       efficiency: EfficiencyRow[]
+      skills?: Record<string, number>
+      adoptionLine?: string
     }
 
 /** Where a gliding figure started and when (ms): the views ease from `from` to the live value. */

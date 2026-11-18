@@ -79,16 +79,34 @@ func (q *QuotaUnits) add(o QuotaUnits) {
 	q.Ran += o.Ran
 }
 
+func (q QuotaUnits) parts() (dir string, share float64, saved, session string, ok bool) {
+	if !q.Observed() {
+		return "", 0, "", "", false
+	}
+	dir, s, pct := "lower", q.Saved(), q.SavedShare()
+	if s < 0 {
+		dir, s, pct = "higher", -s, -pct
+	}
+	return dir, pct, formatTokens(int64(s)), formatTokens(int64(q.Session)), true
+}
+
 // Line is "quota estimate: 41.0% lower than on the session model (38M of 93M
 // mid-tier units) · same tokens assumed · weights ...", or "" with none.
 func (q QuotaUnits) Line() string {
-	if !q.Observed() {
+	dir, share, saved, session, ok := q.parts()
+	if !ok {
 		return ""
 	}
-	dir, saved, share := "lower", q.Saved(), q.SavedShare()
-	if saved < 0 {
-		dir, saved, share = "higher", -saved, -share
-	}
 	return fmt.Sprintf("quota estimate: %.1f%% %s than on the session model (%s of %s mid-tier units) · same tokens assumed · %s",
-		share, dir, formatTokens(int64(saved)), formatTokens(int64(q.Session)), QuotaWeightsSource)
+		share, dir, saved, session, QuotaWeightsSource)
+}
+
+// Short is "41.0% lower (38M of 93M mid units)" (or "higher" when negative),
+// or "" with none.
+func (q QuotaUnits) Short() string {
+	dir, share, saved, session, ok := q.parts()
+	if !ok {
+		return ""
+	}
+	return fmt.Sprintf("%.1f%% %s (%s of %s mid units)", share, dir, saved, session)
 }

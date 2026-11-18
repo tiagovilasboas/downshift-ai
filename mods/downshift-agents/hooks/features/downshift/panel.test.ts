@@ -64,8 +64,14 @@ test('below-session tokens are kept per harness and read unobserved without data
     ['On a lighter model', '12.0k tokens · 1 of 2 agents'],
     ['On the session model', '18.0k tokens'],
     ['Moved by Downshift', '9.0k tokens · 1 agent'],
+    ['Quota estimate', '41.0% lower (38M of 93M mid units)'],
     ['codex · no session model', '1.0k of 4.0k tokens lighter than asked (25%) · 1 agent'],
   ])
+  expect(s.belowSession[0]?.quotaEstimate).toEqual({ session: 93_000_000, ran: 55_000_000 })
+  expect(s.belowSession[0]?.quotaShort).toBe('41.0% lower (38M of 93M mid units)')
+  expect(s.belowSession[0]?.quotaLine).toBe('41.0% lower (38M of 93M mid units)')
+  expect(s.skills).toEqual({ ponytail: 1, 'pr-review': 2 })
+  expect(s.adoptionLine).toBe('skills: ponytail 1, pr-review 2')
   expect(cheaperShare(s.belowSession, 'claude-code')).toBe(40)
   expect(cheaperShare(s.belowSession, 'codex')).toBeUndefined()
   // an older Downshift sends no block: one muted line, not a zero
@@ -162,4 +168,46 @@ test('the direct-calls line comes from Downshift figures', () => {
     throw new Error('expected ok with a compactor')
   }
   expect(directLine(s.compactor)).toEqual({ label: 'Direct calls', value: '3 · ~1.2k* tokens' })
+})
+
+test('quota and skills fields are backward-compatible when omitted and safely ignore malformed shapes', () => {
+  const raw = JSON.parse(PANEL_JSON) as { below_session_by_harness: Record<string, unknown>[] } & Record<string, unknown>
+  const first = raw.below_session_by_harness[0]
+  if (first === undefined) {
+    throw new Error('expected fixture harness row')
+  }
+  delete first.quota_estimate
+  delete first.quota_short
+  delete first.quota_line
+  delete raw.skills
+  delete raw.adoption_line
+  const omitted = parsePanel(JSON.stringify(raw), 5)
+  if (omitted.status !== 'ok') {
+    throw new Error(`expected ok, got ${omitted.status}`)
+  }
+  expect(omitted.belowSession[0]?.quotaEstimate).toBeUndefined()
+  expect(omitted.belowSession[0]?.quotaShort).toBeUndefined()
+  expect(omitted.belowSession[0]?.quotaLine).toBeUndefined()
+  expect(omitted.skills).toBeUndefined()
+  expect(omitted.adoptionLine).toBeUndefined()
+
+  first.quota_estimate = { session: -1, ran: 'bad' }
+  first.quota_short = 42
+  first.quota_line = ['bad']
+  raw.skills = { ponytail: 2, badNeg: -1, badFloat: 1.5, badStr: '3', '': 4 }
+  raw.adoption_line = 99
+  const dirty = parsePanel(JSON.stringify(raw), 5)
+  if (dirty.status !== 'ok') {
+    throw new Error(`expected ok, got ${dirty.status}`)
+  }
+  expect(dirty.belowSession).toHaveLength(2)
+  expect(dirty.belowSession[0]?.quotaEstimate).toBeUndefined()
+  expect(dirty.belowSession[0]?.quotaShort).toBeUndefined()
+  expect(dirty.belowSession[0]?.quotaLine).toBeUndefined()
+  expect(dirty.skills).toEqual({ ponytail: 2 })
+  expect(dirty.adoptionLine).toBeUndefined()
+
+  raw.skills = ['ponytail']
+  const arrSkills = parsePanel(JSON.stringify(raw), 5)
+  expect(arrSkills.status === 'ok' && arrSkills.skills === undefined).toBe(true)
 })

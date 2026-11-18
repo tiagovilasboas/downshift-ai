@@ -96,6 +96,34 @@ func TestTokensByHarness_UnobservedIsNotZero(t *testing.T) {
 	if len(rows) != 3 || rows[0].Harness != "claude-code" {
 		t.Errorf("rows = %+v", rows)
 	}
+	if cc.QuotaEstimate != nil || cx.QuotaEstimate != nil || un.QuotaEstimate != nil {
+		t.Errorf("without a session model QuotaEstimate must be nil: cc=%+v cx=%+v un=%+v", cc.QuotaEstimate, cx.QuotaEstimate, un.QuotaEstimate)
+	}
+}
+
+func TestTokensByHarness_QuotaEstimate(t *testing.T) {
+	events := []telemetry.Event{
+		{CorrelationID: "a", Harness: "claude-code", Outcome: telemetry.OutcomeRewriteEmitted, Verdict: "DOWNSHIFT",
+			ParentModel: "claude-opus-4-8", FromModel: "claude-opus-4-8", ToModel: "claude-sonnet-4-6"},
+		{Harness: "claude-code", Outcome: telemetry.OutcomeUsage, LinkedDecision: "a",
+			InputTokens: i64(1000), OutputTokens: i64(500)},
+		{CorrelationID: "b", Harness: "codex", Outcome: telemetry.OutcomeAllow,
+			FromModel: "claude-opus-4-8", ToModel: "claude-sonnet-4-6"},
+		{Harness: "codex", Outcome: telemetry.OutcomeUsage, LinkedDecision: "b",
+			InputTokens: i64(1000), OutputTokens: i64(500)},
+	}
+	rows := TokensByHarness(events, nil, Scope{Kind: ScopeAll}, nil)
+	if len(rows) != 2 {
+		t.Fatalf("rows = %+v, want 2", rows)
+	}
+	cc, cx := rows[0], rows[1]
+	want := telemetry.QuotaUnits{Session: 3000, Ran: 1500}
+	if cc.QuotaEstimate == nil || *cc.QuotaEstimate != want {
+		t.Fatalf("claude-code QuotaEstimate = %+v, want %+v", cc.QuotaEstimate, want)
+	}
+	if cx.QuotaEstimate != nil {
+		t.Fatalf("codex without session model QuotaEstimate = %+v, want nil", cx.QuotaEstimate)
+	}
 }
 
 func TestSafeIDDropsUnprintableAndOversizedIDs(t *testing.T) {

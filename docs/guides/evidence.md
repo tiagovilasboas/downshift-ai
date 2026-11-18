@@ -66,6 +66,7 @@ Source: `internal/telemetry/aggregate.go` (`Aggregate`), `export.go`, [stats-exp
   `downshift report` prints no dollar either: it shows tokens per completed task for routed spawns, and the routing tokens per harness. The
   figure is a count of where tokens ran, not a reduction in tokens and not a dollar saving. `downshift session --why` quotes no
   price or percentage for one decision: it says whether its tokens would run below the requested model, and only when the hook would make that rewrite.
+  `downshift stats`, `downshift report` and the `downshift-agents` pane also estimate relative mid-tier **quota units** per harness (`QuotaUnits`: weights small `0.05`, cache read `0.1`, mid `1`, frontier `2` from the 2026-11-16 Claude API list rates, unitless, never summed across harnesses and labelled as assuming the same tokens), and `downshift stats`, `report` and the pane track 30-day skill adoption (`ponytail`, `downshift-*`).
   Per harness, what is observed and what blocks the rest: [value-per-harness.md](../reference/value-per-harness.md).
 - **Known biases.** A model the catalog does not rank gives an unobserved spawn, never a guess; a decision with no usage record gives units
   only. The headline percentage this produces (19.3% in one operator's log, per

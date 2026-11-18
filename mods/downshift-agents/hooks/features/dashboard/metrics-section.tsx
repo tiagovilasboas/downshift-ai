@@ -7,7 +7,7 @@
 
 import type { CompactorFigures, DownshiftSnapshot } from '../../../types'
 import { uncutNote } from '../metrics/cut'
-import { directLine, routingLines, routingSummary } from '../metrics/normalize'
+import { directLine, routingLines, routingSummary, skillsValue } from '../metrics/normalize'
 import { ACCENT, MUTED, WARN, bytes, tokens } from '../../shared/ui/format'
 import { card, kv } from './card'
 import { familiesBlock } from './compactor-families'
@@ -68,10 +68,12 @@ export function routingSection(ui: Ui, snapshot: DownshiftSnapshot, delegated: n
     ])
   }
   const r = snapshot.routing
+  const skills = skillsValue(snapshot.skills)
 
   return card(ui, { title: 'ROUTING', summary: routingSummary(snapshot.belowSession, r.belowChildren, r.children), summaryColor: ACCENT, columns }, [
     // lighter-model tokens first, per harness, never summed
     ...routingLines(snapshot.belowSession, snapshot.efficiency).map(l => kv(ui, l.label, l.value, l.isObserved ? ACCENT : MUTED)),
+    skills !== undefined && kv(ui, 'Skills · 30 days', skills),
     kv(ui, 'Delegated', String(delegated)),
     kv(ui, 'Downshift decided', String(r.spawns.length)),
     kv(ui, 'Model changed', String(r.modelSwitched)),

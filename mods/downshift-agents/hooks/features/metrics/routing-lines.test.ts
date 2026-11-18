@@ -4,7 +4,7 @@
 import { expect, test } from 'claude-code/testing'
 
 import type { BelowSessionRow, EfficiencyRow } from '../../../types'
-import { routingLines, routingSummary } from './normalize'
+import { routingLines, routingSummary, skillsValue } from './normalize'
 
 const row = (extra: Partial<BelowSessionRow> = {}): BelowSessionRow => ({
   harness: 'claude-code',
@@ -80,4 +80,27 @@ test('nothing measured reads not measured yet, and no agent measured keeps its s
 test('a harness placed against the requested model keeps its own labelled line', () => {
   const lines = text([row({ observed: false, fallbackSpawns: 1, fallbackBillable: 4000, fallbackBelowBillable: 1000 })])
   expect(lines).toEqual(['claude-code · no session model: 1.0k of 4.0k tokens lighter than asked (25%) · 1 agent'])
+})
+
+test('quotaShort renders only for observed harnesses and carries the harness prefix when several are observed', () => {
+  const single = routingLines([row({ quotaShort: '41.0% lower (38M of 93M mid units)' })])
+  expect(single.at(-1)).toEqual({ label: 'Quota estimate', value: '41.0% lower (38M of 93M mid units)', isObserved: true })
+
+  const many = routingLines([
+    row({ quotaShort: '41.0% lower (38M of 93M mid units)' }),
+    row({ harness: 'codex', quotaShort: '12.0% lower (1M of 8M mid units)' }),
+  ])
+  expect(many.some(l => l.label === 'claude-code · Quota estimate' && l.value === '41.0% lower (38M of 93M mid units)' && l.isObserved)).toBe(true)
+  expect(many.some(l => l.label === 'codex · Quota estimate' && l.value === '12.0% lower (1M of 8M mid units)' && l.isObserved)).toBe(true)
+
+  const unobserved = routingLines([row({ observed: false, fallbackSpawns: 1, fallbackBillable: 4000, fallbackBelowBillable: 1000, quotaShort: 'ignored' })])
+  expect(unobserved.some(l => l.label.includes('Quota estimate'))).toBe(false)
+})
+
+test('skillsValue formats positive integer counts sorted by key and hides empty or zero counts', () => {
+  expect(skillsValue(undefined)).toBeUndefined()
+  expect(skillsValue({})).toBeUndefined()
+  expect(skillsValue({ ponytail: 0 })).toBeUndefined()
+  expect(skillsValue({ ponytail: -1, bad: 1.5 })).toBeUndefined()
+  expect(skillsValue({ zebra: 2, alpha: 1, ponytail: 3, zero: 0 })).toBe('alpha 1, ponytail 3, zebra 2')
 })

@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/json"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -28,6 +29,15 @@ func belowEvents(harness, id, parent, child string) []telemetry.Event {
 }
 
 func TestPanelBelowSession_PerHarnessNeverSummed(t *testing.T) {
+	wantQ := telemetry.QuotaUnits{Session: 3000, Ran: 1500}
+	wantRow := belowSessionRow{
+		Harness:       "claude-code",
+		Observed:      true,
+		RoutingRow:    telemetry.RoutingRow{Spawns: 1, BelowSpawns: 1, Billable: 1500, BelowBillable: 1500},
+		QuotaEstimate: &wantQ,
+		QuotaShort:    wantQ.Short(),
+		QuotaLine:     wantQ.Line(),
+	}
 	cases := []struct {
 		name   string
 		events []telemetry.Event
@@ -35,8 +45,7 @@ func TestPanelBelowSession_PerHarnessNeverSummed(t *testing.T) {
 	}{
 		{"no events gives no rows", nil, map[string]belowSessionRow{}},
 		{"below the session model is observed", belowEvents("claude-code", "d1", "claude-opus-4-8", "claude-sonnet-4-6"),
-			map[string]belowSessionRow{"claude-code": {Harness: "claude-code", Observed: true,
-				RoutingRow: telemetry.RoutingRow{Spawns: 1, BelowSpawns: 1, Billable: 1500, BelowBillable: 1500}}}},
+			map[string]belowSessionRow{"claude-code": wantRow}},
 		{"no rankable model reads unobserved", belowEvents("codex", "d2", "", "claude-sonnet-4-6"),
 			map[string]belowSessionRow{"codex": {Harness: "codex", Observed: false,
 				RoutingRow: telemetry.RoutingRow{UnobservedSpawns: 1}}}},
@@ -44,9 +53,8 @@ func TestPanelBelowSession_PerHarnessNeverSummed(t *testing.T) {
 			belowEvents("claude-code", "d1", "claude-opus-4-8", "claude-sonnet-4-6"),
 			belowEvents("codex", "d2", "", "claude-sonnet-4-6")...),
 			map[string]belowSessionRow{
-				"claude-code": {Harness: "claude-code", Observed: true,
-					RoutingRow: telemetry.RoutingRow{Spawns: 1, BelowSpawns: 1, Billable: 1500, BelowBillable: 1500}},
-				"codex": {Harness: "codex", RoutingRow: telemetry.RoutingRow{UnobservedSpawns: 1}},
+				"claude-code": wantRow,
+				"codex":       {Harness: "codex", RoutingRow: telemetry.RoutingRow{UnobservedSpawns: 1}},
 			}},
 	}
 	for _, tc := range cases {
@@ -56,7 +64,7 @@ func TestPanelBelowSession_PerHarnessNeverSummed(t *testing.T) {
 				t.Fatalf("rows = %+v, want %d", rows, len(tc.want))
 			}
 			for _, r := range rows {
-				if r != tc.want[r.Harness] {
+				if !reflect.DeepEqual(r, tc.want[r.Harness]) {
 					t.Fatalf("%s: got %+v, want %+v", r.Harness, r, tc.want[r.Harness])
 				}
 			}
@@ -77,6 +85,15 @@ func TestPanelBelowSession_JSONShape(t *testing.T) {
 	}
 	if len(rows) != 1 || rows[0]["observed"] != true || rows[0]["below_billable"] != float64(1500) {
 		t.Fatalf("shape: %s", raw)
+	}
+	if rows[0]["quota_short"] != "50.0% lower (1.5k of 3.0k mid units)" {
+		t.Fatalf("quota_short = %v in %s", rows[0]["quota_short"], raw)
+	}
+	if line, _ := rows[0]["quota_line"].(string); !strings.Contains(line, "quota estimate: 50.0% lower") {
+		t.Fatalf("quota_line = %q in %s", line, raw)
+	}
+	if qe, ok := rows[0]["quota_estimate"].(map[string]any); !ok || qe["session"] != float64(3000) || qe["ran"] != float64(1500) {
+		t.Fatalf("quota_estimate = %v in %s", rows[0]["quota_estimate"], raw)
 	}
 	if strings.Contains(string(raw), "secret-id") {
 		t.Fatalf("an id leaked: %s", raw)

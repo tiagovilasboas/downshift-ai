@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Quota estimate in `downshift stats`.** Per harness, a line weighs the subagent tokens placed against the session model at the session tier and at the tier they ran on (weights small 0.05, cache read 0.1, mid 1, frontier 2, Claude API list rates 2026-11-16) and prints how much lower the quota use was. Unitless, never summed across harnesses, labelled as assuming the same tokens. `report --json` carries it as `routing_tokens.quota_by_harness`.
+- **Quota estimate and skill parity across `stats`, `report`, and the `downshift-agents` pane.** Per harness, `downshift stats` and `downshift report` (markdown, `--text`, and `--json`) weigh the subagent tokens placed against the session model at the session tier and at the tier they ran on (weights small 0.05, cache read 0.1, mid 1, frontier 2, Claude API list rates 2026-11-16) and print how much lower the quota use was. Unitless, never summed across harnesses, labelled as assuming the same tokens. `report --json` carries it as `routing_tokens.quota_by_harness` and `tokens_by_harness[].quota_estimate`; `downshift session --panel` and the `downshift-agents` pane expose and display the harness `quota_short` estimate plus 30-day `skills` (`ponytail`) and `adoption_line` parity.
 
 ## [0.18.1] - 2026-11-18
 

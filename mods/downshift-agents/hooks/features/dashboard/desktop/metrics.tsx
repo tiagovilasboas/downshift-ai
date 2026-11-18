@@ -8,7 +8,7 @@
 
 import type { CompactorFigures, DownshiftSnapshot } from '../../../../types'
 import { uncutNote } from '../../metrics/cut'
-import { directLine, routingLines, routingSummary } from '../../metrics/normalize'
+import { directLine, routingLines, routingSummary, skillsValue } from '../../metrics/normalize'
 import { ACCENT, MUTED, WARN, bytes, tokens } from '../../../shared/ui/format'
 import { icon } from '../../../shared/ui/svg/icons'
 import { BAR_HEIGHT } from '../../../shared/ui/svg/progress'
@@ -83,10 +83,12 @@ export function routingPanel(ui: GraphicUi, snapshot: DownshiftSnapshot, delegat
     ])
   }
   const r = snapshot.routing
+  const skills = skillsValue(snapshot.skills)
 
   return panel(ui, { title: 'ROUTING', color: ACCENT, summary: routingSummary(snapshot.belowSession, r.belowChildren, r.children), icon: icon('routing', 'green') }, [
     // lighter-model tokens first: the headline, per harness, never summed
     ...routingLines(snapshot.belowSession, snapshot.efficiency).map(l => row(ui, l.label, l.value, l.isObserved ? ACCENT : MUTED)),
+    skills !== undefined && row(ui, 'Skills · 30 days', skills),
     isExpanded && row(ui, 'Delegated', String(delegated)),
     isExpanded && row(ui, 'Downshift decided', String(r.spawns.length)),
     isExpanded && row(ui, 'Model changed', String(r.modelSwitched)),

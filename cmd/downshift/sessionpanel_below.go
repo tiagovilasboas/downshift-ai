@@ -18,6 +18,9 @@ type belowSessionRow struct {
 	Harness  string `json:"harness"`
 	Observed bool   `json:"observed"`
 	telemetry.RoutingRow
+	QuotaEstimate *telemetry.QuotaUnits `json:"quota_estimate,omitempty"`
+	QuotaShort    string                `json:"quota_short,omitempty"`
+	QuotaLine     string                `json:"quota_line,omitempty"`
 }
 
 // belowSessionRows reads the report's per-harness rows over scope.
@@ -25,7 +28,14 @@ func belowSessionRows(events []telemetry.Event, execEvents []execwrap.Event, sco
 	rows := accounting.TokensByHarness(events, execEvents, scope, nil)
 	out := make([]belowSessionRow, 0, len(rows))
 	for _, r := range rows {
-		out = append(out, belowSessionRow{Harness: r.Harness, Observed: r.Routing.Observed(), RoutingRow: r.Routing})
+		row := belowSessionRow{Harness: r.Harness, Observed: r.Routing.Observed(), RoutingRow: r.Routing}
+		if r.QuotaEstimate != nil && r.QuotaEstimate.Observed() {
+			q := *r.QuotaEstimate
+			row.QuotaEstimate = &q
+			row.QuotaShort = q.Short()
+			row.QuotaLine = q.Line()
+		}
+		out = append(out, row)
 	}
 	return out
 }

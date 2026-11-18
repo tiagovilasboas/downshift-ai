@@ -47,9 +47,10 @@ type HarnessTokens struct {
 	// column then reads "unobserved", never 0. Routing carries the session
 	// and the fallback figures apart: they are different baselines and are
 	// never added.
-	RoutingObserved bool                 `json:"routing_observed"`
-	Routing         telemetry.RoutingRow `json:"routing"`
-	Quota           QuotaUsed            `json:"quota_used"`
+	RoutingObserved bool                  `json:"routing_observed"`
+	Routing         telemetry.RoutingRow  `json:"routing"`
+	Quota           QuotaUsed             `json:"quota_used"`
+	QuotaEstimate   *telemetry.QuotaUnits `json:"quota_estimate,omitempty"`
 }
 
 // TokensByHarness returns one HarnessTokens per harness that has a decision or
@@ -82,9 +83,13 @@ func TokensByHarness(events []telemetry.Event, execEvents []execwrap.Event, scop
 			continue
 		}
 		r := row(h)
-		routing := telemetry.RoutingTokensWithLookup(evs, lookup).ByHarness[h]
+		view := telemetry.RoutingTokensWithLookup(evs, lookup)
+		routing := view.ByHarness[h]
 		r.Routing = routing
 		r.RoutingObserved = routing.Observed() || routing.FallbackObserved()
+		if q := view.QuotaByHarness[h]; q.Observed() {
+			r.QuotaEstimate = &q
+		}
 	}
 	saved := map[string]int64{}
 	for _, ev := range scopeExec(execEvents, scope, time.Now()) {

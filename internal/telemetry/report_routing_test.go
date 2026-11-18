@@ -35,6 +35,13 @@ func TestPrintRoutingSectionMarkdown(t *testing.T) {
 		{"fallback note and cache read",
 			RoutingView{ByHarness: map[string]RoutingRow{"claude-code": {Spawns: 1, Billable: 1000, FallbackSpawns: 22, FallbackBillable: 5_800_000, CacheRead: 2000}}},
 			[]string{"22 agents had no session model: 0 of 5.8M ran on a lighter model than the one requested", "cache read 2.0k"}, nil},
+		{"quota estimate bullet per harness",
+			RoutingView{
+				ByHarness:      map[string]RoutingRow{"claude-code": {Spawns: 1, BelowSpawns: 1, Billable: 1700, BelowBillable: 1700}, "codex": {UnobservedSpawns: 1}},
+				QuotaByHarness: map[string]QuotaUnits{"claude-code": {Session: 3400, Ran: 1700}},
+			},
+			[]string{"- **claude-code**: quota estimate: 50.0% lower than on the session model (1.7k of 3.4k mid-tier units)"},
+			[]string{"- **codex**: quota estimate:"}},
 		{"empty view", RoutingView{}, []string{"No subagent tokens observed in this window."}, nil},
 	}
 	for _, tc := range cases {

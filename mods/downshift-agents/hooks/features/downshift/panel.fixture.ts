@@ -76,7 +76,9 @@ export const PANEL_JSON = JSON.stringify({
     ],
   },
   below_session_by_harness: [
-    { harness: 'claude-code', observed: true, spawns: 2, below_spawns: 1, billable: 30000, below_billable: 12000, rewritten_spawns: 1, rewritten_billable: 9000, fallback_spawns: 0, fallback_billable: 0, fallback_below_billable: 0, unobserved_spawns: 0, cache_read: 0 },
+    { harness: 'claude-code', observed: true, spawns: 2, below_spawns: 1, billable: 30000, below_billable: 12000, rewritten_spawns: 1, rewritten_billable: 9000, fallback_spawns: 0, fallback_billable: 0, fallback_below_billable: 0, unobserved_spawns: 0, cache_read: 0, quota_estimate: { session: 93_000_000, ran: 55_000_000 }, quota_short: '41.0% lower (38M of 93M mid units)', quota_line: '41.0% lower (38M of 93M mid units)' },
     { harness: 'codex', observed: false, spawns: 0, below_spawns: 0, billable: 0, below_billable: 0, fallback_spawns: 1, fallback_billable: 4000, fallback_below_billable: 1000, unobserved_spawns: 0, cache_read: 0 },
   ],
+  skills: { ponytail: 1, 'pr-review': 2 },
+  adoption_line: 'skills: ponytail 1, pr-review 2',
 })
