@@ -63,10 +63,19 @@ Downshift also applies model choices and reasoning effort for delegated work wit
 
 | Capability | What it does |
 | --- | --- |
-| **Context & output compaction** | Prevents context degradation by cutting clean command noise while preserving failure logs. |
+| **Context & output compaction** | Prevents context degradation by cutting clean command noise while preserving failure logs, with 24 h raw recovery (`downshift retrieve <id>`). |
 | **Desktop read compaction** | Shortens `agent-desktop` accessibility-tree reads with every field kept, and sends a repeat read of the same window as the lines that changed ([guide](docs/guides/agent-desktop.md)). |
-| **Subagent model & effort routing** | Applies model tier and reasoning effort at the spawn boundary within your policy. |
-| **Local reporting & telemetry** | Measures tokens and context preserved without sending prompts or code outside your machine. |
+| **Subagent model & effort routing** | Applies model tier and reasoning effort at the spawn boundary within your policy, keeping frontier capacity for complex decisions. |
+| **Local reporting & telemetry** | Tracks tokens, relative quota-unit estimates, main-session mechanical work, and uncompacted coverage without sending prompts or code outside your machine. |
+
+### Practical value in daily sessions
+
+Even when teams already separate planning from execution or delegate work to subagents, daily agent sessions burn quota and context in predictable ways. Downshift targets four practical gaps directly in the harness flow:
+
+- **Keep frontier quota for hard decisions:** mechanical searches and checks delegated to subagents run on lighter, proportional tiers while keeping your main session's prompt cache intact; `downshift stats`, `downshift report`, and the `downshift-agents` pane also show relative quota-unit estimates (assuming equal tokens, per harness — not a billing invoice).
+- **Cut noisy bloat without losing the raw trace:** noisy test runs, `git` lists, `WebFetch`/`mcp__*` (> 4 KB on Claude Code), and large `Read` (> 64 KB) outputs stay compact so the model keeps earlier system rules in view, while exit codes stay intact and CCR retains eligible raw output locally for 24 h via `downshift retrieve <id>`.
+- **Spot missed delegation and uncompacted volume:** `downshift report` highlights mechanical tool calls still running directly inside the main frontier session, and `downshift discover --dedup` surfaces shell and non-shell volume per harness.
+- **Zero extra LLM latency plus lightweight skills:** routing and compaction execute in local deterministic Go code (fail-open, prompt-free `events.jsonl`), while `downshift setup --yes` installs concise workflow skills such as `ponytail` across supported harnesses (`SkillsDir`) and tracks 30-day adoption locally.
 
 [See when to use Downshift](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/guides/when-to-use.md) · [Explore the architecture](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/design/architecture.md)
 
