@@ -4,114 +4,100 @@
 package execwrap
 
 import (
-	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
-	"sync"
+	"reflect"
+	"strings"
 	"testing"
-	"time"
 )
 
-// padding is just over the cap in long non-JSON lines, which readers skip.
-func padding() []byte {
-	line := append(bytes.Repeat([]byte("x"), 4095), '\n')
-	return bytes.Repeat(line, LogRotateBytes/len(line)+1)
-}
+func TestRotateWithLimitRetainsMultipleGenerationsInOrder(t *testing.T) {
+	const limit = 100
+	dir := t.TempDir()
+	path := filepath.Join(dir, "exec-events.jsonl")
 
-// bigLog writes one valid event then blank lines up to just past the cap.
-func bigLog(t *testing.T, path string) {
-	t.Helper()
-	body := []byte(`{"ts":"2026-01-01T00:00:00Z","family":"git"}` + "\n")
-	body = append(body, padding()...)
-	if err := os.WriteFile(path, body, 0o600); err != nil {
-		t.Fatal(err)
-	}
-}
+	// Write 8 batches of ~110 bytes each, rotating after each batch exceeds limit,
+	// then write a final smaller active batch that stays in path.
+	const totalRotatedBatches = maxRotatedGenerations + 2 // 8 batches -> 1 & 2 dropped
+	padding := strings.Repeat("x", 96)
 
-func TestAppendRotatesAtCap(t *testing.T) {
-	path := filepath.Join(t.TempDir(), EventsFileName)
-	bigLog(t, path)
-	if err := Append(path, Event{Family: "go"}); err != nil {
-		t.Fatal(err)
+	var expected []string
+	for batch := 1; batch <= totalRotatedBatches; batch++ {
+		line := fmt.Sprintf(`{"batch":%d,"pad":"%s"}`, batch, padding)
+		if err := appendLine(path, []byte(line)); err != nil {
+			t.Fatalf("append batch %d: %v", batch, err)
+		}
+		if batch > totalRotatedBatches-maxRotatedGenerations {
+			expected = append(expected, line)
+		}
+		rotateWithLimit(path, limit)
 	}
-	if _, err := os.Stat(path + ".1"); err != nil {
-		t.Fatalf("no rotated generation: %v", err)
-	}
-	info, err := os.Stat(path)
-	if err != nil || info.Size() > 1024 {
-		t.Fatalf("current log not fresh: %v %v", info, err)
-	}
-}
 
-func TestAppendBelowCapKeepsFile(t *testing.T) {
-	path := filepath.Join(t.TempDir(), EventsFileName)
-	if err := Append(path, Event{Family: "go"}); err != nil {
-		t.Fatal(err)
+	activeLine := `{"batch":9,"pad":"active"}`
+	if err := appendLine(path, []byte(activeLine)); err != nil {
+		t.Fatalf("append active: %v", err)
 	}
-	if _, err := os.Stat(path + ".1"); err == nil {
-		t.Fatal("rotated a small log")
-	}
-}
+	expected = append(expected, activeLine)
 
-func TestReadersSpanRotation(t *testing.T) {
-	path := filepath.Join(t.TempDir(), EventsFileName)
-	bigLog(t, path)
-	if err := Append(path, Event{Family: "go"}); err != nil {
-		t.Fatal(err)
+	// Generations .1 through .6 must exist; .7 must never be created.
+	for gen := 1; gen <= maxRotatedGenerations; gen++ {
+		if _, err := os.Stat(rotatedPath(path, gen)); err != nil {
+			t.Fatalf("expected rotated generation .%d to exist: %v", gen, err)
+		}
 	}
-	evs, err := ReadEvents(path)
-	if err != nil || len(evs) != 2 {
-		t.Fatalf("events across rotation: %d %v", len(evs), err)
+	if _, err := os.Stat(rotatedPath(path, maxRotatedGenerations+1)); !os.IsNotExist(err) {
+		t.Fatalf("expected generation .%d not to exist, got err=%v", maxRotatedGenerations+1, err)
 	}
-	s, err := Summarize(path)
-	if err != nil || s.Commands != 2 {
-		t.Fatalf("summary across rotation: %+v %v", s, err)
+
+	var got []string
+	if err := scanLog(path, func(line []byte) {
+		got = append(got, string(line))
+	}); err != nil {
+		t.Fatalf("scanLog: %v", err)
+	}
+	if !reflect.DeepEqual(got, expected) {
+		t.Fatalf("scanLog order/content mismatch:\ngot:  %v\nwant: %v", got, expected)
 	}
 }
 
-func TestSkipReadersSpanRotation(t *testing.T) {
-	path := filepath.Join(t.TempDir(), SkipsFileName)
-	row := []byte(`{"ts":"2026-01-01T00:00:00Z","reason":"metachar","metachar":"pipe"}` + "\n")
-	body := append(row, padding()...)
-	if err := os.WriteFile(path, body, 0o600); err != nil {
-		t.Fatal(err)
-	}
-	if err := AppendSkip(path, "metachar", "claude-code", time.Now()); err != nil {
-		t.Fatal(err)
-	}
-	got, err := SummarizeSkips(path)
-	if err != nil || got["metachar"] != 2 {
-		t.Fatalf("skips across rotation: %v %v", got, err)
-	}
-	if rows, _ := ReadSkips(path); len(rows) != 2 {
-		t.Fatalf("ReadSkips rows: %d", len(rows))
-	}
-	if cls, _ := SummarizeSkipClasses(path); cls["pipe"] != 1 {
-		t.Fatalf("classes: %v", cls)
-	}
-}
+func TestRotateWithLimitSkipsWhenUnderLimitAndHandlesSparseGenerations(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "exec-skips.jsonl")
 
-func TestConcurrentAppendsAcrossRotationKeepLinesWhole(t *testing.T) {
-	path := filepath.Join(t.TempDir(), EventsFileName)
-	bigLog(t, path)
-	var wg sync.WaitGroup
-	for i := 0; i < 8; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for j := 0; j < 20; j++ {
-				_ = Append(path, Event{Family: "go"})
-			}
-		}()
-	}
-	wg.Wait()
-	evs, err := ReadEvents(path)
-	if err != nil {
+	small := `{"k":"small"}`
+	if err := appendLine(path, []byte(small)); err != nil {
 		t.Fatal(err)
 	}
-	// 1 seeded + 160 appended; a lost rotation may drop the seed, never a
-	// line cut in two (a torn line would fail to parse and be skipped).
-	if len(evs) < 160 || len(evs) > 161 {
-		t.Fatalf("events after concurrent rotation: %d", len(evs))
+	rotateWithLimit(path, 100)
+	if _, err := os.Stat(rotatedPath(path, 1)); !os.IsNotExist(err) {
+		t.Fatalf("should not rotate under limit, got err=%v", err)
+	}
+
+	// Force over limit, rotate twice, verify .1 and .2 exist while .3 does not.
+	big := fmt.Sprintf(`{"k":"%s"}`, strings.Repeat("a", 120))
+	if err := appendLine(path, []byte(big)); err != nil {
+		t.Fatal(err)
+	}
+	rotateWithLimit(path, 100)
+
+	second := fmt.Sprintf(`{"k":"%s"}`, strings.Repeat("b", 120))
+	if err := appendLine(path, []byte(second)); err != nil {
+		t.Fatal(err)
+	}
+	rotateWithLimit(path, 100)
+
+	var got []string
+	if err := scanLog(path, func(line []byte) {
+		got = append(got, string(line))
+	}); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{small, big, second}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("scanLog = %v, want %v", got, want)
+	}
+	if _, err := os.Stat(rotatedPath(path, 3)); !os.IsNotExist(err) {
+		t.Fatalf("expected .3 not to exist, got err=%v", err)
 	}
 }

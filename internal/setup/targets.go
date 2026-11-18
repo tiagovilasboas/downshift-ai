@@ -136,6 +136,7 @@ var Targets = []Target{
 	{
 		Name:      "opencode",
 		ConfigDir: ".config/opencode",
+		SkillsDir: ".config/opencode/skills",
 		// The bridge is a plugin OpenCode loads from its config directory. It
 		// forwards the subagent intent to `downshift opencode`, applies the
 		// route and retry answers, rewrites an allowlisted shell command, and
@@ -218,6 +219,7 @@ var Targets = []Target{
 	{
 		Name:      "antigravity",
 		ConfigDir: ".gemini",
+		SkillsDir: ".gemini/config/skills",
 		File:      ".gemini/config/hooks.json",
 		Hooks: []Hook{
 			{Event: "PreToolUse", Matcher: "invoke_subagent", Args: "antigravity", Rewrites: RewritesModel},
