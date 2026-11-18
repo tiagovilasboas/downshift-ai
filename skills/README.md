@@ -1,6 +1,6 @@
 # Skills shipped with Downshift
 
-Six skills, six jobs, no overlap. They are plain `SKILL.md` files any
+Seven skills, seven jobs, no overlap. They are plain `SKILL.md` files any
 harness can read; the Claude Code plugin ships them as `/downshift:<name>`.
 
 | Skill | Job | Writes? | When to stop using it |
@@ -11,11 +11,14 @@ harness can read; the Claude Code plugin ships them as `/downshift:<name>`.
 | `downshift-tune` | the one entry point for "we spend too many tokens": fixed diagnosis order, biggest lever first, one change at a time | only after a yes | keep; it defers to setup when nothing is wired |
 | `downshift-squad` | invoke specialized agent squads for coordinated multi-agent work: `squad coder "task"`, `squad core "task"`, `squad downshift "full project"` | never | keep; the orchestration layer |
 | `ponytail` | lazy senior dev mode: smallest change that fully solves the task, delete > add, no abstraction for later | never | keep; the default coding philosophy |
+| `web-motion` | playbook for smooth web animation on the compositor, including the agent-swarm build effect; used by `coder-front` | never | keep for frontend motion work; plugin only, see below |
 
-`downshift-effort` is a sixth, advisory skill: it tells the orchestrator how much
+`downshift-effort` is an advisory skill: it tells the orchestrator how much
 reasoning and verification a task's stakes deserve (mechanical, ordinary, high) and
 never sets an effort value itself. Setup installs it next to `downshift-orchestrator`. It also installs `ponytail` and `downshift-squad` when the plugin lacks them.
 Inspired by an MIT-licensed skill, github.com/mmc7676/skills.
+
+`web-motion` ships through the Claude Code plugin only. It is not in the `go:embed` list of `embed.go`, so `downshift setup` never writes a web-animation skill into a harness that has no use for it. Other harnesses can copy the folder by hand. It credits two MIT-licensed skills as inspiration (`emilkowalski/skills`, `mblode/agent-skills`); the text is original.
 
 ## What they spend in tokens
 
@@ -30,13 +33,15 @@ tokenizer):
 | `downshift-audit/SKILL.md` | ~70 tokens | ~890 tokens |
 | `downshift-setup/SKILL.md` | ~66 tokens | ~730 tokens |
 | `harness-engineer/SKILL.md` (2026-10-21) | ~50 tokens | ~170 tokens |
+| `web-motion/SKILL.md` (2026-11-18) | ~40 tokens | ~2,000 tokens |
 | `agents/mechanical-worker.md` | ~55 tokens | ~270 tokens |
 | `commands/status.md` | ~16 tokens | ~90 tokens |
 
-About 390 tokens per session for the whole set when installed through the
+About 430 tokens per session for the whole set when installed through the
 plugin. A skill reduces nothing just by recommending a reduction; it pays off
 only when its advice is applied. Descriptions therefore trigger only when the
-user names Downshift or asks about its hooks and token use, not on any mention
+user names Downshift or asks about its hooks and token use (the one exception is
+`web-motion`, which triggers on web animation work), not on any mention
 of `CLAUDE.md`.
 
 ## Delegation is not free either

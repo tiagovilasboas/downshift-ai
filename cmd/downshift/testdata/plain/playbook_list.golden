@@ -2,7 +2,7 @@ exit: 0
 --- stdout ---
   General        default     912 chars
   Backend        default     350 chars
-  Frontend       default     370 chars
+  Frontend       default     493 chars
   Research       default    1245 chars
   Implementation default    1298 chars
   Review         default    1394 chars

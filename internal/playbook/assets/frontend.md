@@ -5,3 +5,4 @@
 - Make the layout work at phone width without horizontal scrolling.
 - Check that interactive controls are reachable from the keyboard and have a label.
 - Do not hard-code text that the interface shows; keep it where the project keeps its strings.
+- For motion, animate only transform, opacity, clip-path and filter, and honor reduced motion; see the `web-motion` skill.
