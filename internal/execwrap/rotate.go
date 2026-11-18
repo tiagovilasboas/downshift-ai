@@ -8,6 +8,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"time"
 
@@ -18,11 +19,14 @@ import (
 const rotateLockWait = 50 * time.Millisecond
 
 // LogRotateBytes is the size past which an exec log (exec-events.jsonl,
-// exec-skips.jsonl) moves to path+".1" before the next append. One older
-// generation is kept; the one before it is dropped.
+// exec-skips.jsonl) rotates before the next append. Up to maxRotatedGenerations
+// older generations (.1 through .6) are retained; anything older is dropped.
 const LogRotateBytes = 10 << 20
 
-const rotatedSuffix = ".1"
+const (
+	rotatedSuffix         = ".1"
+	maxRotatedGenerations = 6
+)
 
 // rotateMu makes the size check and the rename one step inside a process, so
 // concurrent appenders cannot each rotate the fresh file over the old one.
@@ -47,9 +51,16 @@ func appendLine(path string, line []byte) error {
 	return err
 }
 
-// rotateIfLarge renames path to path+".1" when it is larger than limit.
-// Best effort: a failure leaves the log growing, which is still correct.
+// rotateIfLarge shifts rotated generations and moves path to path+".1" when it
+// is larger than limit. Best effort: a failure leaves the log growing, which
+// is still correct.
 func rotateIfLarge(path string, limit int64) {
+	rotateWithLimit(path, limit)
+}
+
+// rotateWithLimit shifts existing generations (.5->.6 .. .1->.2) and renames
+// path to path+".1" when path exceeds limit.
+func rotateWithLimit(path string, limit int64) {
 	rotateMu.Lock()
 	defer rotateMu.Unlock()
 	if !overLimit(path, limit) {
@@ -62,9 +73,27 @@ func rotateIfLarge(path string, limit int64) {
 	defer func() { _ = lock.Unlock() }()
 	// Re-check under the lock: another process may have rotated already, and
 	// renaming its fresh file over .1 would drop a generation.
-	if overLimit(path, limit) {
-		_ = os.Rename(path, path+rotatedSuffix)
+	if !overLimit(path, limit) {
+		return
 	}
+	for gen := maxRotatedGenerations - 1; gen >= 1; gen-- {
+		src := rotatedPath(path, gen)
+		if _, err := os.Stat(src); err != nil {
+			continue
+		}
+		replaceFile(src, rotatedPath(path, gen+1))
+	}
+	replaceFile(path, rotatedPath(path, 1))
+}
+
+func rotatedPath(path string, gen int) string {
+	return path + "." + strconv.Itoa(gen)
+}
+
+func replaceFile(src, dst string) {
+	// Remove dst first so os.Rename replaces existing files on Windows as well as Unix.
+	_ = os.Remove(dst)
+	_ = os.Rename(src, dst)
 }
 
 func overLimit(path string, limit int64) bool {
@@ -72,17 +101,17 @@ func overLimit(path string, limit int64) bool {
 	return err == nil && info.Size() > limit
 }
 
-// scanLog calls fn for every line of the log: the rotated generation first,
-// then the current file, so totals do not drop at a rotation. A rotation
-// between the two reads can under-count for a moment, never double count. A missing file
-// is empty, not an error.
+// scanLog calls fn for every line of the log in chronological order from the
+// oldest rotated generation (.6) through the newest (.1) to the current file.
+// A rotation between reads can under-count for a moment, never double count.
+// A missing file is empty, not an error.
 func scanLog(path string, fn func(line []byte)) error {
-	for _, p := range []string{path + rotatedSuffix, path} {
-		if err := scanFile(p, fn); err != nil {
+	for gen := maxRotatedGenerations; gen >= 1; gen-- {
+		if err := scanFile(rotatedPath(path, gen), fn); err != nil {
 			return err
 		}
 	}
-	return nil
+	return scanFile(path, fn)
 }
 
 func scanFile(path string, fn func(line []byte)) error {

@@ -115,3 +115,41 @@ func TestSetupInstallsTheOrchestratorPlaybook(t *testing.T) {
 		t.Fatalf("playbook missing, unmarked or renamed: %v\n%.200s", err, got)
 	}
 }
+
+func TestSetupInstallsSkillsForEveryCodeHarness(t *testing.T) {
+	e := newSetupEnv(t, ".codex", ".cursor", ".config/opencode", ".gemini", ".kiro")
+	if code, out, errOut := e.run("--yes"); code != 0 {
+		t.Fatalf("setup exit %d\n%s\n%s", code, out, errOut)
+	}
+	dirs := []string{
+		".codex/skills",
+		".cursor/skills",
+		".config/opencode/skills",
+		".gemini/config/skills",
+		".kiro/skills",
+	}
+	skillsToCheck := []string{"ponytail/SKILL.md", auditSkill}
+	for _, dir := range dirs {
+		for _, skill := range skillsToCheck {
+			p := e.path(filepath.FromSlash(dir + "/" + skill))
+			got, err := os.ReadFile(p)
+			if err != nil || !configfile.Owns(got) || !strings.HasPrefix(string(got), "---\n") {
+				t.Fatalf("%s/%s: skill missing, unmarked or frontmatter displaced: %v\n%.200s", dir, skill, err, got)
+			}
+		}
+	}
+	if code, out, errOut := e.run("--yes"); code != 0 || !strings.Contains(out, "already up to date") {
+		t.Fatalf("second run exit %d, want idempotent\n%s\n%s", code, out, errOut)
+	}
+	if code, out, errOut := e.run("--undo", "--yes"); code != 0 {
+		t.Fatalf("undo exit %d\n%s\n%s", code, out, errOut)
+	}
+	for _, dir := range dirs {
+		for _, folder := range []string{"ponytail", "downshift-audit"} {
+			p := e.path(filepath.FromSlash(dir + "/" + folder))
+			if _, err := os.Stat(p); !os.IsNotExist(err) {
+				t.Errorf("%s/%s: skill folder left behind after undo: %v", dir, folder, err)
+			}
+		}
+	}
+}
