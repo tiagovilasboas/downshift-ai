@@ -63,10 +63,19 @@ O Downshift também aplica escolhas de modelo e nível de esforço de raciocíni
 
 | Capacidade | O que faz |
 | --- | --- |
-| **Compactação de contexto & saída** | Evita a degradação do contexto ao encurtar o ruído de comandos limpos, preservando logs de falha. |
+| **Compactação de contexto & saída** | Evita a degradação do contexto ao encurtar o ruído de comandos limpos, preservando logs de falha, com recuperação bruta por 24 h (`downshift retrieve <id>`). |
 | **Compactação de leituras do desktop** | Encurta as leituras da árvore de acessibilidade do `agent-desktop` sem perder campo, e manda uma releitura da mesma janela só com as linhas que mudaram ([guia](../guides/agent-desktop.md)). |
-| **Roteamento de modelo & esforço por subagente** | Aplica o tier do modelo e o nível de esforço de raciocínio na criação do subagente conforme a política. |
-| **Relatórios locais & telemetria** | Mede tokens e contexto preservados sem enviar prompts, código ou caminhos para fora da máquina. |
+| **Roteamento de modelo & esforço por subagente** | Aplica o tier do modelo e o nível de esforço de raciocínio na criação do subagente conforme a política, preservando capacidade de fronteira para decisões complexas. |
+| **Relatórios locais & telemetria** | Mede tokens, estimativas relativas em unidades de cota, trabalho mecânico na sessão principal e cobertura sem enviar prompts, código ou caminhos para fora da máquina. |
+
+### Valor prático nas sessões do dia a dia
+
+Mesmo quando o fluxo já separa planejamento de execução ou usa subagentes, as sessões diárias ainda desperdiçam cota e contexto de forma previsível. O Downshift ataca quatro pontos práticos direto no fluxo do harness:
+
+- **Guardar cota de fronteira para decisões difíceis:** buscas e checagens mecânicas delegadas a subagentes rodam em tiers menores e proporcionais, mantendo intacto o cache de prompt da sessão principal; `downshift stats`, `downshift report` e o painel `downshift-agents` também mostram estimativas relativas em unidades de cota (assumindo tokens iguais, por harness — nunca como fatura).
+- **Cortar ruído sem perder o dado bruto:** suítes limpas, listas do `git`, `WebFetch`/`mcp__*` (> 4 KB no Claude Code) e `Read` grandes (> 64 KB) chegam enxutos para o agente não perder o foco nas regras do sistema, enquanto códigos de saída permanecem intactos e o CCR guarda a saída elegível localmente por 24 h para leitura sob demanda via `downshift retrieve <id>`.
+- **Revelar delegação perdida e volume fora da compactação:** o `downshift report` aponta chamadas mecânicas que continuam rodando direto na sessão principal de fronteira, e `downshift discover --dedup` mostra o volume de Bash e não-Bash elegível por harness.
+- **Zero latência extra de LLM com skills leves:** roteamento e compactação rodam localmente em código Go determinístico (fail-open, `events.jsonl` sem prompts), enquanto `downshift setup --yes` instala skills concisas como `ponytail` nos harnesses compatíveis (`SkillsDir`) e acompanha a adoção em 30 dias localmente.
 
 [Quando usar o Downshift](../guides/when-to-use.md) · [Arquitetura](../design/architecture.md)
 

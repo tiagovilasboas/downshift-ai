@@ -14,8 +14,9 @@ Every harness with an adapter gets every feature, computed in shared layers. **C
 - You run **agentic coding sessions** where subagents inherit the session’s most expensive model.
 - You want **declared policy** (profiles, rules, floors) bounding the orchestrator's model choices, with **no LLM call in Downshift's own code**.
 - You need **offline, keyless model selection** for hooks: the decider reads your declared policy and the orchestrator's tier hint, and rewrites `updatedInput` before the child starts. No classifier.
-- You care about **measurement**: `downshift report` shows tokens per completed task and rework for routed spawns, and [evidence.md](evidence.md) lists what is shown and what is not.
-- You want **local, prompt-free telemetry** (`events.jsonl`), not a hosted analytics product.
+- You care about **measurement**: `downshift report` shows tokens per completed task, rework for routed spawns, and **main-session mechanical work** that stayed on the frontier model; `downshift stats`, `downshift report`, and the `downshift-agents` pane also show relative quota-unit estimates (assuming equal tokens, per harness, never a billing invoice), and [evidence.md](evidence.md) lists what is shown and what is not.
+- You want **context clean without blind truncation**: Compactor strips clean scrollback and CCR retains eligible raw output locally for 24 h so your agent can inspect full logs on demand with `downshift retrieve <id>`.
+- You want **local, prompt-free telemetry** (`events.jsonl`) and lightweight installed skills (such as `ponytail` via `downshift setup --yes`) across harnesses, not a hosted analytics product.
 - Your agent **drives desktop apps** with `agent-desktop` and reads the same window again after every action: Downshift compacts each read and sends repeat reads as the lines that changed ([agent-desktop](agent-desktop.md)).
 
 ## When not to use it
