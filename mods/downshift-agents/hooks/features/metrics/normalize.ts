@@ -126,6 +126,9 @@ export function routingLines(rows: readonly BelowSessionRow[], efficiency: reado
       if (tiers !== undefined) {
         out.push(row('Agents by tier · 30 days', tiers))
       }
+      if (r.quotaShort) {
+        out.push(row('Quota estimate', r.quotaShort))
+      }
     }
     if (r.fallbackSpawns > 0) {
       // no session model to compare with: measured against the model the agent asked for
@@ -170,4 +173,15 @@ export function cheaperShare(rows: readonly BelowSessionRow[], harness: string):
 /** The direct-calls figures of the Compactor, or undefined when there are none. */
 export function directLine(c: CompactorFigures): { label: string; value: string } | undefined {
   return c.direct === undefined ? undefined : { label: 'Direct calls', value: `${c.direct.commands} · ~${tokens(c.direct.estimatedTokens)}* tokens` }
+}
+
+/** "ponytail 1, pr-review 2": positive skill counts sorted deterministically by name, or undefined when none. */
+export function skillsValue(skills?: Record<string, number>): string | undefined {
+  if (skills === undefined) {
+    return undefined
+  }
+  const entries = Object.entries(skills)
+    .filter(([k, n]) => k !== '' && typeof n === 'number' && Number.isInteger(n) && n > 0)
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+  return entries.length > 0 ? entries.map(([k, n]) => `${k} ${n}`).join(', ') : undefined
 }

@@ -52,6 +52,9 @@ func printHeadlineTokens(w io.Writer, v RoutingView) {
 			line = "unobserved"
 		}
 		fmt.Fprintf(w, "%s: %s\n", name, line)
+		if q := v.QuotaByHarness[name].Line(); q != "" {
+			fmt.Fprintf(w, "%s: %s\n", name, q)
+		}
 	}
 }
 

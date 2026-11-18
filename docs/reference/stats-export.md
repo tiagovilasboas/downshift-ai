@@ -89,6 +89,15 @@ for native and gateway ids. A harness with no spawn is absent: read it as unobse
 harness, or `tokens not observed yet` when no priced usage exists; `--detail` adds the same rows with
 their fallback, unobserved and cache-read lines. `observed_child_tokens` still counts every record.
 
+Under each harness line, `downshift stats` (and `downshift report`, both markdown and `--text`) adds a `quota estimate: ...` line when spawns were placed
+against the session model. It weighs the same tokens twice, at the session model's tier and at the tier they ran
+on, with the weights of the routing study (small 0.05, cache read 0.1, mid 1, frontier 2; ratio of the Claude API
+public list rates read 2026-11-16, [protocol](../evidence/routing-quota-study-protocol-2026-11-16.md)). Quota units
+are unitless. The estimate assumes the session model would have spent the same tokens, which the controlled
+[routing study](../evidence/routing-quota-study-2026-11-16.md) did not confirm, so the line says so. A tier outside
+the table is not weighted. `downshift report --json` carries the same figures as `routing_tokens.quota_by_harness`
+and per row in `tokens_by_harness` as `quota_estimate` (`session` and `ran` units per harness, never summed). `downshift session --panel` emits `quota_estimate`, `quota_short` and `quota_line` on `below_session_by_harness` plus 30-day `skills` and `adoption_line`, which the `downshift-agents` pane renders under `ROUTING`.
+
 ## Routing note and tokens per harness (`downshift report`)
 
 `downshift report` (text and `--json`) carries two sections with no money in them, built from the
@@ -101,8 +110,9 @@ same events and window as the rest of the report.
   `profile`, `tier_from`, `tier_to`). Events written before it, or by a path that does not record it,
   count under `not_recorded`.
 - `tokens_by_harness`: per harness `routing_observed` with `routing` (the same row as
-  [Routing tokens](#routing-tokens)) and `quota_used` (`status` `native` or `unknown`,
-  `five_hour_pct`, `week_pct`, `observed_at`, `stale`). **Breaking:** `moved_observed`,
+  [Routing tokens](#routing-tokens)), `quota_used` (`status` `native` or `unknown`,
+  `five_hour_pct`, `week_pct`, `observed_at`, `stale`), and optional `quota_estimate` (`session`
+  and `ran` quota units when session-placed spawns are observed). **Breaking:** `moved_observed`,
   `tokens_moved_to_smaller_model`, `below_session_observed` and `below_session` are gone, and
   `compactor_tokens_avoided` moved out (it is printed once, under `compaction_by_harness`).
 - `compaction_by_harness`: per harness `compactor_tokens_avoided` (estimated, saved bytes / 4).

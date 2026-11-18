@@ -213,3 +213,64 @@ func TestPanel_NoExecEventsNoCompactorBlock(t *testing.T) {
 		t.Fatalf("tokens_saved_estimate = %d, want 0: routing tokens are never counted as saved (%+v)", out.TokensSavedEstimate, out.Report.Routing)
 	}
 }
+
+func TestPanel_SkillsAndAdoptionLine(t *testing.T) {
+	now := time.Now().UTC()
+	ts := func(d time.Duration) string { return now.Add(d).Format(time.RFC3339Nano) }
+	cases := []struct {
+		name         string
+		events       []telemetry.Event
+		wantSkills   map[string]int
+		wantAdoption string
+	}{
+		{
+			name:   "no adoption or skills omits both",
+			events: nil,
+		},
+		{
+			name: "skills only sets skills and adoption_line over 30-day window",
+			events: []telemetry.Event{
+				{Timestamp: ts(-time.Hour), Harness: "claude-code", Outcome: telemetry.OutcomeSkillUsed, Agent: "downshift-route"},
+				{Timestamp: ts(-2 * time.Hour), Harness: "claude-code", Outcome: telemetry.OutcomeSkillUsed, Agent: "downshift-route"},
+				{Timestamp: ts(-40 * 24 * time.Hour), Harness: "claude-code", Outcome: telemetry.OutcomeSkillUsed, Agent: "old-skill"},
+			},
+			wantSkills:   map[string]int{"downshift-route": 2},
+			wantAdoption: "Planner and workers: no calls yet · Skills: downshift-route 2",
+		},
+		{
+			name: "plan and delegate without skills sets adoption_line only",
+			events: []telemetry.Event{
+				{Timestamp: ts(-time.Hour), Harness: "claude-code", Outcome: telemetry.OutcomeMCPTool, Agent: "plan",
+					Tool: &telemetry.ToolCounts{Steps: 2, SpawnSteps: 1, DelegateSteps: 1}},
+				{Timestamp: ts(-time.Minute), Harness: "claude-code", Outcome: telemetry.OutcomeMCPTool, Agent: "delegate",
+					Tool: &telemetry.ToolCounts{Tasks: 1, GatewayRouted: 1}},
+			},
+			wantAdoption: "Planner: 1 plans, 2 steps (1 spawn · 1 delegate) · Workers: 1 delegated, 0 done · gateway 1/1",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			out := panelWithReport(telemetry.PanelView{Session: "h"}, "h", tc.events, nil)
+			if !reflect.DeepEqual(out.Skills, tc.wantSkills) {
+				t.Errorf("Skills = %+v, want %+v", out.Skills, tc.wantSkills)
+			}
+			if out.AdoptionLine != tc.wantAdoption {
+				t.Errorf("AdoptionLine = %q, want %q", out.AdoptionLine, tc.wantAdoption)
+			}
+			raw, err := json.Marshal(out)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var top map[string]json.RawMessage
+			if err := json.Unmarshal(raw, &top); err != nil {
+				t.Fatal(err)
+			}
+			if _, hasSkills := top["skills"]; hasSkills != (len(tc.wantSkills) > 0) {
+				t.Errorf("JSON has skills=%v, want %v (%s)", hasSkills, len(tc.wantSkills) > 0, raw)
+			}
+			if _, hasLine := top["adoption_line"]; hasLine != (tc.wantAdoption != "") {
+				t.Errorf("JSON has adoption_line=%v, want %v (%s)", hasLine, tc.wantAdoption != "", raw)
+			}
+		})
+	}
+}

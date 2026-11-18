@@ -117,6 +117,8 @@ type panelOut struct {
 	// reason in one cell. Enums and declared ids only.
 	Why               []accounting.SpawnWhy `json:"routing_why"`
 	WorkingMemoryLine string                `json:"working_memory_line,omitempty"`
+	Skills            map[string]int        `json:"skills,omitempty"`
+	AdoptionLine      string                `json:"adoption_line,omitempty"`
 }
 
 // panelWithReport builds the panel from the session view and the full logs.
@@ -136,6 +138,13 @@ func panelWithReport(v telemetry.PanelView, hash string, events []telemetry.Even
 	}
 	sessionNums := accounting.Compute(events, execEvents, session)
 	out.WorkingMemoryLine = accounting.BuildWorkingMemory(sessionNums).Line
+	adoption := accounting.BuildAdoption(events, scope)
+	if len(adoption.Skills) > 0 {
+		out.Skills = adoption.Skills
+	}
+	if len(adoption.Skills) > 0 || adoption.Plans > 0 || adoption.Delegated > 0 {
+		out.AdoptionLine = accounting.AdoptionLine(adoption)
+	}
 	c := sessionNums.Compactor
 	direct := accounting.DirectCompactor(execEvents, scope, time.Now())
 	if c.Commands == 0 && direct.Commands == 0 {

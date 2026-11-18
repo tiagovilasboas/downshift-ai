@@ -34,6 +34,10 @@ func PrintRoutingSectionMarkdown(w io.Writer, v RoutingView) {
 			fmt.Fprintf(w, "- **%s**: %s\n", h, note)
 			notes = true
 		}
+		if q := v.QuotaByHarness[h].Line(); q != "" {
+			fmt.Fprintf(w, "- **%s**: %s\n", h, q)
+			notes = true
+		}
 	}
 	if notes {
 		fmt.Fprintln(w)

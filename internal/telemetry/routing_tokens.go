@@ -77,6 +77,9 @@ func (r *RoutingRow) Add(o RoutingRow) {
 type RoutingView struct {
 	ByHarness   map[string]RoutingRow `json:"by_harness"`
 	ByAgentType map[string]RoutingRow `json:"by_agent_type,omitempty"`
+	// QuotaByHarness is the quota-unit estimate of the session-placed spawns,
+	// per harness (quota_units.go). Like ByHarness, never summed.
+	QuotaByHarness map[string]QuotaUnits `json:"quota_by_harness,omitempty"`
 	// bySpawn is keyed by harness + "\n" + decision key.
 	bySpawn map[string]RoutingRow
 }
@@ -92,8 +95,9 @@ type spawnPlacement struct {
 	billable, cacheRead int64
 	onSession           bool // some record ranked against the session model
 	belowSession        bool
-	rewritten           bool // the decision was an applied model rewrite the harness did not refute
-	onRequested         bool // some record ranked against the requested model
+	quota               QuotaUnits // session-placed records weighted by tier
+	rewritten           bool       // the decision was an applied model rewrite the harness did not refute
+	onRequested         bool       // some record ranked against the requested model
 	belowRequested      bool
 }
 
@@ -154,9 +158,10 @@ func accumulateRoutingSpawn(ev Event, decisions map[linkKey]Event, refuted map[l
 	sp.cacheRead += c.CacheRead
 	requested, ran := tokenModels(ev, decision, found, isRefuted)
 	if found && decision.ParentModel != "" {
-		if d := directionVs(ev.Harness, decision.ParentModel, ran); d != TokenUnattributed {
+		if base, got, ok := tiersVs(ev.Harness, decision.ParentModel, ran); ok {
 			sp.onSession = true
-			sp.belowSession = sp.belowSession || d == TokenCheaper
+			sp.belowSession = sp.belowSession || rankTiers(base, got) == TokenCheaper
+			sp.addQuota(base, got, c)
 		}
 	}
 	if d := directionVs(ev.Harness, requested, ran); d != TokenUnattributed {
@@ -166,8 +171,13 @@ func accumulateRoutingSpawn(ev Event, decisions map[linkKey]Event, refuted map[l
 }
 
 func buildRoutingView(spawns map[string]*spawnPlacement) RoutingView {
-	v := RoutingView{ByHarness: map[string]RoutingRow{}, ByAgentType: map[string]RoutingRow{}, bySpawn: map[string]RoutingRow{}}
+	v := RoutingView{ByHarness: map[string]RoutingRow{}, ByAgentType: map[string]RoutingRow{}, QuotaByHarness: map[string]QuotaUnits{}, bySpawn: map[string]RoutingRow{}}
 	for id, sp := range spawns {
+		if sp.quota.Observed() {
+			q := v.QuotaByHarness[sp.harness]
+			q.add(sp.quota)
+			v.QuotaByHarness[sp.harness] = q
+		}
 		t := sp.tokens()
 		v.bySpawn[id] = t
 		h := v.ByHarness[sp.harness]

@@ -284,3 +284,38 @@ test('the progress bar keeps 2 px from the NOW row, and only when a task is runn
   expect(await ui.find({ type: 'Text', text: /NOW/ })).toBeDefined()
   await ui.unmount()
 })
+
+test('the pane renders quota estimate and 30-day skills on terminal and desktop', async ($, on) => {
+  withDownshift(on)
+  await $.command.run(SUMMARY)
+
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const ui = await $.ui.mount(pane(surface, 100))
+    expect(await ui.find({ type: 'Text', text: /^Quota estimate$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^41\.0% lower \(38M of 93M mid units\)$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^Skills · 30 days$/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /^ponytail 1, pr-review 2$/ })).toBeDefined()
+    await ui.unmount()
+  }
+})
+
+test('the pane hides quota estimate and 30-day skills when absent or zero', async ($, on) => {
+  const raw = JSON.parse(PANEL_JSON) as { below_session_by_harness: Record<string, unknown>[] } & Record<string, unknown>
+  const first = raw.below_session_by_harness[0]
+  if (first !== undefined) {
+    delete first.quota_short
+  }
+  raw.skills = { ponytail: 0 }
+  mock.clock(on, { now: 1000 })
+  on('session.id', () => ({ value: 'layout-no-quota-skills' }))
+  on('process.run', () => ({ value: { exitCode: 0, stdout: JSON.stringify(raw), stderr: '', ...UNCUT } }))
+  on('command.run', () => ({ text: '' }))
+  await $.command.run(SUMMARY)
+
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const ui = await $.ui.mount(pane(surface, 100))
+    expect(await ui.findAll({ type: 'Text', text: /^Quota estimate$/ })).toHaveLength(0)
+    expect(await ui.findAll({ type: 'Text', text: /^Skills · 30 days$/ })).toHaveLength(0)
+    await ui.unmount()
+  }
+})

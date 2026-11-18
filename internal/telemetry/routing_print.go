@@ -24,6 +24,9 @@ func PrintRouting(w io.Writer, v RoutingView) {
 		for _, line := range r.Rows() {
 			fmt.Fprintf(w, "    %s\n", line)
 		}
+		if q := v.QuotaByHarness[h].Line(); q != "" {
+			fmt.Fprintf(w, "    %s\n", q)
+		}
 	}
 }
 

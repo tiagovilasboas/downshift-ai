@@ -28,6 +28,8 @@ export function parsePanel(stdout: string, now: number): DownshiftSnapshot {
   if (routing === undefined) {
     return { status: 'unavailable', reason: 'Downshift panel is missing its session counts', at: now }
   }
+  const skills = skillsOf(raw.skills)
+  const adoptionLine = str(raw, 'adoption_line')
   return {
     status: 'ok',
     at: now,
@@ -36,6 +38,8 @@ export function parsePanel(stdout: string, now: number): DownshiftSnapshot {
     tokensSavedScope: str(raw, 'tokens_saved_scope') ?? '',
     belowSession: belowSessionOf(raw.below_session_by_harness),
     efficiency: efficiencyOf(raw.efficiency),
+    ...(skills !== undefined ? { skills } : {}),
+    ...(adoptionLine !== undefined ? { adoptionLine } : {}),
   }
 }
 
@@ -97,6 +101,9 @@ function belowSessionOf(rows: unknown): BelowSessionRow[] {
     if (!isObject(r) || harness === undefined || typeof r.observed !== 'boolean') {
       continue
     }
+    const quotaEstimate = quotaEstimateOf(r.quota_estimate)
+    const quotaShort = str(r, 'quota_short')
+    const quotaLine = str(r, 'quota_line')
     out.push({
       harness,
       observed: r.observed,
@@ -111,9 +118,37 @@ function belowSessionOf(rows: unknown): BelowSessionRow[] {
       fallbackBelowBillable: num(r, 'fallback_below_billable') ?? 0,
       unobservedSpawns: num(r, 'unobserved_spawns') ?? 0,
       cacheRead: num(r, 'cache_read') ?? 0,
+      ...(quotaEstimate !== undefined ? { quotaEstimate } : {}),
+      ...(quotaShort !== undefined ? { quotaShort } : {}),
+      ...(quotaLine !== undefined ? { quotaLine } : {}),
     })
   }
   return out
+}
+
+const finiteNonNeg = (o: Json, k: string): number | undefined => {
+  const v = o[k]
+  return typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : undefined
+}
+
+function quotaEstimateOf(v: unknown): { session: number; ran: number } | undefined {
+  if (!isObject(v)) {
+    return undefined
+  }
+  const session = finiteNonNeg(v, 'session')
+  const ran = finiteNonNeg(v, 'ran')
+  return session === undefined || ran === undefined ? undefined : { session, ran }
+}
+
+function skillsOf(v: unknown): Record<string, number> | undefined {
+  if (!isObject(v)) {
+    return undefined
+  }
+  const entries = Object.entries(v).flatMap(([k, rawCount]) => {
+    const n = count(rawCount)
+    return k !== '' && n !== undefined ? ([[k, n]] as const) : []
+  })
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined
 }
 
 /**
