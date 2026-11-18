@@ -60,7 +60,8 @@ func isTaskDecision(ev Event) bool {
 	// A baseline record is a decision here: a spawn that was classified and
 	// left unchanged (paused, or logged so by an older binary).
 	switch ev.Outcome {
-	case OutcomeUsage, OutcomeResolved, OutcomeChildEnded, "error", OutcomeFailOpen, OutcomeBlocked, OutcomeDCI:
+	case OutcomeUsage, OutcomeResolved, OutcomeChildEnded, "error", OutcomeFailOpen, OutcomeBlocked, OutcomeDCI,
+		OutcomeWorkerEnded, OutcomeMCPTool, OutcomeSkillUsed:
 		return false
 	}
 	return true

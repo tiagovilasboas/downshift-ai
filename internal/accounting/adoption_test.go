@@ -28,3 +28,30 @@ func TestAdoptionLine(t *testing.T) {
 		t.Errorf("got  %q\nwant %q", got, want)
 	}
 }
+
+func TestAdoptionWithSkills(t *testing.T) {
+	scope := Scope{Kind: ScopeAll}
+	evs := []telemetry.Event{
+		telemetry.SkillUsed("claude-code", "s1", "ponytail", "test"),
+		telemetry.SkillUsed("claude-code", "s1", "downshift-audit", "test"),
+		telemetry.SkillUsed("claude-code", "s1", "ponytail", "test"),
+		telemetry.SkillUsed("claude-code", "s1", "ponytail", "test"),
+		telemetry.SkillUsed("claude-code", "s1", "private-skill", "test"),
+	}
+
+	got := BuildAdoption(evs, scope)
+	if got.Skills["ponytail"] != 3 || got.Skills["downshift-audit"] != 1 || got.Skills["other"] != 1 {
+		t.Fatalf("Skills = %+v", got.Skills)
+	}
+
+	wantOnlySkills := "Planner and workers: no calls yet · Skills: downshift-audit 1, other 1, ponytail 3"
+	if line := AdoptionLine(got); line != wantOnlySkills {
+		t.Errorf("skills only line = %q, want %q", line, wantOnlySkills)
+	}
+
+	withPlanner := append(evs, telemetry.MCPTool("plan", "", telemetry.ToolCounts{Steps: 2, SpawnSteps: 1, DelegateSteps: 1}))
+	wantCombined := "Planner: 1 plans, 2 steps (1 spawn · 1 delegate) · Workers: 0 delegated, 0 done · gateway 0/0 · Skills: downshift-audit 1, other 1, ponytail 3"
+	if line := AdoptionLine(BuildAdoption(withPlanner, scope)); line != wantCombined {
+		t.Errorf("combined line = %q, want %q", line, wantCombined)
+	}
+}

@@ -302,3 +302,36 @@ func TestCompact_InnerAndLeadingFamily(t *testing.T) {
 		})
 	}
 }
+
+func TestCompact_ShellDualKeptIDs(t *testing.T) {
+	log := bigLog()
+	in := hookport.ToolOutput{
+		Category:  core.CategoryShell,
+		Command:   "./job.sh | tee job.log",
+		Stdout:    log,
+		Stderr:    log,
+		HasStdout: true,
+		HasStderr: true,
+		ExitCode:  0,
+	}
+
+	seq := 0
+	ids := []string{"111111111111", "222222222222"}
+	res := Compact(allCaps, in, Options{
+		Keep: func([]byte) (string, bool) {
+			id := ids[seq]
+			seq++
+			return id, true
+		},
+		Balanced: true,
+	})
+	if !res.Replaced || res.KeptID != "111111111111" || len(res.ExtraKeptIDs) != 1 || res.ExtraKeptIDs[0] != "222222222222" {
+		t.Fatalf("dual kept IDs: kept=%q extra=%v replaced=%v", res.KeptID, res.ExtraKeptIDs, res.Replaced)
+	}
+
+	// Duplicate IDs across stdout and stderr are not repeated in ExtraKeptIDs.
+	dup := Compact(allCaps, in, Options{Keep: keepOK, Balanced: true})
+	if dup.KeptID != "0123456789ab" || len(dup.ExtraKeptIDs) != 0 {
+		t.Fatalf("duplicate kept IDs: kept=%q extra=%v", dup.KeptID, dup.ExtraKeptIDs)
+	}
+}

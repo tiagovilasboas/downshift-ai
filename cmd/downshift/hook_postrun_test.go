@@ -346,3 +346,49 @@ func TestPostRun_NoCutWithoutCCR(t *testing.T) {
 		t.Error("output cut with CCR off")
 	}
 }
+
+// When pre-run skips a non-read-only command (permission_mode: auto or
+// run_in_background: true), post-run still compacts and logs the output.
+func TestPostRun_SuppressedModeAndBackgroundCompacted(t *testing.T) {
+	stdout := verboseGoTest(40)
+	cases := []struct {
+		name string
+		mode string
+		bg   bool
+	}{
+		{"auto mode go test", "auto", false},
+		{"dontAsk mode go test", "dontAsk", false},
+		{"bypassPermissions mode go test", "bypassPermissions", false},
+		{"background go test in default mode", "default", true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			state := postRunEnv(t, true)
+			input := map[string]any{"command": "go test -v ./...", "description": "run"}
+			if tc.bg {
+				input["run_in_background"] = true
+			}
+			raw, err := json.Marshal(map[string]any{
+				"session_id": postSession, "transcript_path": "/x/" + postSession + ".jsonl", "cwd": "/tmp",
+				"permission_mode": tc.mode, "hook_event_name": "PostToolUse", "tool_name": "Bash",
+				"tool_input": input, "tool_use_id": "toolu_01ABC", "duration_ms": 1200,
+				"tool_response": map[string]any{"stdout": stdout, "stderr": "", "interrupted": false, "isImage": false},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, got := honorAnswer(t, portFor("claude-code"), raw)
+			if got == nil {
+				t.Fatalf("expected updatedToolOutput when pre-run skipped (%s)", tc.name)
+			}
+			out, _ := got["stdout"].(string)
+			if len(out) >= len(stdout) || !strings.Contains(out, "PASS") {
+				t.Errorf("stdout not compacted cleanly: len=%d/%d out=%q", len(out), len(stdout), out)
+			}
+			rows := execRows(t, state)
+			if len(rows) != 1 || !rows[0].Compacted || rows[0].Entry != postrun.Entry {
+				t.Errorf("exec rows = %+v, want 1 compacted post_tool_use row", rows)
+			}
+		})
+	}
+}

@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/tiagovilasboas/downshift-ai/internal/setup/configfile"
 )
 
 // hasMatcher reports whether event carries an entry with the given matcher.
@@ -104,6 +106,19 @@ func TestSetupCursorTouchHooks(t *testing.T) {
 		}
 		if !found {
 			t.Errorf("%s: missing %q (matcher %q): %s", ev.event, want, ev.matcher, e.read(".cursor/hooks.json"))
+		}
+	}
+}
+
+func TestSetupCursorSkills(t *testing.T) {
+	e := newSetupEnv(t, ".cursor")
+	if code, out, _ := e.run("--yes", "cursor"); code != 0 {
+		t.Fatalf("setup exit %d\n%s", code, out)
+	}
+	for _, skill := range []string{"downshift-audit/SKILL.md", "ponytail/SKILL.md"} {
+		got, err := os.ReadFile(e.path(".cursor/skills/" + skill))
+		if err != nil || !configfile.Owns(got) || !strings.HasPrefix(string(got), "---\n") {
+			t.Fatalf(".cursor/skills/%s missing, unmarked or frontmatter displaced: %v\n%.200s", skill, err, got)
 		}
 	}
 }

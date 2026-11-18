@@ -92,7 +92,7 @@ func TestPluginHooksMatchTheShippedFile(t *testing.T) {
 	if row.status != doctorOK || row.fix != "" {
 		t.Fatalf("row = %+v, want ok with no fix", row)
 	}
-	wantAll(t, row.detail, "commit f76cb0b331cc", "carries the 9 hooks this binary ships")
+	wantAll(t, row.detail, "commit f76cb0b331cc", "carries the 10 hooks this binary ships")
 	if strings.Contains(row.detail, testPluginSha) {
 		t.Errorf("detail should name the short commit, got %q", row.detail)
 	}

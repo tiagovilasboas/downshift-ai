@@ -34,7 +34,14 @@ func TestBuild_EveryHarness(t *testing.T) {
 			if h.Caps.MainWorkObserved() != (len(h.Caps.MainToolCategories) > 0) {
 				t.Fatalf("event and categories must be declared together")
 			}
-			rec, ok := Build(Call{Harness: h.Harness, Tool: "Bash", Session: "s1"}, h.Caps, now)
+			shellTool := "Bash"
+			for tool, cat := range h.Caps.MainToolCategories {
+				if cat == core.CategoryShell {
+					shellTool = tool
+					break
+				}
+			}
+			rec, ok := Build(Call{Harness: h.Harness, Tool: shellTool, Session: "s1"}, h.Caps, now)
 			if ok != h.Caps.MainWorkObserved() {
 				t.Fatalf("recorded=%v observed=%v", ok, h.Caps.MainWorkObserved())
 			}
@@ -78,12 +85,16 @@ func TestAppendReadSummarize_NoText(t *testing.T) {
 		t.Fatalf("read: %v %d", err, len(recs))
 	}
 	frontier := func([]Record) map[string]bool { return map[string]bool{"claude-code/s1": true} }
+	capsObserved := map[string]bool{}
+	for _, h := range core.AllHarnessCaps() {
+		capsObserved[h.Harness] = h.Caps.MainWorkObserved()
+	}
 	for _, r := range summarize(recs, 0, now, frontier) {
 		switch {
 		case r.Harness == "claude-code" && (!r.Observed || r.Mechanical != 2 || r.Frontier != 2):
 			t.Errorf("claude-code row = %+v", r)
-		case r.Harness != "claude-code" && (r.Observed || r.Mechanical != 0):
-			t.Errorf("%s must be unobserved: %+v", r.Harness, r)
+		case r.Harness != "claude-code" && (r.Observed != capsObserved[r.Harness] || r.Mechanical != 0):
+			t.Errorf("%s row = %+v, want observed=%v mechanical=0", r.Harness, r, capsObserved[r.Harness])
 		}
 	}
 }

@@ -37,7 +37,7 @@ type Event struct {
 	Tier            string `json:"tier"`                       // SMALL|MID|FRONTIER
 	PolicyVersion   string `json:"policy_version"`
 	BinaryVersion   string `json:"binary_version"`
-	Outcome         string `json:"outcome"` // rewrite_emitted|allow|blocked|error|usage|baseline
+	Outcome         string `json:"outcome"` // rewrite_emitted|allow|blocked|error|usage|baseline|skill_used
 	ErrorCode       string `json:"error_code,omitempty"`
 	// InvalidField names the payload field that failed validation (its wire
 	// name only, never its value). Set on failure and fail-open rows.

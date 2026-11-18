@@ -32,6 +32,9 @@ type harnessEntry struct {
 	// Port is the optional post-spawn observation port (honor / usage).
 	// Zero value means unobserved.
 	Port *hookport.Port
+	// ParseShellEvent decodes a raw hook payload into the harness's event
+	// value for shellwrap.WouldRewriteEvent, or nil when not supported.
+	ParseShellEvent func([]byte) any
 	// Caps are the harness facts.
 	Caps core.HarnessCapabilities
 }
@@ -62,6 +65,13 @@ var harnessRegistry = map[string]harnessEntry{
 			)
 		},
 		Port: portPtr(claudecode.Port()),
+		ParseShellEvent: func(b []byte) any {
+			var e claudecode.Event
+			if json.Unmarshal(b, &e) != nil {
+				return nil
+			}
+			return e
+		},
 		Caps: core.ClaudeCodeCaps,
 	},
 	"cursor": {

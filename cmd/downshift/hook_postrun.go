@@ -42,7 +42,7 @@ func postRunAnswer(port hookport.Port, raw []byte, prev any) (out any) {
 		Balanced:         bal.on,
 		BalanceThreshold: bal.postThreshold,
 		Session:          telemetry.HashSessionID(in.Session),
-		PreWrapped:       func(command string) bool { return shellwrap.WouldRewrite(port.ID, command) },
+		PreWrapped:       wouldPreWrap(port.ID, raw),
 	})
 	if res.Considered {
 		recordPostRun(port.ID, in.Session, res)
@@ -51,6 +51,17 @@ func postRunAnswer(port hookport.Port, raw []byte, prev any) (out any) {
 		return prev
 	}
 	return port.ReplaceToolOutput(prev, res.Output)
+}
+
+// wouldPreWrap reports whether the pre-run hook actually wrapped the call,
+// evaluating full permission/background/rule state from raw when available.
+func wouldPreWrap(harness string, raw []byte) func(string) bool {
+	if e, ok := harnessRegistry[harness]; ok && e.ParseShellEvent != nil {
+		if parsed := e.ParseShellEvent(raw); parsed != nil {
+			return func(string) bool { return shellwrap.WouldRewriteEvent(harness, parsed) }
+		}
+	}
+	return func(command string) bool { return shellwrap.WouldRewrite(harness, command) }
 }
 
 // postRunOn reports whether post-run compaction is on: off with
@@ -76,6 +87,7 @@ func recordPostRun(harness, session string, res postrun.Result) {
 		RawBytes: res.RawBytes, EmittedBytes: res.EmittedBytes,
 		Compacted: res.Compacted, Folded: res.Folded,
 		Passthrough: res.Passthrough, PassthroughDetail: res.Detail, KeptID: res.KeptID,
+		KeptIDs: res.ExtraKeptIDs,
 	}, time.Now())
 	if session != "" {
 		ev.Session = telemetry.HashSessionID(session)

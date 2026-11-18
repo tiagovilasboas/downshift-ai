@@ -123,21 +123,7 @@ func (p *spawnPlacement) tokens() RoutingRow {
 // resumed child has several records and counts as one spawn: below when any of
 // its records ran below the baseline.
 func RoutingTokens(events []Event) RoutingView {
-	refuted := map[linkKey]string{}
-	decisions := map[linkKey]Event{}
-	for _, ev := range events {
-		if ev.Outcome == OutcomeResolved && ev.LinkedDecision != "" && ev.RewriteHonored != nil && !*ev.RewriteHonored {
-			refuted[linkKey{ev.Harness, ev.LinkedDecision}] = ev.ToModel
-		}
-		if IsDecisionRow(ev) {
-			decisions[linkKey{ev.Harness, DecisionKey(ev)}] = ev
-		}
-	}
-	spawns := map[string]*spawnPlacement{}
-	for _, ev := range events {
-		accumulateRoutingSpawn(ev, decisions, refuted, spawns)
-	}
-	return buildRoutingView(spawns)
+	return RoutingTokensWithLookup(events, events)
 }
 
 func accumulateRoutingSpawn(ev Event, decisions map[linkKey]Event, refuted map[linkKey]string, spawns map[string]*spawnPlacement) {

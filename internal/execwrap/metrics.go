@@ -100,7 +100,9 @@ type Event struct {
 	// Kept is the CCR id named in the marker of a compacted run whose raw output
 	// was stored: a hash of the stored text, never the text. A later
 	// `downshift retrieve` of that id is matched to this row (retrievals.go).
-	Kept string `json:"kept,omitempty"`
+	// KeptIDs holds any secondary CCR ids stored by the same run.
+	Kept    string   `json:"kept,omitempty"`
+	KeptIDs []string `json:"kept_ids,omitempty"`
 	// RetrievedBytes is filled when the log is read, never written: the bytes
 	// that retrievals of Kept pulled back into context, matched to this run.
 	// NetSavedBytes subtracts them.
@@ -143,9 +145,40 @@ func EventFrom(r Result, now time.Time) Event {
 		Folded:       r.Folded,
 		Passthrough:  r.Passthrough,
 		Kept:         r.KeptID,
+		KeptIDs:      uniqueIDs(r.KeptIDs, r.KeptID),
 
 		PassthroughDetail: r.PassthroughDetail,
 	}
+}
+
+func uniqueIDs(ids []string, exclude string) []string {
+	if len(ids) == 0 {
+		return nil
+	}
+	seen := map[string]bool{exclude: true}
+	var out []string
+	for _, id := range ids {
+		if id != "" && !seen[id] {
+			seen[id] = true
+			out = append(out, id)
+		}
+	}
+	return out
+}
+
+// eventKeptIDs returns every unique non-empty CCR id on ev (Kept followed by KeptIDs).
+func eventKeptIDs(ev Event) []string {
+	if len(ev.KeptIDs) == 0 {
+		if ev.Kept == "" {
+			return nil
+		}
+		return []string{ev.Kept}
+	}
+	out := make([]string, 0, 1+len(ev.KeptIDs))
+	if ev.Kept != "" {
+		out = append(out, ev.Kept)
+	}
+	return append(out, uniqueIDs(ev.KeptIDs, ev.Kept)...)
 }
 
 // EventsPath is exec-events.jsonl in the state directory.

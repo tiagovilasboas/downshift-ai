@@ -81,6 +81,7 @@ type Result struct {
 	Compacted, Folded      bool
 	Passthrough, Detail    string
 	KeptID                 string
+	ExtraKeptIDs           []string
 	ExitCode               int
 	// Inner and Kind describe a shell command with no family that the
 	// policy refuses for a metacharacter: execwrap.CompoundShape. Empty otherwise.
@@ -153,13 +154,30 @@ func compactShell(in hookport.ToolOutput, o Options) Result {
 		if errOut.Compacted {
 			res.Output.Stderr = string(errOut.Output)
 			res.Compacted, res.Folded, res.Passthrough, res.Detail = true, res.Folded || errOut.Folded, "", ""
-			if res.KeptID == "" {
-				res.KeptID = errOut.KeptID
-			}
+			recordKeptID(&res, errOut.KeptID)
 		}
 	}
 	res.EmittedBytes = int64(len(res.Output.Stdout) + len(res.Output.Stderr))
 	return settle(res, in)
+}
+
+func recordKeptID(res *Result, id string) {
+	if id == "" {
+		return
+	}
+	if res.KeptID == "" {
+		res.KeptID = id
+		return
+	}
+	if res.KeptID == id {
+		return
+	}
+	for _, extra := range res.ExtraKeptIDs {
+		if extra == id {
+			return
+		}
+	}
+	res.ExtraKeptIDs = append(res.ExtraKeptIDs, id)
 }
 
 // settle undoes a result that would not shorten the output: the row then
@@ -170,7 +188,7 @@ func settle(res Result, in hookport.ToolOutput) Result {
 		return res
 	}
 	if res.Compacted {
-		res.Compacted, res.Folded, res.KeptID, res.Passthrough, res.Detail = false, false, "", execwrap.PassthroughSmallOutput, ""
+		res.Compacted, res.Folded, res.KeptID, res.ExtraKeptIDs, res.Passthrough, res.Detail = false, false, "", nil, execwrap.PassthroughSmallOutput, ""
 	}
 	res.Output, res.EmittedBytes = in, res.RawBytes
 	return res

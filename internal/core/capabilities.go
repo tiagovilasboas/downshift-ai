@@ -203,7 +203,8 @@ var (
 	// The adapter records decisions but cannot rewrite models in place. Child end
 	// (N5): PostToolUse carries spawn result. Shell rewrite: not supported.
 	// SessionEnv is not set to avoid collision with KiroCrew (both use KIRO_SESSION_ID).
-	KiroCaps = HarnessCapabilities{CanRewriteModel: false, CanApplyEffort: false, RewritePreservesInput: false, ChildEndEvent: "PostToolUse", UsageSource: UsageNone, CanRewriteShellCommand: false, ShellDialect: ShellPOSIX, UnknownUserRules: true}
+	KiroCaps = HarnessCapabilities{CanRewriteModel: false, CanApplyEffort: false, RewritePreservesInput: false, ChildEndEvent: "PostToolUse", UsageSource: UsageNone, CanRewriteShellCommand: false, ShellDialect: ShellPOSIX, UnknownUserRules: true, MainToolEvent: "PostToolUse",
+		MainToolCategories: map[string]ToolCategory{"execute_bash": CategoryShell, "read_file": CategoryRead, "grep_search": CategorySearch, "file_search": CategorySearch}}
 
 	// KiroCrewCaps — KiroCrew's preToolUse hook is policy-only: its contract is
 	// exit 0 (allow) / exit 2 (block + stderr to the LLM), with NO updated_input

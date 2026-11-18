@@ -15,21 +15,29 @@ import (
 // `downshift compactor -- ...` by an agent or a script.
 const DirectLabel = "direct calls, no session"
 
-// DirectCompactor totals the exec runs of the window that carry no session
-// (Event.Session empty). A session-scoped view never sees them, so they get
-// their own figure instead of being dropped. Only a day window applies: a
-// session scope has no untagged runs by definition, so it returns zero.
+// DirectCompactor totals the exec runs of the window that arrived as direct
+// invocations (`entry == "direct"` or legacy rows with empty `entry` and empty
+// `session`). Hook and post-tool-use rows are excluded even when `session` is
+// empty. Only a day window applies: a session scope has no direct runs by
+// definition, so it returns zero.
 func DirectCompactor(execEvents []execwrap.Event, scope Scope, now time.Time) Compactor {
 	if scope.Kind == ScopeSession {
 		return Compactor{}
 	}
 	var untagged []execwrap.Event
 	for _, ev := range scopeExec(execEvents, scope, now) {
-		if ev.Session == "" {
+		if isDirectExec(ev) {
 			untagged = append(untagged, ev)
 		}
 	}
 	return compactorTotals(untagged)
+}
+
+func isDirectExec(ev execwrap.Event) bool {
+	if ev.Entry == "direct" {
+		return true
+	}
+	return ev.Entry == "" && ev.Session == ""
 }
 
 // DirectLine is "direct calls, no session: 3, ~1.2k tokens saved"; the tokens

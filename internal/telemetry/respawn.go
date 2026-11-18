@@ -78,6 +78,9 @@ func newRespawnIndex() *respawnIndex {
 }
 
 func (r *respawnIndex) add(e Event) {
+	if e.Outcome == OutcomeSkillUsed || e.Outcome == OutcomeMCPTool || e.Outcome == OutcomeWorkerEnded {
+		return
+	}
 	t, err := time.Parse(time.RFC3339Nano, e.Timestamp)
 	if err != nil || e.SessionID == "" {
 		return

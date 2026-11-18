@@ -134,7 +134,7 @@ func parseVerboseMapFields(out hookport.ToolOutput, resp map[string]any) hookpor
 		return out
 	}
 	if len(resp) > 0 {
-		if b, err := json.MarshalIndent(resp, "", "  "); err == nil {
+		if b, err := json.Marshal(resp); err == nil {
 			out.Content, out.HasContent = string(b), true
 			out.Native = map[string]any{rawShapeKey: rawShapeJSON}
 		}

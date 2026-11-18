@@ -117,15 +117,22 @@ func Handle(harness string, ev any, sessionTag string) Result {
 	return Result{}
 }
 
-func handleRewrite(caps core.HarnessCapabilities, rw RewriteAdapter, sessionTag, harness string) Result {
+func rewriteDecision(caps core.HarnessCapabilities, rw RewriteAdapter) (execwrap.Decision, string, bool) {
 	command, isShell := rw.ShellCommand()
 	if !isShell {
-		return Result{}
+		return execwrap.Decision{}, "", false
 	}
 	d := decide(caps.ShellDialect, command, rw.ShellBlocked, caps.CanRewriteShellCommand)
 	d = refuseBackground(rw, refuseQuotedUnderQuotedRules(rw, d))
 	limit := caps.RewriteImpliesApproval || caps.UnknownUserRules || promptsSuppressed(rw)
-	d = limitToReadOnly(limit, d, command)
+	return limitToReadOnly(limit, d, command), command, true
+}
+
+func handleRewrite(caps core.HarnessCapabilities, rw RewriteAdapter, sessionTag, harness string) Result {
+	d, command, isShell := rewriteDecision(caps, rw)
+	if !isShell {
+		return Result{}
+	}
 	if !d.Rewrite {
 		return skipped(d, command)
 	}

@@ -126,3 +126,41 @@ func TestCompact_SearchGlobLargePathListUnder16KB(t *testing.T) {
 		t.Errorf("missing CCR retrieve marker in:\n%s", joined)
 	}
 }
+
+func TestCompact_SearchDualKeptIDs(t *testing.T) {
+	var content strings.Builder
+	for i := 1; i <= 500; i++ {
+		fmt.Fprintf(&content, "pkg/mod%02d/file.go:%d:match payload\n", i%10, i)
+	}
+	paths := make([]string, 0, 500)
+	for i := 0; i < 500; i++ {
+		paths = append(paths, fmt.Sprintf("internal/pkg%02d/component/service_handler_%03d.go", i%20, i))
+	}
+	in := hookport.ToolOutput{
+		Category:   core.CategorySearch,
+		Content:    content.String(),
+		Paths:      paths,
+		HasContent: true,
+		HasPaths:   true,
+	}
+
+	seq := 0
+	ids := []string{"aaaaaaaaaaaa", "bbbbbbbbbbbb"}
+	res := Compact(allCaps, in, Options{
+		Keep: func([]byte) (string, bool) {
+			id := ids[seq]
+			seq++
+			return id, true
+		},
+		Balanced: true,
+	})
+	if !res.Replaced || res.KeptID != "aaaaaaaaaaaa" || len(res.ExtraKeptIDs) != 1 || res.ExtraKeptIDs[0] != "bbbbbbbbbbbb" {
+		t.Fatalf("dual search kept IDs: kept=%q extra=%v replaced=%v", res.KeptID, res.ExtraKeptIDs, res.Replaced)
+	}
+
+	// Duplicate IDs across content and paths are not repeated in ExtraKeptIDs.
+	dup := Compact(allCaps, in, Options{Keep: keepOK, Balanced: true})
+	if dup.KeptID != "0123456789ab" || len(dup.ExtraKeptIDs) != 0 {
+		t.Fatalf("duplicate search kept IDs: kept=%q extra=%v", dup.KeptID, dup.ExtraKeptIDs)
+	}
+}

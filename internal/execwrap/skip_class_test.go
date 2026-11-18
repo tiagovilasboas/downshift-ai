@@ -56,7 +56,8 @@ func TestSkipDetail(t *testing.T) {
 		{"pipe after go test", SkipMetachar, "go test ./... | tail", MetaPipe, string(FamilyGoTest)},
 		{"env prefix", SkipMetachar, "CI=1 go test ./... && echo", MetaAnd, string(FamilyGoTest)},
 		{"unknown family", SkipMetachar, "foo bar | baz", MetaPipe, ""},
-		{"other reason has none", SkipDenied, "go test | tail", "", ""},
+		{"other reason keeps family without class", SkipDenied, "go test | tail", "", string(FamilyGoTest)},
+		{"other reason unknown family", SkipDenied, "vim README.md", "", ""},
 		{"no metachar", SkipMetachar, "go test ./...", "", ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

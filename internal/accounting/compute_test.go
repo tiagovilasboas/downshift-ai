@@ -218,3 +218,46 @@ func TestComputeCompactorIsNetOfRetrievals(t *testing.T) {
 		t.Fatalf("compactor = %+v, want saved 600, retrieved 300, tokens 150", c)
 	}
 }
+
+func TestCompute_DaysWindowKeepsCrossBoundaryDecision(t *testing.T) {
+	honoredFalse := false
+	events := []telemetry.Event{
+		// Old spawn completely outside 30-day window: must be excluded.
+		{CorrelationID: "old-pair", Timestamp: ago(40 * 24 * time.Hour), SessionID: "s1", Harness: "claude-code",
+			Outcome: telemetry.OutcomeRewriteEmitted, Verdict: "DOWNSHIFT", ParentModel: "claude-opus-4-8",
+			FromModel: "claude-opus-4-8", ToModel: "claude-haiku-4-5"},
+		{Timestamp: ago(40 * 24 * time.Hour), SessionID: "s1", Harness: "claude-code", Outcome: telemetry.OutcomeUsage,
+			LinkedDecision: "old-pair", InputTokens: i64(500)},
+		// Cross-boundary spawn: decision at 35 days ago, usage 1 hour ago -> below session model.
+		{CorrelationID: "edge", Timestamp: ago(35 * 24 * time.Hour), SessionID: "s1", Harness: "claude-code",
+			Outcome: telemetry.OutcomeRewriteEmitted, Verdict: "DOWNSHIFT", ParentModel: "claude-opus-4-8",
+			FromModel: "claude-opus-4-8", ToModel: "claude-haiku-4-5"},
+		{Timestamp: ago(time.Hour), SessionID: "s1", Harness: "claude-code", Outcome: telemetry.OutcomeUsage,
+			LinkedDecision: "edge", InputTokens: i64(250)},
+		// Cross-boundary refuted spawn: decision + refutation at 35 days ago, usage 1 hour ago -> not below.
+		{CorrelationID: "edge-ref", Timestamp: ago(35 * 24 * time.Hour), SessionID: "s1", Harness: "claude-code",
+			Outcome: telemetry.OutcomeRewriteEmitted, Verdict: "DOWNSHIFT", ParentModel: "claude-opus-4-8",
+			FromModel: "claude-opus-4-8", ToModel: "claude-haiku-4-5"},
+		{CorrelationID: "edge-r", Timestamp: ago(35 * 24 * time.Hour), SessionID: "s1", Harness: "claude-code",
+			Outcome: telemetry.OutcomeResolved, LinkedDecision: "edge-ref", ToModel: "claude-opus-4-8",
+			RewriteHonored: &honoredFalse},
+		{Timestamp: ago(time.Hour), SessionID: "s1", Harness: "claude-code", Outcome: telemetry.OutcomeUsage,
+			LinkedDecision: "edge-ref", InputTokens: i64(100)},
+	}
+
+	scope := Scope{Kind: ScopeDays, Days: 30}
+	win := Compute(events, nil, scope)
+	got := win.Routing.ByHarness["claude-code"]
+	want := telemetry.RoutingRow{
+		Spawns: 2, BelowSpawns: 1, Billable: 350, BelowBillable: 250,
+		RewrittenSpawns: 1, RewrittenBillable: 250,
+	}
+	if got != want {
+		t.Fatalf("Compute windowed routing = %+v, want %+v", got, want)
+	}
+
+	rows := TokensByHarness(events, nil, scope, nil)
+	if len(rows) != 1 || !rows[0].RoutingObserved || rows[0].Routing != want {
+		t.Fatalf("TokensByHarness = %+v, want 1 observed row with %+v", rows, want)
+	}
+}

@@ -165,9 +165,34 @@ func TestOldLogsWithoutRetrievalsAreUnchanged(t *testing.T) {
 
 func TestRunReportsKeptID(t *testing.T) {
 	// A kept id reaches the Result and the Event only when the run was compacted.
-	r := Result{Family: "go-test", RawBytes: 1000, EmittedBytes: 100, Compacted: true, KeptID: idA}
-	if ev := EventFrom(r, time.Now()); ev.Kept != idA {
+	r := Result{Family: "go-test", RawBytes: 1000, EmittedBytes: 100, Compacted: true, KeptID: idA, KeptIDs: []string{idA, idB, idB}}
+	ev := EventFrom(r, time.Now())
+	if ev.Kept != idA {
 		t.Fatalf("EventFrom kept = %q, want %q", ev.Kept, idA)
+	}
+	if len(ev.KeptIDs) != 1 || ev.KeptIDs[0] != idB {
+		t.Fatalf("EventFrom kept_ids = %v, want [%s]", ev.KeptIDs, idB)
+	}
+}
+
+func TestApplyRetrievalsSecondaryKeptIDs(t *testing.T) {
+	ev := Event{Family: "search-tool", RawBytes: 1000, EmittedBytes: 100, Compacted: true, Kept: idA, KeptIDs: []string{idB, idA}}
+	got := ApplyRetrievals([]Event{ev}, map[string]int64{idA: 250, idB: 350})
+	if got[0].RetrievedBytes != 600 || got[0].NetSavedBytes() != 300 {
+		t.Fatalf("retrieved=%d net=%d, want 600 and 300", got[0].RetrievedBytes, got[0].NetSavedBytes())
+	}
+
+	// Session-scoped and bare retrievals via ReadEvents/Summarize both match secondary IDs.
+	events := setState(t)
+	ev.Session = hashS1
+	if err := Append(events, ev); err != nil {
+		t.Fatal(err)
+	}
+	RecordRetrieval(idB, hashS1, 300, time.Now())
+	RecordRetrieval(idA, "", 200, time.Now())
+	evs, err := ReadEvents(events)
+	if err != nil || len(evs) != 1 || evs[0].RetrievedBytes != 500 {
+		t.Fatalf("ReadEvents = %+v err=%v, want RetrievedBytes=500", evs, err)
 	}
 }
 

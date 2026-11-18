@@ -96,6 +96,8 @@ var Targets = []Target{
 			{Event: "PostToolUse", Matcher: "Read|Grep|Glob", Args: "claude-code-post-tool-use"},
 			// WebFetch and MCP tools compact verbose text/JSON after the run.
 			{Event: "PostToolUse", Matcher: "WebFetch|mcp__.*", Args: "claude-code-post-tool-use"},
+			// Skill invocations (ponytail, downshift-*) feed adoption counts.
+			{Event: "PostToolUse", Matcher: "Skill", Args: "claude-code-post-tool-use"},
 			{Event: "PostToolUseFailure", Matcher: "Agent|Task", Args: "claude-code-post-tool-use"},
 			{Event: "SessionStart", Args: "claude-code-session-start"},
 			{Event: "SubagentStop", Args: "claude-code-subagent-stop"},
@@ -111,6 +113,7 @@ var Targets = []Target{
 	{
 		Name:      "cursor",
 		ConfigDir: ".cursor",
+		SkillsDir: ".cursor/skills",
 		File:      ".cursor/hooks.json",
 		HooksPath: []string{"hooks"},
 		Defaults:  []Default{{Key: "version", Value: 1}},

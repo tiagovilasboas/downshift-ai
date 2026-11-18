@@ -983,8 +983,13 @@
       "CanAdviseShellWrap": false,
       "AgentTypeHints": null,
       "SquadAgentPrefix": "",
-      "MainToolEvent": "",
-      "MainToolCategories": null,
+      "MainToolEvent": "PostToolUse",
+      "MainToolCategories": {
+        "execute_bash": "shell",
+        "file_search": "search",
+        "grep_search": "search",
+        "read_file": "read"
+      },
       "MaxParallel": 0,
       "WorkerAgent": "",
       "WorkerReadOnlyVerified": false,

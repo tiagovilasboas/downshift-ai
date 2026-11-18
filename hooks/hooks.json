@@ -57,6 +57,15 @@
             "command": "downshift claude-code-post-tool-use"
           }
         ]
+      },
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "downshift claude-code-post-tool-use"
+          }
+        ]
       }
     ],
     "PostToolUseFailure": [

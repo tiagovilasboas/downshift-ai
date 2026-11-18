@@ -76,7 +76,7 @@ func BuildReport(events []Event, days int) Report {
 	rep := Report{Days: days}
 	windowed := FilterByDays(events, days)
 	rep.Completion = CompletionByHarness(windowed)
-	rep.Routing = RoutingTokens(windowed)
+	rep.Routing = RoutingTokensWithLookup(windowed, events)
 	rep.SetCompactor(0, 0)
 	rep.DecisionsByPermissionMode = CountPermissionModes(windowed)
 	verdicts := verdictTally{}

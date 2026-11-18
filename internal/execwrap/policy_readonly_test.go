@@ -37,6 +37,8 @@ func TestReadOnly(t *testing.T) {
 		{"asdf current", true},
 		{"direnv status", true},
 		{"ls -la internal", true},
+		{"agent-desktop snapshot --app Files -i", true},
+		{"agent-desktop find --role button --name Save", true},
 
 		// Chained or with any shell metacharacter.
 		{"go version ; perl /tmp/x.pl", false},
@@ -110,6 +112,9 @@ func TestReadOnly(t *testing.T) {
 		{"gh pr view 1 -w", false},
 		{"gh search repos x --web", false},
 		{"gh search repos x", true},
+		{"agent-desktop click @s1:e3", false},
+		{"agent-desktop snapshot --debug", false},
+		{"agent-desktop snapshot --screenshot out.png", false},
 
 		// Edge shapes.
 		{"", false},

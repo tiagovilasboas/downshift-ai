@@ -29,7 +29,8 @@ var allowlistExamples = []string{
 	"gh run",
 	"ls",
 	"find",
-	"grep -rn x .",
+	"grep -r x",
+	"agent-desktop snapshot",
 }
 
 // AllowlistSummary is the one-line list of allowlisted command forms, in

@@ -52,7 +52,7 @@ Read, search and shell calls a small-tier subagent could take.
 | claude-code | main session: 0 read/search/shell calls, 0 on a frontier model |
 | cursor | unobserved |
 | codex | unobserved |
-| kiro | unobserved |
+| kiro | main session: 0 read/search/shell calls, 0 on a frontier model |
 | kirocrew | unobserved |
 | antigravity | unobserved |
 | opencode | unobserved |

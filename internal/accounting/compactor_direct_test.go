@@ -28,3 +28,55 @@ func TestDirectCompactorUsesGivenNow(t *testing.T) {
 		}
 	}
 }
+
+func TestDirectCompactorClassifiesEntry(t *testing.T) {
+	now, _ := time.Parse(time.RFC3339, "2026-11-05T00:00:00Z")
+	scope := Scope{Kind: ScopeDays, Days: 7}
+	ts := "2026-11-04T12:00:00Z"
+
+	cases := []struct {
+		name string
+		ev   execwrap.Event
+		want int64
+	}{
+		{
+			name: "entry direct without session",
+			ev:   execwrap.Event{TS: ts, Entry: "direct", Compacted: true, RawBytes: 4000, EmittedBytes: 400},
+			want: 1,
+		},
+		{
+			name: "entry direct with session",
+			ev:   execwrap.Event{TS: ts, Entry: "direct", Session: "s1", Compacted: true, RawBytes: 4000, EmittedBytes: 400},
+			want: 1,
+		},
+		{
+			name: "entry post_tool_use without session",
+			ev:   execwrap.Event{TS: ts, Entry: "post_tool_use", Session: "", Compacted: true, RawBytes: 4000, EmittedBytes: 400},
+			want: 0,
+		},
+		{
+			name: "entry hook without session",
+			ev:   execwrap.Event{TS: ts, Entry: "hook", Session: "", Compacted: true, RawBytes: 4000, EmittedBytes: 400},
+			want: 0,
+		},
+		{
+			name: "legacy without entry or session",
+			ev:   execwrap.Event{TS: ts, Entry: "", Session: "", Compacted: true, RawBytes: 4000, EmittedBytes: 400},
+			want: 1,
+		},
+		{
+			name: "legacy without entry with session",
+			ev:   execwrap.Event{TS: ts, Entry: "", Session: "s1", Compacted: true, RawBytes: 4000, EmittedBytes: 400},
+			want: 0,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := DirectCompactor([]execwrap.Event{tc.ev}, scope, now).Commands
+			if got != tc.want {
+				t.Errorf("%s: commands = %d, want %d", tc.name, got, tc.want)
+			}
+		})
+	}
+}

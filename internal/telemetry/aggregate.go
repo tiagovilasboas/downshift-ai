@@ -115,8 +115,8 @@ func (a *aggregator) processEvent(ev Event) {
 	if a.countChildEnd(ev) {
 		return // how a child ended: an observation, not a decision or cost
 	}
-	if ev.Outcome == OutcomeWorkerEnded || ev.Outcome == OutcomeMCPTool {
-		return // a delegated worker's end: tokens for the worker budget, not a routed spawn
+	if ev.Outcome == OutcomeWorkerEnded || ev.Outcome == OutcomeMCPTool || ev.Outcome == OutcomeSkillUsed {
+		return // an adoption or worker observation, not a routed spawn or cost
 	}
 	if ev.Outcome == OutcomeResolved {
 		return // an observation about an earlier decision, not a cost or a decision

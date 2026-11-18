@@ -36,7 +36,9 @@ func TestReport_MainSessionWorkRow(t *testing.T) {
 		switch {
 		case line == "":
 			t.Errorf("no row for %s:\n%s", h.Harness, sec)
-		case h.Caps.MainWorkObserved() && !strings.Contains(line, "main session: 3 read/search/shell calls, 2 on a frontier model"):
+		case h.Harness == "claude-code" && !strings.Contains(line, "main session: 3 read/search/shell calls, 2 on a frontier model"):
+			t.Errorf("%s row = %q", h.Harness, line)
+		case h.Harness != "claude-code" && h.Caps.MainWorkObserved() && !strings.Contains(line, "main session: 0 read/search/shell calls, 0 on a frontier model"):
 			t.Errorf("%s row = %q", h.Harness, line)
 		case !h.Caps.MainWorkObserved() && !strings.Contains(line, "unobserved"):
 			t.Errorf("%s must read unobserved: %q", h.Harness, line)

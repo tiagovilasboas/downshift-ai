@@ -105,7 +105,8 @@ func IsDecisionRow(ev Event) bool {
 		return false
 	}
 	switch ev.Outcome {
-	case OutcomeUsage, OutcomeResolved, OutcomeChildEnded, "error", OutcomeFailOpen, OutcomeDCI:
+	case OutcomeUsage, OutcomeResolved, OutcomeChildEnded, "error", OutcomeFailOpen, OutcomeDCI,
+		OutcomeWorkerEnded, OutcomeMCPTool, OutcomeSkillUsed:
 		return false
 	}
 	return true

@@ -131,10 +131,10 @@ func TestSetupFreshClaudeCode(t *testing.T) {
 		got := hookCommands(t, doc, event)
 		if event == "PreToolUse" || event == "PostToolUse" {
 			// Agent|Task spawns and Bash (the exec wrapper) share the handler;
-			// PostToolUse adds Read|Grep|Glob and WebFetch|mcp__.*.
+			// PostToolUse adds Read|Grep|Glob, WebFetch|mcp__.* and Skill.
 			n := 2
 			if event == "PostToolUse" {
-				n = 4
+				n = 5
 			}
 			if len(got) != n {
 				t.Errorf("%s = %v, want %d x %s", event, got, n, cmd)

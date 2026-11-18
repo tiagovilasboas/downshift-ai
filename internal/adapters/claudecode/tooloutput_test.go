@@ -215,3 +215,23 @@ func TestParseAndReplaceToolOutput_NonBashTools(t *testing.T) {
 		})
 	}
 }
+
+func TestParseToolOutput_MCPArbitraryJSONIsCompact(t *testing.T) {
+	raw, err := json.Marshal(map[string]any{
+		"hook_event_name": "PostToolUse",
+		"session_id":      "sess-1",
+		"tool_name":       "mcp__api__list",
+		"tool_response":   map[string]any{"items": []any{"a", "b", "c"}, "total": 3},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsed, ok := claudecode.ParseToolOutput(raw)
+	if !ok {
+		t.Fatal("ParseToolOutput returned ok=false")
+	}
+	want := `{"items":["a","b","c"],"total":3}`
+	if parsed.Content != want {
+		t.Fatalf("Content = %q, want compact JSON %q", parsed.Content, want)
+	}
+}
