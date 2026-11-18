@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.1] - 2026-11-18
+
+Release notes: [docs/releases/v0.18.1.md](docs/releases/v0.18.1.md).
+
 ### Fixed
 
 - **Post-tool-use rewrites in suppressed permission modes and background runs.** Postrun now evaluates full `WouldRewriteEvent` against the parsed hook payload instead of command-only `WouldRewrite`, so commands rejected as `not_read_only` in PreToolUse still compact and log in PostToolUse (#149).
@@ -18,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`agent-desktop` read-only snapshots and cross-harness parity.** Added `agent-desktop` (`snapshot`/`find`) to read-only families, added SessionIdentifier for `antigravity`, wired `kiro.HandlePostToolUse`, set `SkillsDir` for `opencode` and `antigravity`, and wired Cursor's skills directory (#149, #150).
 - **Honest skill adoption telemetry (`ponytail`).** Added `OutcomeSkillUsed`, strict skill name allowlisting, Claude Code PostToolUse skill observation, and `Adoption.Skills` summary display (#149).
+- **Compositor-friendly `web-motion` skill and `coder-front` guidance.** Added plugin-only `skills/web-motion/SKILL.md` with compositor-only motion rules, updated `agents/coder-front.md` to drop Canvas 2D / Web Worker motion defaults in favour of DOM + WAAPI/CSS, and added matching frontend playbook guidance (#152).
 
 ## [0.18.0] - 2026-11-17
 
