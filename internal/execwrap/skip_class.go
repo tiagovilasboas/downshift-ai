@@ -87,27 +87,68 @@ func MetacharClass(command string) string {
 // accepted (policy_quoted.go), so they are not what a skip is classified by.
 func firstUnsafe(command string) int { return firstRefused(command) }
 
-// SkipDetail returns the metacharacter class and the command family of a
-// metachar skip, and "", "" for any other skip. The family is the one named by
-// the words before the first metacharacter, "" when none is allowlisted. Only
-// fixed codes are returned, never command text.
+// SkipDetail returns the metacharacter class (for SkipMetachar only) and the
+// command family of a skip. For SkipMetachar, the family comes from the words
+// before the first metacharacter; for any other reason, class is "" and the
+// family comes from safe argv parsing (including basename resolution for
+// absPathAllowlisted commands). Only fixed codes are returned, never command
+// text.
 func SkipDetail(reason, command string) (class, family string) {
-	if reason != SkipMetachar {
+	if reason == "" {
 		return "", ""
+	}
+	if reason != SkipMetachar {
+		return "", string(commandFamily(command))
 	}
 	i := firstUnsafe(command)
 	if i < 0 {
 		return "", ""
 	}
-	words := strings.Fields(command[:i])
-	if lexed, bad := lexQuoted(command[:i]); bad < 0 {
-		words = words[:0]
-		for _, w := range lexed {
-			words = append(words, w.text)
-		}
+	_, argv := splitEnvAssignments(parseWords(command[:i]))
+	return MetacharClass(command), string(FamilyOf(argv))
+}
+
+func commandFamily(command string) Family {
+	words := safeCommandWords(command)
+	if len(words) == 0 {
+		return FamilyNone
 	}
 	_, argv := splitEnvAssignments(words)
-	return MetacharClass(command), string(FamilyOf(argv))
+	if fam := FamilyOf(argv); fam != FamilyNone {
+		return fam
+	}
+	return absPathFamily(argv)
+}
+
+func safeCommandWords(command string) []string {
+	trimmed := strings.TrimSpace(command)
+	if trimmed == "" {
+		return nil
+	}
+	core, _ := cutShellTail(trimmed)
+	if lexed, bad := lexQuoted(core); bad < 0 {
+		return wordTexts(lexed)
+	}
+	i := firstUnsafe(trimmed)
+	if i <= 0 {
+		return nil
+	}
+	return parseWords(trimmed[:i])
+}
+
+func parseWords(prefix string) []string {
+	if lexed, bad := lexQuoted(prefix); bad < 0 {
+		return wordTexts(lexed)
+	}
+	return strings.Fields(prefix)
+}
+
+func wordTexts(lexed []shellWord) []string {
+	out := make([]string, len(lexed))
+	for i, w := range lexed {
+		out[i] = w.text
+	}
+	return out
 }
 
 // SummarizeSkipClasses counts the metachar skips of the log by class. Rows

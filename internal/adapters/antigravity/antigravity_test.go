@@ -392,3 +392,27 @@ func TestProjectDirFallsBackToWorkspacePaths(t *testing.T) {
 		t.Errorf("workspacePaths must parse from the payload, got %q (%v)", ev.ProjectDir(), err)
 	}
 }
+
+func TestSessionIdentifier(t *testing.T) {
+	cases := []struct {
+		name string
+		raw  string
+		want string
+	}{
+		{"conversationId", `{"conversationId":"conv-1","sessionId":"s-1","session_id":"s-2"}`, "conv-1"},
+		{"sessionId fallback", `{"sessionId":"s-1","session_id":"s-2"}`, "s-1"},
+		{"session_id snake fallback", `{"session_id":"s-2"}`, "s-2"},
+		{"empty", `{}`, ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var ev antigravity.Event
+			if err := json.Unmarshal([]byte(tc.raw), &ev); err != nil {
+				t.Fatalf("unmarshal: %v", err)
+			}
+			if got := ev.SessionIdentifier(); got != tc.want {
+				t.Errorf("SessionIdentifier() = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}

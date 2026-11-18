@@ -87,11 +87,17 @@ func hasUnsafeByte(command string) bool { return firstRefused(command) >= 0 }
 // whose basename would be allowlisted.
 func absPathAllowlisted(command string) bool {
 	_, argv := splitEnvAssignments(strings.Fields(command))
+	return absPathFamily(argv) != FamilyNone
+}
+
+// absPathFamily returns the allowlisted family of argv when argv[0] is an
+// absolute path whose basename is allowlisted, or FamilyNone otherwise.
+func absPathFamily(argv []string) Family {
 	if len(argv) == 0 || !strings.HasPrefix(filepath.ToSlash(argv[0]), "/") {
-		return false
+		return FamilyNone
 	}
-	argv = append([]string{path.Base(filepath.ToSlash(argv[0]))}, argv[1:]...)
-	return FamilyOf(argv) != FamilyNone
+	baseArgv := append([]string{path.Base(filepath.ToSlash(argv[0]))}, argv[1:]...)
+	return FamilyOf(baseArgv)
 }
 
 // AppendSkip writes one record. Callers ignore the error. An empty reason

@@ -151,7 +151,7 @@ so flip the code and this table together. `NativeUsageSource` and
 | `CanAdviseShellWrap` | no | yes | no | no | yes | no | no | The hook can advise a wrapped shell command (exit 2). |
 | `AgentTypeHints` | yes | no | no | no | no | no | no | Subagent type names map to a tier. |
 | `SquadAgentPrefix` | yes | no | no | no | no | no | no | Squad agents arrive with a type prefix. |
-| `MainToolEvent` | yes | no | no | no | no | no | no | An event reports main-session tool calls. |
+| `MainToolEvent` | yes | no | no | yes | no | no | no | An event reports main-session tool calls. |
 | `MaxParallel` | no | no | no | no | no | no | no | A parallel subagent cap is known. |
 | `WorkerAgent` | yes | no | yes | no | no | no | no | A worker agent CLI runs on this harness. |
 | `WorkerReadOnlyVerified` | yes | no | no | no | no | no | no | A read-only worker was verified unable to write. |

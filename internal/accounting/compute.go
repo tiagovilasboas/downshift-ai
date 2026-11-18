@@ -106,7 +106,7 @@ type Display struct {
 func Compute(events []telemetry.Event, execEvents []execwrap.Event, scope Scope) Numbers {
 	scoped := scopeTelemetry(events, scope)
 	n := Numbers{Scope: scope}
-	n.Routing = telemetry.RoutingTokens(scoped)
+	n.Routing = routingForScope(scoped, events, scope)
 	n.ModelSwitched, n.EffortChanged, n.Held, n.HeldGuardrail, n.UpshiftNotApplied = countSpawns(scoped)
 	n.Compactor = compactorTotals(scopeExec(execEvents, scope, time.Now()))
 	n.TokensSavedEstimate = telemetry.TokensSavedEstimate(n.Compactor.Tokens)
@@ -131,6 +131,15 @@ func scopeTelemetry(events []telemetry.Event, scope Scope) []telemetry.Event {
 		return telemetry.FilterByDays(events, scope.Days)
 	}
 	return events
+}
+
+// routingForScope computes RoutingTokens over scoped while preserving decision
+// and refutation lookup across the day-window boundary when scope.Kind == ScopeDays.
+func routingForScope(scoped, all []telemetry.Event, scope Scope) telemetry.RoutingView {
+	if scope.Kind == ScopeDays {
+		return telemetry.RoutingTokensWithLookup(scoped, all)
+	}
+	return telemetry.RoutingTokens(scoped)
 }
 
 // scopeExec keeps the exec events of scope. A timestamp that does not parse

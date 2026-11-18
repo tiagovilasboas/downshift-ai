@@ -11,9 +11,9 @@ import (
 	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
 )
 
-// Adoption is how much the MCP plan and delegate tools were used over a
-// Scope, from mcp_tool and worker_ended events. Counts only: no task text, no
-// tokens, no money.
+// Adoption is how much the MCP plan and delegate tools, and skills, were used
+// over a Scope, from mcp_tool, worker_ended, and skill_used events. Counts
+// only: no task text, no tokens, no money.
 type Adoption struct {
 	Plans         int `json:"plans"`
 	Steps         int `json:"steps"`
@@ -26,9 +26,12 @@ type Adoption struct {
 	// Refused counts refused calls by code, across plan and delegate.
 	Refused       map[string]int `json:"refused,omitempty"`
 	GatewayRouted int            `json:"gateway_routed"`
+	// Skills counts skill activations by sanitized skill label (counts only,
+	// never token savings).
+	Skills map[string]int `json:"skills,omitempty"`
 }
 
-// BuildAdoption tallies the plan and delegate calls in the window of scope.
+// BuildAdoption tallies the plan, delegate, and skill calls in the window of scope.
 func BuildAdoption(events []telemetry.Event, scope Scope) Adoption {
 	a := Adoption{}
 	for _, ev := range scopeTelemetry(events, scope) {
@@ -39,6 +42,13 @@ func BuildAdoption(events []telemetry.Event, scope Scope) Adoption {
 			}
 		case telemetry.OutcomeMCPTool:
 			a.add(ev)
+		case telemetry.OutcomeSkillUsed:
+			if name := telemetry.SkillNameLabel(ev.Agent); name != "" {
+				if a.Skills == nil {
+					a.Skills = map[string]int{}
+				}
+				a.Skills[name]++
+			}
 		}
 	}
 	return a
@@ -77,28 +87,48 @@ func (a Adoption) refusedTotal() int {
 }
 
 // AdoptionLine is the printed planner and workers line. With no calls at all
-// it says so, so adoption at zero stays visible.
+// it says so, so adoption at zero stays visible. When skills were used it
+// appends ` · Skills: ...` in alphabetical order.
 func AdoptionLine(a Adoption) string {
+	var line string
 	if a.Plans == 0 && a.Delegated == 0 && a.Done == 0 && a.refusedTotal() == 0 {
-		return "Planner and workers: no calls yet"
-	}
-	line := fmt.Sprintf("Planner: %d plans, %d steps (%d spawn · %d delegate) · Workers: %d delegated, %d done",
-		a.Plans, a.Steps, a.SpawnSteps, a.DelegateSteps, a.Delegated, a.Done)
-	if n := a.refusedTotal(); n > 0 {
-		codes := make([]string, 0, len(a.Refused))
-		for c := range a.Refused {
-			codes = append(codes, c)
-		}
-		sort.Strings(codes)
-		parts := make([]string, 0, len(codes))
-		for _, c := range codes {
-			if len(codes) == 1 {
-				parts = append(parts, c)
-			} else {
-				parts = append(parts, fmt.Sprintf("%s %d", c, a.Refused[c]))
+		line = "Planner and workers: no calls yet"
+	} else {
+		line = fmt.Sprintf("Planner: %d plans, %d steps (%d spawn · %d delegate) · Workers: %d delegated, %d done",
+			a.Plans, a.Steps, a.SpawnSteps, a.DelegateSteps, a.Delegated, a.Done)
+		if n := a.refusedTotal(); n > 0 {
+			codes := make([]string, 0, len(a.Refused))
+			for c := range a.Refused {
+				codes = append(codes, c)
 			}
+			sort.Strings(codes)
+			parts := make([]string, 0, len(codes))
+			for _, c := range codes {
+				if len(codes) == 1 {
+					parts = append(parts, c)
+				} else {
+					parts = append(parts, fmt.Sprintf("%s %d", c, a.Refused[c]))
+				}
+			}
+			line += fmt.Sprintf(", %d refused (%s)", n, strings.Join(parts, ", "))
 		}
-		line += fmt.Sprintf(", %d refused (%s)", n, strings.Join(parts, ", "))
+		line += fmt.Sprintf(" · gateway %d/%d", a.GatewayRouted, a.Delegated)
 	}
-	return line + fmt.Sprintf(" · gateway %d/%d", a.GatewayRouted, a.Delegated)
+	if len(a.Skills) > 0 {
+		line += " · Skills: " + formatSkillCounts(a.Skills)
+	}
+	return line
+}
+
+func formatSkillCounts(skills map[string]int) string {
+	names := make([]string, 0, len(skills))
+	for name := range skills {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	parts := make([]string, 0, len(names))
+	for _, name := range names {
+		parts = append(parts, fmt.Sprintf("%s %d", name, skills[name]))
+	}
+	return strings.Join(parts, ", ")
 }

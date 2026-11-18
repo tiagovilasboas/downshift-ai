@@ -20,3 +20,20 @@ func WouldRewrite(harness, command string) bool {
 	d := decide(caps.ShellDialect, command, func(string) bool { return false }, caps.CanRewriteShellCommand)
 	return limitToReadOnly(caps.RewriteImpliesApproval || caps.UnknownUserRules, d, command).Rewrite
 }
+
+// WouldRewriteEvent reports whether Handle would rewrite ev in place on
+// harness, using the full handleRewrite decision path (caps, ShellCommand,
+// decide, refuseBackground, refuseQuotedUnderQuotedRules, and limitToReadOnly
+// with PromptReporter) without recording a skip or invoking ShellRewrite.
+func WouldRewriteEvent(harness string, ev any) bool {
+	caps, ok := core.CapsFor(harness)
+	if !ok {
+		return false
+	}
+	rw, ok := ev.(RewriteAdapter)
+	if !ok {
+		return false
+	}
+	d, _, isShell := rewriteDecision(caps, rw)
+	return isShell && d.Rewrite
+}

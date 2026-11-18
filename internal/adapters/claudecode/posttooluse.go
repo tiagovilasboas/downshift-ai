@@ -106,6 +106,7 @@ func HandlePostToolUse(raw []byte, binaryVersion string, r core.Resolver) (Outpu
 		recordSensorToolObservation(payload, telemetry.HashSessionID(stringFieldAny(payload, "session_id", "sessionId", "sessionID")))
 	}
 	observeMainWork(payload)
+	observeSkillUse(payload, binaryVersion)
 
 	ce, ok := parsePostToolUse(payload)
 	if !ok {
@@ -147,4 +148,23 @@ func normalizeServedModel(raw string, r core.Resolver) string {
 		return m.ID
 	}
 	return raw
+}
+
+func observeSkillUse(payload map[string]any, binaryVersion string) {
+	if evName := stringFieldAny(payload, "hook_event_name"); evName != "" && evName != "PostToolUse" {
+		return
+	}
+	if stringFieldAny(payload, "tool_name", "toolName") != "Skill" {
+		return
+	}
+	input, _ := payload["tool_input"].(map[string]any)
+	skill := telemetry.SkillNameLabel(stringFieldAny(input, "skill"))
+	if skill == "" {
+		return
+	}
+	session := stringFieldAny(payload, "session_id", "sessionId", "sessionID")
+	if session == "" {
+		session = sessionFromTranscript(stringFieldAny(payload, "transcript_path", "transcriptPath"))
+	}
+	telemetry.Record(telemetry.SkillUsed(harnessID, telemetry.HashSessionID(session), skill, binaryVersion))
 }

@@ -37,7 +37,8 @@ func compactSearch(in hookport.ToolOutput, o Options) Result {
 	threshold := balanceThreshold(o)
 	if in.HasContent && len(in.Content) > threshold {
 		if cut, id, ok := cutMatches(in.Content, o.Keep, o.Session); ok {
-			res.Output.Content, res.KeptID = cut, id
+			res.Output.Content = cut
+			recordKeptID(&res, id)
 			emitted += len(cut) - len(in.Content)
 		}
 	}
@@ -46,9 +47,7 @@ func compactSearch(in hookport.ToolOutput, o Options) Result {
 			before := len(strings.Join(in.Paths, "\n")) + 1
 			res.Output.Paths = cut
 			emitted += len(strings.Join(cut, "\n")) + 1 - before
-			if res.KeptID == "" {
-				res.KeptID = id
-			}
+			recordKeptID(&res, id)
 		}
 	}
 	if res.KeptID != "" {

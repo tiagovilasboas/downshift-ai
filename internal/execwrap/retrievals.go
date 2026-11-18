@@ -114,38 +114,49 @@ func scopedKey(ref, id string) string { return ref + "/" + id }
 // then the reads without a session against any run that kept the id.
 func applyLogged(evs []Event, eventsPath string) []Event {
 	byID, scoped := readRetrievalLog(eventsPath)
-	evs = applyKeyed(evs, scoped, func(ev Event) string {
-		if ref := SessionRef(ev.Session); ref != "" && ev.Kept != "" {
-			return scopedKey(ref, ev.Kept)
+	evs = applyKeyed(evs, scoped, func(ev Event) []string {
+		ref := SessionRef(ev.Session)
+		if ref == "" {
+			return nil
 		}
-		return ""
+		ids := eventKeptIDs(ev)
+		if len(ids) == 0 {
+			return nil
+		}
+		keys := make([]string, len(ids))
+		for i, id := range ids {
+			keys[i] = scopedKey(ref, id)
+		}
+		return keys
 	})
 	return ApplyRetrievals(evs, byID)
 }
 
 // ApplyRetrievals matches the bytes read back per id (reads without a session)
-// to the runs that kept that id and sets their RetrievedBytes. Content
-// addressing gives two runs with the same output the same id; the bytes go to
-// the runs in log order, each up to what it saved, and any remainder to the
-// last of them, so the total shown is what was read back. A run whose id was
-// never read back, and an id no run in evs kept, change nothing. evs is
-// modified in place and returned.
+// to the runs that kept that id (in Kept or KeptIDs) and sets their
+// RetrievedBytes. Content addressing gives two runs with the same output the
+// same id; the bytes go to the runs in log order, each up to what it saved,
+// and any remainder to the last of them, so the total shown is what was read
+// back. A run whose id was never read back, and an id no run in evs kept,
+// change nothing. evs is modified in place and returned.
 func ApplyRetrievals(evs []Event, byID map[string]int64) []Event {
-	return applyKeyed(evs, byID, func(ev Event) string { return ev.Kept })
+	return applyKeyed(evs, byID, eventKeptIDs)
 }
 
 // applyKeyed is the one arithmetic of ApplyRetrievals over any grouping of
-// runs: keyOf names the group of a run ("" for none) and totals holds the
+// runs: keysOf names the groups of a run (nil for none) and totals holds the
 // bytes read back per group. Bytes already on a run (RetrievedBytes) count
 // against what it can still take.
-func applyKeyed(evs []Event, totals map[string]int64, keyOf func(Event) string) []Event {
+func applyKeyed(evs []Event, totals map[string]int64, keysOf func(Event) []string) []Event {
 	if len(totals) == 0 {
 		return evs
 	}
 	last := map[string]int{}
 	for i, ev := range evs {
-		if k := keyOf(ev); k != "" && totals[k] > 0 {
-			last[k] = i
+		for _, k := range keysOf(ev) {
+			if k != "" && totals[k] > 0 {
+				last[k] = i
+			}
 		}
 	}
 	left := map[string]int64{}
@@ -153,19 +164,20 @@ func applyKeyed(evs []Event, totals map[string]int64, keyOf func(Event) string) 
 		left[k] = n
 	}
 	for i := range evs {
-		k := keyOf(evs[i])
-		if k == "" || left[k] <= 0 {
-			continue
+		for _, k := range keysOf(evs[i]) {
+			if k == "" || left[k] <= 0 {
+				continue
+			}
+			take := evs[i].RawBytes - evs[i].EmittedBytes - evs[i].RetrievedBytes
+			if take < 0 {
+				take = 0
+			}
+			if take > left[k] || i == last[k] {
+				take = left[k]
+			}
+			evs[i].RetrievedBytes += take
+			left[k] -= take
 		}
-		take := evs[i].RawBytes - evs[i].EmittedBytes - evs[i].RetrievedBytes
-		if take < 0 {
-			take = 0
-		}
-		if take > left[k] || i == last[k] {
-			take = left[k]
-		}
-		evs[i].RetrievedBytes += take
-		left[k] -= take
 	}
 	return evs
 }

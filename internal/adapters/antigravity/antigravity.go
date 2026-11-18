@@ -20,6 +20,11 @@ type ToolCall struct {
 
 type Event struct {
 	ToolCall ToolCall `json:"toolCall"`
+	// ConversationID is the Antigravity hook field for the conversation /
+	// session; SessionID and SessionIDSnake accept optional fallback keys.
+	ConversationID string `json:"conversationId,omitempty"`
+	SessionID      string `json:"sessionId,omitempty"`
+	SessionIDSnake string `json:"session_id,omitempty"`
 	// Cwd is the working directory, used to find a project policy file.
 	Cwd string `json:"cwd,omitempty"`
 	// WorkspacePaths is the IDE hook field for the open workspaces; fallback
@@ -51,6 +56,18 @@ func (ev Event) ProjectDir() string {
 		return ev.WorkspacePaths[0]
 	}
 	return ""
+}
+
+// SessionIdentifier returns the conversation or session id supplied by the
+// harness for telemetry correlation and per-session pause.
+func (ev Event) SessionIdentifier() string {
+	if ev.ConversationID != "" {
+		return ev.ConversationID
+	}
+	if ev.SessionID != "" {
+		return ev.SessionID
+	}
+	return ev.SessionIDSnake
 }
 
 // decidedSubagent returns the child a routing row is about: the last subagent

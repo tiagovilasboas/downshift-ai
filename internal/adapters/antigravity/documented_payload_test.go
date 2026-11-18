@@ -31,6 +31,9 @@ func TestEvent_ParsesDocumentedPreToolUseFields(t *testing.T) {
 	if got := ev.ProjectDir(); got != "/work/proj" {
 		t.Errorf("ProjectDir = %q, want /work/proj", got)
 	}
+	if got := ev.SessionIdentifier(); got != "c-1" {
+		t.Errorf("SessionIdentifier = %q, want c-1", got)
+	}
 	if got := ev.TaskText(); got != "rename a variable" {
 		t.Errorf("TaskText = %q", got)
 	}

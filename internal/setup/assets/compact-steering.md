@@ -32,7 +32,7 @@ command to see more. Set
 
 ## Allowlisted families
 
-Allowlisted families: go test, go build, git status, git diff, npm test, jest, vitest, pytest, phpunit, cargo test, make, tsc, golangci-lint run, playwright test, gh pr, gh run, ls, find, grep -rn x .
+Allowlisted families: go test, go build, git status, git diff, npm test, jest, vitest, pytest, phpunit, cargo test, make, tsc, golangci-lint run, playwright test, gh pr, gh run, ls, find, grep -r x, agent-desktop snapshot
 
 Any other command is refused (exit 126). Run it without `downshift compactor`.
 

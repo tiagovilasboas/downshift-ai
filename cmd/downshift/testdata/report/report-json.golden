@@ -687,7 +687,7 @@
     },
     {
       "harness": "kiro",
-      "observed": false,
+      "observed": true,
       "mechanical_calls": 0,
       "mechanical_on_frontier": 0
     },

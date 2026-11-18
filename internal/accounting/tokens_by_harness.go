@@ -68,18 +68,21 @@ func TokensByHarness(events []telemetry.Event, execEvents []execwrap.Event, scop
 		}
 		return rows[h]
 	}
-	byHarness := map[string][]telemetry.Event{}
-	for _, ev := range scoped {
-		if ev.Harness != "" {
-			byHarness[ev.Harness] = append(byHarness[ev.Harness], ev)
-		}
+	byHarness := groupByHarness(scoped)
+	var lookupByHarness map[string][]telemetry.Event
+	if scope.Kind == ScopeDays {
+		lookupByHarness = groupByHarness(events)
 	}
 	for h, evs := range byHarness {
-		if !hasDecision(evs) {
+		lookup := evs
+		if scope.Kind == ScopeDays {
+			lookup = lookupByHarness[h]
+		}
+		if !hasDecision(evs) && !hasLinkedDecision(evs, lookup) {
 			continue
 		}
 		r := row(h)
-		routing := telemetry.RoutingTokens(evs).ByHarness[h]
+		routing := telemetry.RoutingTokensWithLookup(evs, lookup).ByHarness[h]
 		r.Routing = routing
 		r.RoutingObserved = routing.Observed() || routing.FallbackObserved()
 	}
@@ -101,9 +104,34 @@ func TokensByHarness(events []telemetry.Event, execEvents []execwrap.Event, scop
 	return out
 }
 
+func groupByHarness(evs []telemetry.Event) map[string][]telemetry.Event {
+	out := map[string][]telemetry.Event{}
+	for _, ev := range evs {
+		if ev.Harness != "" {
+			out[ev.Harness] = append(out[ev.Harness], ev)
+		}
+	}
+	return out
+}
+
 func hasDecision(evs []telemetry.Event) bool {
 	for _, ev := range evs {
 		if telemetry.IsDecisionRow(ev) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasLinkedDecision(scoped, lookup []telemetry.Event) bool {
+	known := map[string]bool{}
+	for _, ev := range lookup {
+		if telemetry.IsDecisionRow(ev) {
+			known[telemetry.DecisionKey(ev)] = true
+		}
+	}
+	for _, ev := range scoped {
+		if ev.Outcome == telemetry.OutcomeUsage && ev.LinkedDecision != "" && known[ev.LinkedDecision] {
 			return true
 		}
 	}

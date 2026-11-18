@@ -107,6 +107,9 @@ type Result struct {
 	// KeptID is the CCR id the compacted output names, empty when the raw
 	// output was not kept. It is a hash of the stored text, never the text.
 	KeptID string
+	// KeptIDs holds any secondary CCR ids stored by the same run (for example
+	// when stderr or search paths compacted alongside the primary output).
+	KeptIDs []string
 }
 
 // ObserveUncompactedHook is called when a command's output was not compacted.

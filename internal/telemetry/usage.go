@@ -69,7 +69,7 @@ func IsCostOnlyOutcome(outcome string) bool {
 // and its end must link to it like any routed spawn's.
 func IsObservationOutcome(outcome string) bool {
 	return outcome == OutcomeUsage || outcome == OutcomeResolved || outcome == OutcomeChildEnded || outcome == OutcomeDCI ||
-		outcome == OutcomeWorkerEnded || outcome == OutcomeMCPTool
+		outcome == OutcomeWorkerEnded || outcome == OutcomeMCPTool || outcome == OutcomeSkillUsed
 }
 
 // DecisionKey identifies a decision event for post-hoc linkage: its

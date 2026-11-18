@@ -106,3 +106,51 @@ func TestRoutingRow_Line(t *testing.T) {
 		t.Fatalf("got %q", got)
 	}
 }
+
+func TestRoutingTokensWithLookup_EdgeWindow(t *testing.T) {
+	honoredFalse := false
+	in, out := int64(600), int64(400)
+	// Case 1: Decision before cutoff, usage inside window -> placed against ParentModel, rewritten=true.
+	edgeDecision := Event{
+		CorrelationID: "d-edge", Harness: "claude-code", Outcome: OutcomeRewriteEmitted,
+		Verdict: "DOWNSHIFT", ParentModel: "claude-opus-4-8", FromModel: "claude-opus-4-8", ToModel: "claude-haiku-4-5",
+	}
+	edgeUsage := Event{
+		CorrelationID: "u-edge", Harness: "claude-code", Outcome: OutcomeUsage,
+		LinkedDecision: "d-edge", InputTokens: &in, OutputTokens: &out,
+	}
+	// Case 2: Decision and refutation before cutoff, usage inside window -> ran on requested (not below).
+	refutedDecision := Event{
+		CorrelationID: "d-ref", Harness: "claude-code", Outcome: OutcomeRewriteEmitted,
+		Verdict: "DOWNSHIFT", ParentModel: "claude-opus-4-8", FromModel: "claude-opus-4-8", ToModel: "claude-haiku-4-5",
+	}
+	refutedResolved := Event{
+		CorrelationID: "r-ref", Harness: "claude-code", Outcome: OutcomeResolved,
+		LinkedDecision: "d-ref", ToModel: "claude-opus-4-8", RewriteHonored: &honoredFalse,
+	}
+	refutedUsage := Event{
+		CorrelationID: "u-ref", Harness: "claude-code", Outcome: OutcomeUsage,
+		LinkedDecision: "d-ref", InputTokens: &in, OutputTokens: &out,
+	}
+	// Case 3: Fully expired spawn (both decision and usage outside scoped): must not count.
+	oldPairDec := Event{
+		CorrelationID: "d-old", Harness: "claude-code", Outcome: OutcomeRewriteEmitted,
+		Verdict: "DOWNSHIFT", ParentModel: "claude-opus-4-8", FromModel: "claude-opus-4-8", ToModel: "claude-haiku-4-5",
+	}
+	expiredUsage := Event{
+		CorrelationID: "u-old", Harness: "claude-code", Outcome: OutcomeUsage,
+		LinkedDecision: "d-old", InputTokens: &in, OutputTokens: &out,
+	}
+
+	full := []Event{edgeDecision, edgeUsage, refutedDecision, refutedResolved, refutedUsage, oldPairDec, expiredUsage}
+	scoped := []Event{edgeUsage, refutedUsage}
+
+	got := RoutingTokensWithLookup(scoped, full).ByHarness["claude-code"]
+	want := RoutingRow{
+		Spawns: 2, BelowSpawns: 1, Billable: 2000, BelowBillable: 1000,
+		RewrittenSpawns: 1, RewrittenBillable: 1000,
+	}
+	if got != want {
+		t.Fatalf("got %+v, want %+v", got, want)
+	}
+}

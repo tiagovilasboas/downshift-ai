@@ -45,13 +45,14 @@ var readOnlyFamilies = map[Family]func(argv []string) bool{
 	FamilyGoVersion: func([]string) bool { return true },
 	// FamilyGoDoc also holds `go tool`, which builds and runs programs: only
 	// `go doc` is read-only, and never with -http (it runs pkgsite).
-	FamilyGoDoc:  func(argv []string) bool { return argv[1] == "doc" && !namesFlag(argv[2:], "http") },
-	FamilyGoEnv:  func(argv []string) bool { return !namesFlag(argv[2:], "w", "u") },
-	FamilyGoList: func(argv []string) bool { return !namesFlag(argv[2:], goListWriteFlags...) },
-	FamilyMise:   func(argv []string) bool { return versionListSubcommands[argv[1]] },
-	FamilyAsdf:   func(argv []string) bool { return versionListSubcommands[argv[1]] },
-	FamilyDirenv: func(argv []string) bool { return argv[1] == "status" },
-	FamilyLs:     func([]string) bool { return true },
+	FamilyGoDoc:        func(argv []string) bool { return argv[1] == "doc" && !namesFlag(argv[2:], "http") },
+	FamilyGoEnv:        func(argv []string) bool { return !namesFlag(argv[2:], "w", "u") },
+	FamilyGoList:       func(argv []string) bool { return !namesFlag(argv[2:], goListWriteFlags...) },
+	FamilyMise:         func(argv []string) bool { return versionListSubcommands[argv[1]] },
+	FamilyAsdf:         func(argv []string) bool { return versionListSubcommands[argv[1]] },
+	FamilyDirenv:       func(argv []string) bool { return argv[1] == "status" },
+	FamilyLs:           func([]string) bool { return true },
+	FamilyAgentDesktop: func([]string) bool { return true },
 }
 
 // gitReadOther names the read-only git subcommands that have no family of
