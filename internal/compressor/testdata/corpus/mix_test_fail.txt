@@ -1,0 +1,15 @@
+Running ExUnit with seed: 482913, max_cases: 16
+
+.F..
+
+  1) test adds line items to total (Ledger.InvoiceTest)
+     test/ledger/invoice_test.exs:14
+     Assertion with == failed
+     code:  assert Invoice.total(invoice) == 110
+     left:  100
+     right: 110
+     stacktrace:
+       test/ledger/invoice_test.exs:16: (test)
+
+Finished in 0.19 seconds (0.05s async, 0.14s sync)
+4 tests, 1 failure

@@ -789,7 +789,8 @@ written. The family name is the only command fact telemetry keeps.
 | `detox-test` | `detox test` or `npx detox test`; `--watch` and remote URLs refused (generic chain only) | compresses |
 | `detox-build` | `detox build` or `npx detox build`; `--watch` and remote URLs refused (generic chain only) | compresses |
 | `pip-install` | `pip install` (install form; a run with a WARNING or an error passes through) | compresses |
-| `mix` | `mix` | passes through |
+| `mix-test` | `mix test`; `--listen-on-stdin` refused (clean ExUnit dot runs only; warnings, debug lines and failures stay raw) | compresses |
+| `mix` | `mix` (`compile`, `deps.get`, `deps.compile`, `format`, `clean`, `run`, `do`, `hex.info`) | passes through |
 | `swift` | `swift build`, `swift run`, `swift package` | passes through |
 | `swift-test` | `swift test` | compresses |
 | `sbt` | `sbt` | passes through |

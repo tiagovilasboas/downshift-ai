@@ -31,6 +31,7 @@ var followFlags = map[Family]followFlag{
 	FamilyJest:        {long: []string{"watch", "watchAll"}},
 	FamilyVitest:      {long: []string{"watch"}, short: 'w'},
 	FamilyTSC:         {long: []string{"watch"}, short: 'w'},
+	FamilyMixTest:     {long: []string{"listen-on-stdin"}},
 }
 
 // alwaysRunning are families whose every form starts a server or an app and

@@ -162,7 +162,7 @@ paths or text the command echoed.
 ## Measured effect
 
 `make bench` ([bench.md](../reference/bench.md)): total saving is 53.6% with CCR off and
-69.8% with CCR on, which is now the default; the generic family goes from 18.3% to 93.3%.
+69.7% with CCR on, which is now the default; the generic family goes from 18.3% to 93.3%.
 
 The exec log records raw and emitted bytes after the fold, so savings include CCR.
 

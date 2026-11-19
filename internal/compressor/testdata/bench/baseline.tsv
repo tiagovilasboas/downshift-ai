@@ -43,6 +43,7 @@ kubectl_pods	1	229	191
 lockfile_diff	2	4998	675
 markdown	2	1063	901
 maven	3	6676	907
+mix_test	1	226	103
 mypy	2	710	391
 next_build	1	578	144
 npm_audit	1	1052	431
@@ -62,6 +63,6 @@ terraform_plan	1	317	82
 tsc	3	946	231
 turbo	1	494	110
 vitest	4	3624	967
-@lossless	74	111598	43998
+@lossless	75	111824	44101
 @lossy	49	90487	49749
-@total	123	202085	93747
+@total	124	202311	93850

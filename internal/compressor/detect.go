@@ -85,6 +85,9 @@ func detectFormat(input []byte) (Format, bool) {
 	if isSwiftTest(input) {
 		return FormatSwiftTest, reSwiftTestFailure.Match(input)
 	}
+	if isMixTest(input) {
+		return FormatMixTest, reMixTestFailure.Match(input)
+	}
 
 	// Verbose Go output ends with PASS, which otherwise matches Jest's generic
 	// PASS header. Identify a Go test transcript before the broader Jest check.
