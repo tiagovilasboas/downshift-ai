@@ -146,6 +146,7 @@ func runHookAdapter[E any](
 		return 0
 	}
 	out, note, decision := handle(ev)
+	recordSkillObservations(harness, sessionHash, ev)
 	fate := spawnFate{note: note}
 	// The per-session pause (`downshift session --pause`) is the only way a
 	// spawn goes unrouted, and only because the user asked for it: the decision
@@ -244,4 +245,14 @@ func parseErrorField(err error) string {
 		return named.InvalidField()
 	}
 	return ""
+}
+
+func recordSkillObservations[E any](harness, sessionHash string, ev E) {
+	obs, ok := any(ev).(interface{ UsedSkills() []string })
+	if !ok {
+		return
+	}
+	for _, skill := range obs.UsedSkills() {
+		telemetry.Record(telemetry.SkillUsed(harness, sessionHash, skill, telemetryVersion()))
+	}
 }

@@ -6,11 +6,13 @@ package main
 import (
 	"bytes"
 	"io"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/adapters/cursor"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
 )
 
 func touchWith(t *testing.T, in io.Reader) (int, string) {
@@ -60,4 +62,26 @@ func TestCursorTouchFailsOpen(t *testing.T) {
 			t.Fatalf("rc=%d out=%q", rc, out)
 		}
 	})
+}
+
+func TestCursorTouchRecordsPromptSkill(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("DOWNSHIFT_STATE_DIR", dir)
+	logPath := filepath.Join(dir, "events.jsonl")
+	t.Setenv("DOWNSHIFT_EVENT_LOG", logPath)
+
+	payload := `{"hook_event_name":"beforeSubmitPrompt","session_id":"cursor-raw-1","model_id":"claude-sonnet-5-5","prompt":"use /ponytail on my secret file"}`
+	rc, out := touchWith(t, strings.NewReader(payload))
+	if rc != 0 || out != "{}\n" {
+		t.Fatalf("rc=%d out=%q, want 0 and {}", rc, out)
+	}
+	events, err := telemetry.ReadEventsFrom(logPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(events) != 1 || events[0].Outcome != telemetry.OutcomeSkillUsed ||
+		events[0].Harness != "cursor" || events[0].Agent != "ponytail" ||
+		events[0].SessionID != telemetry.HashSessionID("cursor-raw-1") {
+		t.Fatalf("events = %+v", events)
+	}
 }

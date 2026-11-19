@@ -18,9 +18,11 @@ const OpenCodePlugin = "opencode/index.ts"
 // siblings of index.ts are not separate plugins. Setup writes index.ts and
 // every module; a test keeps this list equal to the embedded folder.
 var OpenCodeModules = []string{
+	"opencode/children.ts",
 	"opencode/models.ts",
 	"opencode/shell_sessions.ts",
 	"opencode/shell_trust.ts",
+	"opencode/skills.ts",
 	"opencode/wire.ts",
 }
 

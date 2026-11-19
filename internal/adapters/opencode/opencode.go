@@ -54,6 +54,9 @@ func Handle(req Request, r ...core.Resolver) (Response, string, core.Decision) {
 	if req.Kind == kindRetry {
 		return retryAnswer(req), "", core.Decision{}
 	}
+	if req.Kind == kindSkill {
+		return handleSkill(req), "", core.Decision{}
+	}
 	if field := invalidRouteField(req); field != "" {
 		resp := failOpen()
 		resp.InvalidField = field

@@ -18,7 +18,6 @@ const maxTSLines = 300
 // added, each with its line count as a ceiling. Do not add an entry: split the
 // file instead.
 var tsSizeBaseline = map[string]int{
-	"hooks/opencode/index.ts":                               329,
 	"mods/downshift-agents/hooks/shared/ui/svg/svg.test.ts": 310,
 }
 
