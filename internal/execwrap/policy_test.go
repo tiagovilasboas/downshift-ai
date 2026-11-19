@@ -203,7 +203,7 @@ func TestDecide(t *testing.T) {
 		{"already wrapped", "downshift exec -- go test ./...", false, "", "", ReasonAlreadyWrapped},
 		{"wrapped twice", "downshift exec -- downshift exec -- git status", false, "", "", ReasonAlreadyWrapped},
 
-		{"pipe", "go test ./... | wc -l", false, "", "", ReasonUnsafeChar},
+		{"pipe", "go test ./... | awk '{print}'", false, "", "", ReasonUnsafeChar},
 		{"or list", "git status || rm -rf x", false, "", "", ReasonUnsafeChar},
 		{"background list", "go test ./... & echo ok", false, "", "", ReasonUnsafeChar},
 		{"background", "go test ./... &", false, "", "", ReasonUnsafeChar},
@@ -255,11 +255,11 @@ func TestDecide_TooLong(t *testing.T) {
 
 func TestDecide_LongAllowlisted(t *testing.T) {
 	cmd := "go test -v"
-	for len(cmd) < 600 {
+	for len(cmd) < 3000 {
 		cmd += " ./pkg/sub"
 	}
-	if len(cmd) <= 512 || len(cmd) > maxCommandBytes {
-		t.Fatalf("test command length %d not in (512, %d]", len(cmd), maxCommandBytes)
+	if len(cmd) <= 2048 || len(cmd) > maxCommandBytes {
+		t.Fatalf("test command length %d not in (2048, %d]", len(cmd), maxCommandBytes)
 	}
 	d := Decide(cmd, exe)
 	if !d.Rewrite || d.Family != FamilyGoTest || d.Reason != ReasonAllowlisted {
@@ -269,10 +269,10 @@ func TestDecide_LongAllowlisted(t *testing.T) {
 		t.Fatalf("SimpleFamily(long allowlisted) = %q, want %q", fam, FamilyGoTest)
 	}
 
-	quoted := `go test -run "TestLongName" ` + strings.Repeat("./pkg ", 100)
+	quoted := `go test -run "TestLongName" ` + strings.Repeat("./pkg ", 400)
 	quoted = strings.TrimSpace(quoted)
-	if len(quoted) <= 512 || len(quoted) > maxCommandBytes {
-		t.Fatalf("quoted command length %d not in (512, %d]", len(quoted), maxCommandBytes)
+	if len(quoted) <= 2048 || len(quoted) > maxCommandBytes {
+		t.Fatalf("quoted command length %d not in (2048, %d]", len(quoted), maxCommandBytes)
 	}
 	dq := Decide(quoted, exe)
 	if !dq.Rewrite || dq.Family != FamilyGoTest || dq.Reason != ReasonAllowlistedQuoted {

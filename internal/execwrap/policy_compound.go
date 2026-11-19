@@ -11,7 +11,7 @@ import "strings"
 //
 //	cd <dir> && <allowlisted>
 //	<allowlisted> | tail -N        (also head, -n N, -nN)
-//	<allowlisted> | grep <pat>     (also rg/egrep/fgrep with safe filter flags)
+//	<allowlisted> | grep <pat>     (also rg/egrep/fgrep, sort/uniq/wc/cut stdin filters)
 //	<allowlisted> 2>&1 | tail -N
 //	<allowlisted> 2>&1 | grep <pat>
 //	cd <dir> && <allowlisted> 2>&1 | tail -N
@@ -77,7 +77,7 @@ func decideCompound(trimmed, exe string) Decision {
 		}
 		return inner
 	}
-	if pipeKind.grep && (inner.Family == FamilyFileRead || inner.Family == FamilyWc || inner.Family == FamilyAgentDesktop) {
+	if pipeKind.filter && (inner.Family == FamilyFileRead || inner.Family == FamilyWc || inner.Family == FamilyAgentDesktop) {
 		return Decision{Reason: ReasonUnsafeChar}
 	}
 	inner.Command = prefix + inner.Command + suffix
@@ -123,11 +123,11 @@ func cdPrefix(command string) (dir, rest string, ok bool) {
 }
 
 type pipeKindFlags struct {
-	grep   bool
+	filter bool
 	quoted bool
 }
 
-// pipeSuffix splits `core [2>&1] | <lineFilter|grepFilter>`. suffix is what
+// pipeSuffix splits `core [2>&1] | <lineFilter|pipeFilter>`. suffix is what
 // follows the wrapped command in the rewrite; segs are the pipe's command
 // forms for the permission check. No pipe returns ok=true and empty parts; an
 // unsafe or unsupported pipe returns ok=false.
@@ -144,12 +144,12 @@ func pipeSuffix(command string) (core, suffix string, segs []string, kind pipeKi
 		seg := strings.Join(words, " ")
 		pipeOut, segs = seg, []string{seg}
 	} else {
-		var grepOK bool
-		pipeOut, segs, kind.quoted, grepOK = parsePipeGrep(tail)
-		if !grepOK {
+		var filterOK bool
+		pipeOut, segs, kind.quoted, filterOK = parsePipeFilter(tail)
+		if !filterOK {
 			return command, "", nil, pipeKindFlags{}, false
 		}
-		kind.grep = true
+		kind.filter = true
 	}
 	strippedCore, redirKind, redirOK := extractStderrRedirect(core)
 	if !redirOK {

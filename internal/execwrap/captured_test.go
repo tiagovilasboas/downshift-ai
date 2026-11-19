@@ -81,7 +81,8 @@ func TestSimpleFamily(t *testing.T) {
 		"downshift compact -- ls":              FamilyNone,
 		"":                                     FamilyNone,
 		"go test " + strings.Repeat("x", 600):  FamilyGoTest,
-		"go test " + strings.Repeat("x", 2050): FamilyNone,
+		"go test " + strings.Repeat("x", 2050): FamilyGoTest,
+		"go test " + strings.Repeat("x", 4100): FamilyNone,
 	} {
 		if got, _ := SimpleFamily(cmd); got != want {
 			t.Errorf("SimpleFamily(%q) = %q, want %q", cmd, got, want)

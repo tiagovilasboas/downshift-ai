@@ -25,7 +25,8 @@ func TestDecide_GrammarRefusesAdversarialLines(t *testing.T) {
 	cases := []struct {
 		name, command, reason string
 	}{
-		{"pipe to wc", "go test ./... | wc -l", ReasonUnsafeChar},
+		{"pipe to awk", "go test ./... | awk '{print}'", ReasonUnsafeChar},
+		{"pipe to wc with file operand", "go test ./... | wc -l /etc/passwd", ReasonUnsafeChar},
 		{"pipe to grep with file operand", "go test ./... | grep x /etc/passwd", ReasonUnsafeChar},
 		{"background", "go test ./... &", ReasonUnsafeChar},
 		{"lone ampersand in a chain", "go test & go vet", ReasonUnsafeChar},
@@ -55,8 +56,8 @@ func TestDecide_GrammarRefusesAdversarialLines(t *testing.T) {
 		{"already wrapped bare", bareWrapped, ReasonAlreadyWrapped},
 		{"already wrapped quoted path", quotedWrapped, ReasonAlreadyWrapped},
 		{"already wrapped with session", sessionWrapped, ReasonAlreadyWrapped},
-		{"over 2048 bytes, simple", "go test " + grammarPad(2041), ReasonTooLong},
-		{"over 2048 bytes, chain", "gofmt -l x; go test " + grammarPad(2036), ReasonTooLong},
+		{"over 4096 bytes, simple", "go test " + grammarPad(4089), ReasonTooLong},
+		{"over 4096 bytes, chain", "gofmt -l x; go test " + grammarPad(4084), ReasonTooLong},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -80,10 +81,10 @@ func TestDecide_GrammarWrapsTheProvenShapes(t *testing.T) {
 			"go test ./...", ReasonAllowlistedCompound, []string{"tail -5"}},
 		{"cd, then piped to tail", "cd x && go test ./... | tail -5", "cd x && " + w + "go test ./... | tail -5",
 			"go test ./...", ReasonAllowlistedCompound, []string{"cd x", "tail -5"}},
-		{"between 513 and 2048 bytes", "go test " + grammarPad(1000), w + "go test " + grammarPad(1000),
-			"go test " + grammarPad(1000), ReasonAllowlisted, nil},
-		{"exactly 2048 bytes", "go test " + grammarPad(2040), w + "go test " + grammarPad(2040),
-			"go test " + grammarPad(2040), ReasonAllowlisted, nil},
+		{"between 2049 and 4096 bytes", "go test " + grammarPad(3000), w + "go test " + grammarPad(3000),
+			"go test " + grammarPad(3000), ReasonAllowlisted, nil},
+		{"exactly 4096 bytes", "go test " + grammarPad(4088), w + "go test " + grammarPad(4088),
+			"go test " + grammarPad(4088), ReasonAllowlisted, nil},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

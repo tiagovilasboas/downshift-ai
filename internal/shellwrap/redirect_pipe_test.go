@@ -25,6 +25,10 @@ func TestHandle_RedirectsAndGrepPipes(t *testing.T) {
 		{"2> /dev/null", "git status 2> /dev/null", "'" + testExe + "' compact --harness=claude-code --discard-stderr -- 'git' 'status'"},
 		{"pipe grep", "go test ./... | grep FAIL", "'" + testExe + "' compact --harness=claude-code -- go test ./... | grep FAIL"},
 		{"pipe rg", "go test ./... 2>&1 | rg -i error", "'" + testExe + "' compact --harness=claude-code -- go test ./... 2>&1 | rg -i error"},
+		{"pipe sort", "git diff --name-only | sort -u", "'" + testExe + "' compact --harness=claude-code -- git diff --name-only | sort -u"},
+		{"pipe uniq", "git log --oneline | uniq -c", "'" + testExe + "' compact --harness=claude-code -- git log --oneline | uniq -c"},
+		{"pipe wc", "go test ./... | wc -l", "'" + testExe + "' compact --harness=claude-code -- go test ./... | wc -l"},
+		{"pipe cut", "git log --oneline | cut -d ' ' -f 1", "'" + testExe + "' compact --harness=claude-code -- git log --oneline | 'cut' '-d' ' ' '-f' '1'"},
 	}
 	for _, tc := range wrapCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -40,7 +44,7 @@ func TestHandle_RedirectsAndGrepPipes(t *testing.T) {
 	}
 
 	// Approving / unknown-rules harnesses still refuse non-read-only & metachar shapes.
-	for _, cmd := range []string{"git status 2>&1", "git status 2>/dev/null", "git status | grep clean", "go test ./... | rg FAIL"} {
+	for _, cmd := range []string{"git status 2>&1", "git status 2>/dev/null", "git status | grep clean", "go test ./... | rg FAIL", "git status | sort -u", "git log | wc -l", "git diff | cut -f1"} {
 		for _, h := range []string{approving, unknown} {
 			withEnv(t, true, nil, true)
 			if r := Handle(h, fakeShell{command: cmd}, ""); r.Rewrite != nil || r.Skip != ReasonNotReadOnly {
@@ -52,12 +56,18 @@ func TestHandle_RedirectsAndGrepPipes(t *testing.T) {
 		}
 	}
 
-	// Deny rule on grep/rg segment stops pipe rewrite; quoted rule stops quoted pipe pattern.
+	// Deny rule on grep/rg/text segment stops pipe rewrite; quoted rule stops quoted pipe pattern.
 	withEnv(t, true, nil, true)
 	if r := Handle("claude-code", ruledShell{command: "go test ./... | grep FAIL", rules: []string{"Bash(grep FAIL)"}}, ""); r.Rewrite != nil || r.Skip != execwrap.SkipDenied {
 		t.Fatalf("Bash(grep FAIL) must deny pipe: %+v", r)
 	}
+	if r := Handle("claude-code", ruledShell{command: "go test ./... | sort -u", rules: []string{"Bash(sort -u)"}}, ""); r.Rewrite != nil || r.Skip != execwrap.SkipDenied {
+		t.Fatalf("Bash(sort -u) must deny pipe: %+v", r)
+	}
 	if r := Handle("claude-code", ruledShell{command: `go test ./... | rg "FAIL"`, rules: []string{`Bash(git commit -m "wip")`}}, ""); r.Rewrite != nil || r.Skip != ReasonQuotedRule {
 		t.Fatalf("quoted rule must stop quoted pipe pattern: %+v", r)
+	}
+	if r := Handle("claude-code", ruledShell{command: `git log --oneline | cut -d ' ' -f1`, rules: []string{`Bash(git commit -m "wip")`}}, ""); r.Rewrite != nil || r.Skip != ReasonQuotedRule {
+		t.Fatalf("quoted rule must stop quoted text pipe: %+v", r)
 	}
 }
