@@ -25,7 +25,8 @@ func TestDecide_GrammarRefusesAdversarialLines(t *testing.T) {
 	cases := []struct {
 		name, command, reason string
 	}{
-		{"pipe to grep", "go test ./... | grep x", ReasonUnsafeChar},
+		{"pipe to wc", "go test ./... | wc -l", ReasonUnsafeChar},
+		{"pipe to grep with file operand", "go test ./... | grep x /etc/passwd", ReasonUnsafeChar},
 		{"background", "go test ./... &", ReasonUnsafeChar},
 		{"lone ampersand in a chain", "go test & go vet", ReasonUnsafeChar},
 		{"command substitution", "go test $(pwd)", ReasonUnsafeChar},

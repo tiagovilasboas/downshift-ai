@@ -168,7 +168,7 @@ func TestParseSince(t *testing.T) {
 func TestMetacharSkipsSplitByKind(t *testing.T) {
 	home := t.TempDir()
 	writeLines(t, filepath.Join(home, ".claude", "projects", "p", "s.jsonl"),
-		claudeUse(time.Hour, "a", "go test ./... | grep FAIL"),
+		claudeUse(time.Hour, "a", "ps aux | grep FAIL"),
 		claudeUse(time.Hour, "b", "go test ./... > out.txt"),
 	)
 	r := scan(t, home, HarnessAll, 7*24*time.Hour)

@@ -110,7 +110,7 @@ func TestPostRun_PipedCommandCompactedAndCounted(t *testing.T) {
 	state := postRunEnv(t, true)
 	stdout := verboseGoTest(800)
 	for _, command := range []string{
-		"go test -v ./... 2>&1 | grep -v '^$'",
+		"go test -v ./... 2>&1 | awk 'NF'",
 		"go test -v ./... > /tmp/log.txt 2>&1; cat /tmp/log.txt",
 	} {
 		_, got := honorAnswer(t, portFor("claude-code"), bashPost(t, command, stdout, ""))
@@ -318,7 +318,7 @@ func TestPostRun_FailOpen(t *testing.T) {
 // declare ReplacesToolOutput give no replacement, and the switch turns it off.
 func TestPostRun_CapabilityAndSwitch(t *testing.T) {
 	postRunEnv(t, true)
-	payload := bashPost(t, "go test -v ./... 2>&1 | grep -v '^$'", verboseGoTest(800), "")
+	payload := bashPost(t, "go test -v ./... 2>&1 | awk 'NF'", verboseGoTest(800), "")
 	noCap := hookport.Port{
 		ID:                "cursor",
 		Honor:             func([]byte, string, core.Resolver) (any, string) { return nil, "" },

@@ -11,9 +11,11 @@ import "strings"
 //
 //	cd <dir> && <allowlisted>
 //	<allowlisted> | tail -N        (also head, -n N, -nN)
+//	<allowlisted> | grep <pat>     (also rg/egrep/fgrep with safe filter flags)
 //	<allowlisted> 2>&1 | tail -N
+//	<allowlisted> 2>&1 | grep <pat>
 //	cd <dir> && <allowlisted> 2>&1 | tail -N
-//	<allowlisted> 2>&1             (a trailing stderr merge, no pipe)
+//	<allowlisted> 2>&1             (a stderr merge, no pipe)
 //	cd <dir> && <allowlisted> 2>&1
 //
 // The 2>&1 merge is kept as written: the wrapper already captures both
@@ -21,19 +23,19 @@ import "strings"
 // the wrapper's own output.
 //
 // Only the allowlisted command is wrapped; the cd prefix and the pipe suffix
-// are kept as written, so the exit code is what it was: cd's on failure, the
-// pipe's last command otherwise. <dir> and the pipe's command pass the
-// safe-byte gate, so they hold no expansion, quote, glob or tilde.
+// are kept as written (or single-quoted per word when a grep/rg pattern holds
+// quotes), so the exit code is what it was: cd's on failure, the pipe's last
+// command otherwise. <dir> and unquoted pipe stages pass the safe-byte gate,
+// so they hold no expansion, quote, glob or tilde.
 //
-// The wrapped command may also hold quoted words and an exact trailing
-// 2>/dev/null, lexed by the quoted policy (policy_quoted.go), as in
+// The wrapped command may also hold quoted words and a single 2>/dev/null
+// (policy_quoted.go, policy_redirect.go), as in
 // `go test -run 'A|B' ./... 2>&1 | tail -20`. Two trailing forms are refused
 // there because the shape around them changes their meaning: `|| true`
-// (`a && b || true` applies it to the whole list) and 2>/dev/null before a
-// 2>&1 merge (the merge sends stderr back into the pipe). A shape whose
-// wrapped command went through the quoted policy carries
-// ReasonAllowlistedQuoted, so every guard on the quoted path (a deny or ask
-// rule that holds a quote) still applies.
+// (`a && b || true` applies it to the whole list) and 2>/dev/null combined with
+// a 2>&1 merge. A shape whose wrapped command or grep stage went through the
+// quoted path carries ReasonAllowlistedQuoted, so every guard on the quoted
+// path (a deny or ask rule that holds a quote) still applies.
 
 // ReasonAllowlistedCompound is the reason for a wrapped compound shape.
 const ReasonAllowlistedCompound = "allowlisted_compound"
@@ -55,7 +57,10 @@ func decideCompound(trimmed, exe string) Decision {
 		prefix = cdSeg + andSep
 		rest = after
 	}
-	rest, suffix, pipeSeg := pipeSuffix(rest)
+	rest, suffix, pipeSegs, pipeKind, ok := pipeSuffix(rest)
+	if !ok {
+		return Decision{Reason: ReasonUnsafeChar}
+	}
 	if suffix == "" {
 		rest, suffix = stderrSuffix(rest)
 	}
@@ -67,17 +72,24 @@ func decideCompound(trimmed, exe string) Decision {
 		inner = decideQuotedPart(rest, exe, strings.HasPrefix(suffix, stderrDup))
 	}
 	if !inner.Rewrite {
+		if pipeKind.quoted {
+			return Decision{Reason: ReasonUnsafeChar}
+		}
 		return inner
 	}
+	if pipeKind.grep && (inner.Family == FamilyFileRead || inner.Family == FamilyWc || inner.Family == FamilyAgentDesktop) {
+		return Decision{Reason: ReasonUnsafeChar}
+	}
 	inner.Command = prefix + inner.Command + suffix
-	if inner.Reason != ReasonAllowlistedQuoted {
+	if pipeKind.quoted || inner.Reason == ReasonAllowlistedQuoted {
+		inner.Reason = ReasonAllowlistedQuoted
+	} else {
 		inner.Reason = ReasonAllowlistedCompound
 	}
-	for _, s := range []string{cdSeg, pipeSeg} {
-		if s != "" {
-			inner.Segments = append(inner.Segments, s)
-		}
+	if cdSeg != "" {
+		inner.Segments = append(inner.Segments, cdSeg)
 	}
+	inner.Segments = append(inner.Segments, pipeSegs...)
 	return inner
 }
 
@@ -110,37 +122,79 @@ func cdPrefix(command string) (dir, rest string, ok bool) {
 	return words[1], strings.TrimLeft(rest, " "), true
 }
 
-// pipeSuffix splits `core [2>&1] | tail -N`. suffix is what follows the
-// wrapped command in the rewrite; seg is the pipe's command alone, for the
-// permission check. No shape returns the command unchanged and empty parts.
-func pipeSuffix(command string) (core, suffix, seg string) {
-	i := strings.LastIndex(command, pipeSep)
-	if i < 0 {
-		return command, "", ""
-	}
-	tail := command[i+len(pipeSep):]
-	words := strings.Fields(tail)
-	if !allSafe(tail) || !lineFilter(words) {
-		return command, "", ""
-	}
-	seg = strings.Join(words, " ")
-	core = strings.TrimRight(command[:i], " ")
-	redirect := ""
-	if strings.HasSuffix(core, stderrDup) {
-		redirect = stderrDup
-		core = strings.TrimRight(strings.TrimSuffix(core, stderrDup), " ")
-	}
-	return core, redirect + pipeSep + seg, seg
+type pipeKindFlags struct {
+	grep   bool
+	quoted bool
 }
 
-// stderrSuffix splits a trailing ` 2>&1` off a command that has no pipe. The
-// token must be exactly that, at the end, so every other redirect (2>/dev/null,
-// >file, 1>&2) keeps the command unsafe.
+// pipeSuffix splits `core [2>&1] | <lineFilter|grepFilter>`. suffix is what
+// follows the wrapped command in the rewrite; segs are the pipe's command
+// forms for the permission check. No pipe returns ok=true and empty parts; an
+// unsafe or unsupported pipe returns ok=false.
+func pipeSuffix(command string) (core, suffix string, segs []string, kind pipeKindFlags, ok bool) {
+	i := lastUnquotedPipe(command)
+	if i < 0 {
+		return command, "", nil, kind, true
+	}
+	tail := strings.TrimLeft(command[i+len(pipeSep):], " ")
+	core = strings.TrimRight(command[:i], " ")
+	var pipeOut string
+	words := strings.Fields(tail)
+	if allSafe(tail) && lineFilter(words) {
+		seg := strings.Join(words, " ")
+		pipeOut, segs = seg, []string{seg}
+	} else {
+		var grepOK bool
+		pipeOut, segs, kind.quoted, grepOK = parsePipeGrep(tail)
+		if !grepOK {
+			return command, "", nil, pipeKindFlags{}, false
+		}
+		kind.grep = true
+	}
+	strippedCore, redirKind, redirOK := extractStderrRedirect(core)
+	if !redirOK {
+		return command, "", nil, pipeKindFlags{}, false
+	}
+	redirect := ""
+	if redirKind == redirMerge {
+		redirect = stderrDup
+		core = strippedCore
+	}
+	return core, redirect + pipeSep + pipeOut, segs, kind, true
+}
+
+func lastUnquotedPipe(command string) int {
+	last := -1
+	var quote byte
+	for i := 0; i < len(command); i++ {
+		c := command[i]
+		if quote != 0 {
+			if c == quote {
+				quote = 0
+			}
+			continue
+		}
+		if c == '\'' || c == '"' {
+			quote = c
+			continue
+		}
+		if strings.HasPrefix(command[i:], pipeSep) {
+			last = i
+			i += len(pipeSep) - 1
+		}
+	}
+	return last
+}
+
+// stderrSuffix splits a single `2>&1` off a command that has no pipe. Every
+// other redirect (`>file`, `1>&2`, or multiple redirects) keeps the command
+// unsafe; `2>/dev/null` is left for decideQuoted to turn into --discard-stderr.
 func stderrSuffix(command string) (core, suffix string) {
-	if !strings.HasSuffix(command, stderrDup) {
+	c, kind, ok := extractStderrRedirect(command)
+	if !ok || kind != redirMerge {
 		return command, ""
 	}
-	return strings.TrimRight(strings.TrimSuffix(command, stderrDup), " "), stderrDup
+	return c, stderrDup
 }
 
 // lineFilter reports whether words are `tail|head` (default 10 lines) or
