@@ -31,6 +31,7 @@ var toolNames = map[string]bool{"README.md": true, "SKILL.md": true, "AGENTS.md"
 var toolPaths = map[string]bool{
 	".github/PULL_REQUEST_TEMPLATE.md": true, ".github/CODE_OF_CONDUCT.md": true,
 	".github/SECURITY.md": true, ".github/GOVERNANCE.md": true,
+	".github/SUPPORT.md": true,
 }
 
 var kebab = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*(\.[a-z0-9]+(-[a-z0-9]+)*)*\.md$`)

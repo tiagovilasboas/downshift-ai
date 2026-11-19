@@ -315,6 +315,15 @@ type Router interface {
 
 ---
 
+## Good first contributions
+
+Looking for a focused first PR? Two high-impact ways to help right now:
+
+1. **Share a 1-week external pilot (`downshift export --days=7`)** — [Beta exit Pillar 2](docs/reference/beta-exit.md#pillar-2--multi-user-evidence) needs independent operators running Downshift for a week and pasting the prompt-free summary into the `stats-export` or `pilot-report` issue template ([operator guide](docs/guides/operator.md)).
+2. **Add a clean command family to the Compactor** — Follow the 5-step guide above (matcher + fixture pair in `internal/compressor/testdata/` + unit tests + row in [supported-tools.md](docs/reference/supported-tools.md)). Use the [devcontainer setup](.devcontainer/devcontainer.json) or run `make hooks && make check`.
+
+---
+
 ## Pull Request Process
 
 1. **Fork and branch** — Create a feature branch from `main`
