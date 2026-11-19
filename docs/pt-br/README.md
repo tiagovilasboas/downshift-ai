@@ -25,17 +25,26 @@ Funciona com harnesses de programação, incluindo Claude Code e Codex CLI; as c
 
 Instale um binário de release compatível, escolha seu harness, revise a configuração proposta e verifique a instalação. Para o roteamento integrado, o harness compatível precisa estar instalado; o compactor também pode ser executado diretamente como CLI independente. O assistente interativo pode configurar hooks, MCP, skills e política de sessão conforme suas escolhas. Ele mostra as alterações propostas e pede confirmação antes de gravar.
 
-Os pacotes de release atendem macOS e Linux em arm64 e amd64, e Windows em amd64. A disponibilidade dos arquivos varia conforme o release; confira a página de releases para sua plataforma e os arquivos de verificação. O instalador shell do guia atende macOS e Linux.
+Os pacotes de release atendem macOS e Linux em arm64 e amd64, e Windows em amd64. A disponibilidade dos arquivos varia conforme o release; confira a página de releases para sua plataforma e os arquivos de verificação. Há suporte a Homebrew (`tiagovilasboas/tap`), instalador shell (`install.sh`) e Windows PowerShell (`install.ps1`).
 
 [Releases](https://github.com/tiagovilasboas/downshift-ai/releases) · [Instalação](../guides/install.md) · [Início rápido](../guides/quickstart.md) · [Configuração](../guides/config.md) · [Desfazer configuração](../reference/cli.md#downshift-setup) · [Desinstalar](../reference/cli.md#downshift-uninstall)
 
 ```bash
+# macOS & Linux (Homebrew)
+brew install tiagovilasboas/tap/downshift
+
 # macOS & Linux (arm64 / amd64)
 curl -fsSL https://raw.githubusercontent.com/tiagovilasboas/downshift-ai/main/install.sh | bash
+
+# Windows (PowerShell, amd64)
+irm https://raw.githubusercontent.com/tiagovilasboas/downshift-ai/main/install.ps1 | iex
 
 # No seu repositório:
 downshift setup
 downshift doctor
+
+# Autocompletar opcional no shell (bash, zsh, fish, powershell):
+downshift completion zsh > "${fpath[1]}/_downshift"
 
 # Depois, em qualquer sistema: instala a próxima release e atualiza cada harness
 downshift update

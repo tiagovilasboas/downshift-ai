@@ -37,9 +37,19 @@ received a live usage observation.
 
 ## Quickstart — zero to working hook in 2 minutes
 
-**Step 1 — Install** (macOS / Linux):
+**Step 1 — Install:**
+
 ```bash
+# macOS / Linux (Homebrew)
+brew install tiagovilasboas/tap/downshift
+
+# macOS / Linux (shell installer)
 curl -fsSL https://raw.githubusercontent.com/tiagovilasboas/downshift-ai/main/install.sh | sh
+```
+
+```powershell
+# Windows (PowerShell, amd64)
+irm https://raw.githubusercontent.com/tiagovilasboas/downshift-ai/main/install.ps1 | iex
 ```
 
 The installer downloads the release archive and `checksums.txt` from the same
