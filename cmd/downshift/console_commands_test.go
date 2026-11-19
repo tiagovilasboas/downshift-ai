@@ -22,7 +22,7 @@ func TestConsoleListsEveryCommand(t *testing.T) {
 			listed[s.Args[0]+" "+s.Args[1]] = true
 		}
 	}
-	for _, topics := range []map[string]string{dailyHelp, gatewayHelp, experimentalHelp, maintainerHelp, modelsHelp, mcpHelp, playbookHelp, policyHelp, routeHelp, retrieveHelp, discoverHelp} {
+	for _, topics := range []map[string]string{dailyHelp, gatewayHelp, experimentalHelp, maintainerHelp, modelsHelp, mcpHelp, playbookHelp, policyHelp, routeHelp, retrieveHelp, discoverHelp, completionHelp} {
 		for name := range topics {
 			if !consoleSkip[name] && !listed[name] {
 				t.Errorf("help topic %q has no console entry in consoleCommands", name)

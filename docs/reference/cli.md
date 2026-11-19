@@ -456,6 +456,14 @@ interactive terminal always sees the raw output.
 After upgrading Downshift, re-run `eval "$(downshift enable)"` (or open a new
 shell) so the functions pick up the current script.
 
+### `downshift completion`
+
+Print a shell completion script covering subcommands and flags for `bash`, `zsh`, `fish`, or `powershell` (`pwsh`).
+
+```bash
+downshift completion <bash|zsh|fish|powershell>
+```
+
 ---
 
 ## Compressor Learning

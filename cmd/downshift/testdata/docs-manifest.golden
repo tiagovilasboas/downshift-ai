@@ -102,6 +102,10 @@
       "legacy": true
     },
     {
+      "name": "completion",
+      "summary": "Print shell completion script for bash, zsh, fish or powershell"
+    },
+    {
       "name": "config",
       "summary": "Every effective setting with its value and source",
       "flags": [
