@@ -21,6 +21,7 @@ var consoleCommands = []command.Spec{
 	{Args: []string{"doctor", "--verbose"}, Group: "health", Summary: "Checklist with every detail"},
 	{Args: []string{"config"}, Group: "health", Summary: "Every effective setting with its value and source"},
 	{Args: []string{"enable"}, Group: "health", Summary: "Print shell aliases for transparent compaction"},
+	{Args: []string{"completion", "zsh"}, Group: "health", Summary: "Print shell completion script (bash, zsh, fish, powershell)", Plain: true},
 	{Args: []string{"version"}, Group: "health", Summary: "Print the binary version", Plain: true},
 
 	// See the effect

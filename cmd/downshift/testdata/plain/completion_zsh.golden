@@ -1,0 +1,134 @@
+exit: 0
+--- stdout ---
+#compdef downshift
+# zsh completion for downshift
+
+_downshift() {
+  local -a commands
+  if (( CURRENT == 2 )); then
+    commands=('accept' 'antigravity' 'claude-code' 'codex' 'compact' 'completion' 'config' 'context' 'cursor' 'dci' 'discover' 'doctor' 'enable' 'end' 'eval-outcome' 'export' 'gateway' 'help' 'honor' 'kiro' 'kirocrew' 'learning' 'loop' 'mcp' 'models' 'opencode' 'plan' 'playbook' 'policy' 'probe' 'quota' 'report' 'retrieve' 'route' 'session' 'setup' 'stats' 'uninstall' 'update' 'usage' 'version' 'watch')
+    compadd -a commands
+    return
+  fi
+  case "${words[2]}" in
+    accept)
+      compadd -- '--discarded' '--session' '--used' '--help' '--plain' '--version' ;;
+    antigravity)
+      compadd -- '--help' '--plain' '--version' ;;
+    claude-code)
+      compadd -- '--help' '--plain' '--version' ;;
+    codex)
+      compadd -- '--help' '--plain' '--version' ;;
+    compact)
+      compadd -- '--allowlisted' '--discard-stderr' '--exit-zero' '--harness' '--session' '--help' '--plain' '--version' ;;
+    completion)
+      if (( CURRENT >= 4 )); then
+        case "${words[3]}" in
+          bash) compadd -- '--help' '--plain' '--version'; return ;;
+          fish) compadd -- '--help' '--plain' '--version'; return ;;
+          powershell) compadd -- '--help' '--plain' '--version'; return ;;
+          zsh) compadd -- '--help' '--plain' '--version'; return ;;
+        esac
+      fi
+      compadd -- 'bash' 'fish' 'powershell' 'zsh' '--help' '--plain' '--version' ;;
+    config)
+      compadd -- '--json' '--help' '--plain' '--version' ;;
+    context)
+      if (( CURRENT >= 4 )); then
+        case "${words[3]}" in
+          compress) compadd -- '--exit' '--observe' '--off' '--safe' '--help' '--plain' '--version'; return ;;
+          enable) compadd -- '--exec' '--no-exec' '--help' '--plain' '--version'; return ;;
+        esac
+      fi
+      compadd -- 'compress' 'enable' '--help' '--plain' '--version' ;;
+    cursor)
+      compadd -- '--help' '--plain' '--version' ;;
+    dci)
+      compadd -- '--help' '--plain' '--version' ;;
+    discover)
+      compadd -- '--dedup' '--harness' '--json' '--since' '--top' '--help' '--plain' '--version' ;;
+    doctor)
+      compadd -- '--check-latest' '--harness' '--json' '--quiet' '--self-test' '--verbose' '--verify' '--help' '--plain' '--version' ;;
+    enable)
+      compadd -- '--help' '--plain' '--version' ;;
+    end)
+      compadd -- '--help' '--plain' '--version' ;;
+    eval-outcome)
+      compadd -- '--check' '--model' '--record' '--report' '--runs' '--solver' '--tasks' '--tier' '--verify' '--write' '--help' '--plain' '--version' ;;
+    export)
+      compadd -- '--days' '--help' '--plain' '--version' ;;
+    gateway)
+      compadd -- '--endpoint' '--json' '--help' '--plain' '--version' ;;
+    help)
+      compadd -- '--all' '--help' '--plain' '--version' ;;
+    honor)
+      compadd -- '--help' '--plain' '--version' ;;
+    kiro)
+      compadd -- '--help' '--plain' '--version' ;;
+    kirocrew)
+      compadd -- '--help' '--plain' '--version' ;;
+    learning)
+      compadd -- '--help' '--plain' '--version' ;;
+    loop)
+      compadd -- '--batch' '--continue-on-error' '--iterations' '--json' '--model' '--sensor' '--session' '--task' '--timeout' '--help' '--plain' '--version' ;;
+    mcp)
+      compadd -- '--help' '--plain' '--version' ;;
+    models)
+      if (( CURRENT >= 4 )); then
+        case "${words[3]}" in
+          available) compadd -- '--harness' '--json' '--help' '--plain' '--version'; return ;;
+          check) compadd -- '--help' '--plain' '--version'; return ;;
+          discover) compadd -- '--dry-run' '--harness' '--json' '--help' '--plain' '--version'; return ;;
+          list) compadd -- '--help' '--plain' '--version'; return ;;
+          pull) compadd -- '--help' '--plain' '--version'; return ;;
+        esac
+      fi
+      compadd -- 'available' 'check' 'discover' 'list' 'pull' '--help' '--plain' '--version' ;;
+    opencode)
+      compadd -- '--help' '--plain' '--version' ;;
+    plan)
+      compadd -- '--json' '--help' '--plain' '--version' ;;
+    playbook)
+      compadd -- '--help' '--plain' '--version' ;;
+    policy)
+      compadd -- '--bare' '--dry-run' '--harness' '--yes' '--help' '--plain' '--version' ;;
+    probe)
+      compadd -- '--help' '--plain' '--version' ;;
+    quota)
+      compadd -- '--harness' '--model' '--source' '--transcript' '--ttl' '--help' '--plain' '--version' ;;
+    report)
+      if (( CURRENT >= 4 )); then
+        case "${words[3]}" in
+          clear) compadd -- '--dry-run' '--yes' '--help' '--plain' '--version'; return ;;
+        esac
+      fi
+      compadd -- 'clear' '--by' '--daily' '--days' '--history' '--json' '--markdown' '--text' '--help' '--plain' '--version' ;;
+    retrieve)
+      compadd -- '--grep' '--head' '--lines' '--session' '--tail' '--help' '--plain' '--version' ;;
+    route)
+      compadd -- '--agent-type' '--dir' '--effort' '--harness' '--json' '--model' '--tier' '--help' '--plain' '--version' ;;
+    session)
+      compadd -- '--brief' '--json' '--no-report' '--panel' '--pause' '--resume' '--session' '--tree' '--why' '--help' '--plain' '--version' ;;
+    setup)
+      compadd -- '--allow-unsafe-binary' '--dry-run' '--keep-binaries' '--no-mcp' '--no-mods' '--no-plugin' '--no-policy' '--no-session-policy' '--no-skills' '--no-steering' '--no-tui' '--tui' '--undo' '--workers' '--yes' '--you-should-know' '--help' '--plain' '--version' ;;
+    stats)
+      compadd -- '--by-harness' '--days' '--detail' '--export' '--help' '--plain' '--version' ;;
+    uninstall)
+      compadd -- '--dry-run' '--purge' '--yes' '--help' '--plain' '--version' ;;
+    update)
+      compadd -- '--check' '--version' '--yes' '--help' '--plain' '--version' ;;
+    usage)
+      compadd -- '--help' '--plain' '--version' ;;
+    version)
+      compadd -- '--help' '--plain' '--version' ;;
+    watch)
+      compadd -- '--interval' '--once' '--session' '--help' '--plain' '--version' ;;
+  esac
+}
+
+if [[ "${funcstack[1]:-}" == _downshift ]]; then
+  _downshift "$@"
+else
+  compdef _downshift downshift
+fi
+--- stderr ---
