@@ -183,7 +183,7 @@ func recordKeptID(res *Result, id string) {
 // settle undoes a result that would not shorten the output: the row then
 // says the output stayed raw because the summary was not smaller.
 func settle(res Result, in hookport.ToolOutput) Result {
-	res.Replaced = res.Compacted && res.EmittedBytes < res.RawBytes
+	res.Replaced = res.Compacted && (res.EmittedBytes < res.RawBytes || res.Family == execwrap.FamilyGlab)
 	if res.Replaced {
 		return res
 	}

@@ -102,6 +102,12 @@ func compactSafely(argv []string, data []byte, family Family, exitCode int) (out
 		// unknown line): the family's compressor did not summarise it.
 		return nil, PassthroughUnrecognized, detailFromReason(r.Reason)
 	}
+	if r.Format == compressor.FormatGlab {
+		// glab is redaction-only (nothing is cut, raw is never stored): emit
+		// the redacted bytes directly without a compaction marker so secrets
+		// are always redacted and the output never pays marker overhead.
+		return r.Output, "", ""
+	}
 	out = append(append([]byte{}, r.Output...), Marker(len(data), len(r.Output))...)
 	if len(out) >= len(data) {
 		return nil, PassthroughSmallOutput, ""

@@ -16,7 +16,7 @@ Downshift and CCR bytes include the marker line the compactor appends at runtime
 | cargo_build | lossy | 1 | 440 | 183 | 58.4 | 110 | 45 | 197 | 55.2 |
 | cargo_clippy | lossless | 1 | 261 | 139 | 46.7 | 65 | 34 | 153 | 41.4 |
 | cargo_test | lossless | 3 | 3660 | 284 | 92.2 | 915 | 71 | 299 | 91.8 |
-| cargo_tree | lossless | 2 | 393 | 225 | 42.7 | 98 | 56 | 253 | 35.6 |
+| cargo_tree | lossless | 2 | 393 | 225 | 42.7 | 98 | 56 | 239 | 39.2 |
 | composer | lossless | 1 | 405 | 104 | 74.3 | 101 | 26 | 118 | 70.9 |
 | cypress | lossless | 1 | 910 | 162 | 82.2 | 227 | 40 | 164 | 82.0 |
 | docker_build | lossy | 1 | 388 | 196 | 49.5 | 97 | 49 | 210 | 45.9 |
@@ -32,23 +32,23 @@ Downshift and CCR bytes include the marker line the compactor appends at runtime
 | gh_pr | lossless | 2 | 1843 | 1774 | 3.7 | 460 | 443 | 1802 | 2.2 |
 | gh_run_list | lossless | 1 | 378 | 230 | 39.2 | 94 | 57 | 244 | 35.4 |
 | gh_run_log | lossy | 2 | 2451 | 655 | 73.3 | 612 | 163 | 683 | 72.1 |
-| git_diff | lossless | 3 | 810 | 849 | -4.8 | 202 | 212 | 891 | -10.0 |
+| git_diff | lossless | 3 | 810 | 807 | 0.4 | 202 | 201 | 807 | 0.4 |
 | git_log | lossy | 5 | 2265 | 655 | 71.1 | 566 | 163 | 725 | 68.0 |
-| git_show | lossless | 2 | 786 | 828 | -5.3 | 196 | 207 | 856 | -8.9 |
-| git_stash | lossy | 1 | 192 | 184 | 4.2 | 48 | 46 | 198 | -3.1 |
-| git_status | lossless | 5 | 1113 | 583 | 47.6 | 278 | 145 | 653 | 41.3 |
-| glab | lossy | 2 | 1673 | 1690 | -1.0 | 418 | 422 | 1718 | -2.7 |
-| go_build | lossy | 2 | 632 | 518 | 18.0 | 158 | 129 | 546 | 13.6 |
-| go_test | lossless | 13 | 13425 | 6167 | 54.1 | 3356 | 1541 | 4516 | 66.4 |
+| git_show | lossless | 2 | 786 | 786 | 0.0 | 196 | 196 | 786 | 0.0 |
+| git_stash | lossy | 1 | 192 | 184 | 4.2 | 48 | 46 | 184 | 4.2 |
+| git_status | lossless | 5 | 1113 | 545 | 51.0 | 278 | 136 | 587 | 47.3 |
+| glab | lossy | 2 | 1673 | 1574 | 5.9 | 418 | 393 | 1574 | 5.9 |
+| go_build | lossy | 2 | 632 | 515 | 18.5 | 158 | 128 | 529 | 16.3 |
+| go_test | lossless | 13 | 13425 | 6079 | 54.7 | 3356 | 1519 | 4504 | 66.5 |
 | golangci_lint | lossy | 2 | 569 | 415 | 27.1 | 142 | 103 | 443 | 22.1 |
-| gradle | lossy | 4 | 1875 | 854 | 54.5 | 468 | 213 | 910 | 51.5 |
+| gradle | lossy | 4 | 1875 | 840 | 55.2 | 468 | 210 | 882 | 53.0 |
 | grep_counts | lossy | 1 | 226 | 123 | 45.6 | 56 | 30 | 137 | 39.4 |
 | grep_rows | lossless | 1 | 1920 | 1307 | 31.9 | 480 | 326 | 975 | 49.2 |
 | http_fetch | lossy | 1 | 4980 | 1850 | 62.9 | 1245 | 462 | 1275 | 74.4 |
 | jest | lossless | 2 | 459 | 226 | 50.8 | 114 | 56 | 254 | 44.7 |
 | kubectl_pods | lossy | 1 | 229 | 191 | 16.6 | 57 | 47 | 205 | 10.5 |
 | lockfile_diff | lossy | 2 | 4998 | 675 | 86.5 | 1249 | 168 | 703 | 85.9 |
-| markdown | lossy | 2 | 1063 | 939 | 11.7 | 265 | 234 | 967 | 9.0 |
+| markdown | lossy | 2 | 1063 | 901 | 15.2 | 265 | 225 | 915 | 13.9 |
 | maven | lossy | 3 | 6676 | 907 | 86.4 | 1669 | 226 | 949 | 85.8 |
 | mypy | lossy | 2 | 710 | 391 | 44.9 | 177 | 97 | 419 | 41.0 |
 | next_build | lossless | 1 | 578 | 144 | 75.1 | 144 | 36 | 158 | 72.7 |
@@ -69,7 +69,7 @@ Downshift and CCR bytes include the marker line the compactor appends at runtime
 | turbo | lossless | 1 | 494 | 110 | 77.7 | 123 | 27 | 124 | 74.9 |
 | vitest | lossless | 4 | 3624 | 967 | 73.3 | 906 | 241 | 989 | 72.7 |
 | uncompacted (CCR only) | lossy | 3 | 6150 | 6150 | 0.0 | 1537 | 1537 | 1152 | 81.3 |
-| TOTAL | - | 121 | 198472 | 93943 | 52.7 | 49618 | 23485 | 61415 | 69.1 |
+| TOTAL | - | 121 | 198472 | 93562 | 52.9 | 49618 | 23390 | 60914 | 69.3 |
 
 ## Lossless and lossy split
 
@@ -77,16 +77,16 @@ Downshift and CCR bytes include the marker line the compactor appends at runtime
 
 | Class | Fixtures | Raw bytes | Downshift bytes | Saving % |
 |---|--:|--:|--:|--:|
-| lossless | 72 | 107985 | 44023 | 59.2 |
-| lossy | 49 | 90487 | 49920 | 44.8 |
+| lossless | 72 | 107985 | 43813 | 59.4 |
+| lossy | 49 | 90487 | 49749 | 45.0 |
 
 ## Relationship to live token savings
 
 The figures above measure raw byte reduction across a synthetic corpus of 121 compacted fixtures: command output and agent-desktop reads.
 
 - In live LLM sessions, compaction cuts verbose command outputs before they enter the prompt context, directly saving input tokens and subsequent prompt cache reads.
-- With CCR enabled, overall corpus reduction is **69.1% fewer bytes** (and **52.7%** with CCR disabled).
-- Lossless families (72 fixtures) have **59.2% fewer bytes** while keeping every failure line, exit code and stack trace.
+- With CCR enabled, overall corpus reduction is **69.3% fewer bytes** (and **52.9%** with CCR disabled).
+- Lossless families (72 fixtures) have **59.4% fewer bytes** while keeping every failure line, exit code and stack trace.
 - Compaction operates on tool output bytes, whereas model routing operates on subagent model pricing. These levers are orthogonal and multiply when combined.
 - Detailed empirical reconciliation: [anthropic-references-benchmark-reconciliation-2026-11-07.md](../evidence/anthropic-references-benchmark-reconciliation-2026-11-07.md).
 

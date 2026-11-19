@@ -130,7 +130,7 @@ Three subsequent empirical evaluations expanded this evidence base:
    routing with shell advise compaction achieved **up to ~53% fewer tokens per task** (directional real-use measurement; see
    [`roadmap.md`](../roadmap.md#now-beta) line 68 and [`anthropic-references-benchmark-reconciliation-2026-11-07.md`](../evidence/anthropic-references-benchmark-reconciliation-2026-11-07.md)).
 3. **CCR Compactor benchmark:** On the 121-fixture synthetic corpus ([`bench.md`](../reference/bench.md)), output compaction
-   achieved **69.1% byte reduction with CCR** (52.7% raw without CCR), reaching 59.2% on lossless families while preserving 100% of diagnostic failures.
+   achieved **69.3% byte reduction with CCR** (52.9% raw without CCR), reaching 59.4% on lossless families while preserving 100% of diagnostic failures.
 
 What D supports: a saving of about 12% to 24% on mechanical delegated work, a third on pure renames, and up to 53% when combined
 with shell compaction in KiroCrew, with 100% acceptance on mechanical tasks. What it does not: any proven figure for unconstrained natural
