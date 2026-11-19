@@ -36,6 +36,8 @@ func applyFormatCompression(input []byte, f Format) ([]byte, bool, string) {
 		return compressRspec(input)
 	case FormatDotnetTest:
 		return compressDotnetTest(input)
+	case FormatCTest:
+		return compressCTest(input)
 	case FormatNpmAudit:
 		return compressNpmAudit(input)
 	case FormatNpmInstall:

@@ -15,6 +15,8 @@ func buildSystemFamily(argv []string) Family {
 		return FamilyMake
 	case "cmake":
 		return FamilyCMake
+	case "ctest":
+		return FamilyCTest
 	case "ninja":
 		return FamilyNinja
 	case "bazel", "bazelisk":

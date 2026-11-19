@@ -1,0 +1,21 @@
+Test project /Users/dev/acme/build
+      Start  1: math_add_test
+ 1/4 Test  #1: math_add_test ....................   Passed    0.01 sec
+      Start  2: math_div_test
+ 2/4 Test  #2: math_div_test ....................***Failed    0.02 sec
+Assertion failed: (div_checked(10, 0) == 0), function test_div_zero, file tests/math_test.c, line 42.
+
+      Start  3: parser_ast_test
+ 3/4 Test  #3: parser_ast_test ..................   Passed    0.03 sec
+      Start  4: net_timeout_test
+ 4/4 Test  #4: net_timeout_test .................***Timeout   5.00 sec
+
+50% tests passed, 2 tests failed out of 4
+
+Total Test time (real) =   5.06 sec
+
+The following tests FAILED:
+	  2 - math_div_test (Failed)
+	  4 - net_timeout_test (Timeout)
+Errors while running CTest
+Output from these tests are in: /Users/dev/acme/build/Testing/Temporary/LastTest.log

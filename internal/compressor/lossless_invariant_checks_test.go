@@ -20,7 +20,7 @@ type invariant func(in, out []byte) (lost []string)
 
 // zeroCount matches a line that reports "nothing wrong" ("0 errors",
 // "Failing: 0"). A summary may fold it into its verdict, so it is not a signal.
-var zeroCount = regexp.MustCompile(`(?i)\b0\s+(errors?|failed|failures?|failing|warnings?)\b|(errors?|failed|failures?|failing|warnings?)\s*[:=]\s*0\b`)
+var zeroCount = regexp.MustCompile(`(?i)\b0\s+(?:tests?\s+)?(errors?|failed|failures?|failing|warnings?)\b|(errors?|failed|failures?|failing|warnings?)\s*[:=]\s*0\b`)
 
 // processID is a per-process id in a Node notice; the same notice from several
 // workers differs only by it, and the compaction folds them with a count.
@@ -91,15 +91,16 @@ func lastOf(re *regexp.Regexp) passTotal {
 }
 
 var (
-	reOKLine   = regexp.MustCompile(`(?m)^ok\s`)
-	reTopPass  = regexp.MustCompile(`(?m)^--- PASS:`)
-	rePassedN  = regexp.MustCompile(`(\d+) passed`)
-	reCypress  = regexp.MustCompile(`Passing:\s+(\d+)`)
-	rePHPUnit  = regexp.MustCompile(`OK \((\d+) tests`)
-	reFlutter  = regexp.MustCompile(`\+(\d+)`)
-	reTscFound = regexp.MustCompile(`Found (\d+) errors?`)
-	reRspecN   = regexp.MustCompile(`(\d+) examples?,`)
-	reDotnetN  = regexp.MustCompile(`Passed:\s+(\d+)`)
+	reOKLine      = regexp.MustCompile(`(?m)^ok\s`)
+	reTopPass     = regexp.MustCompile(`(?m)^--- PASS:`)
+	rePassedN     = regexp.MustCompile(`(\d+) passed`)
+	reCypress     = regexp.MustCompile(`Passing:\s+(\d+)`)
+	rePHPUnit     = regexp.MustCompile(`OK \((\d+) tests`)
+	reFlutter     = regexp.MustCompile(`\+(\d+)`)
+	reTscFound    = regexp.MustCompile(`Found (\d+) errors?`)
+	reRspecN      = regexp.MustCompile(`(\d+) examples?,`)
+	reDotnetN     = regexp.MustCompile(`Passed:\s+(\d+)`)
+	reCTestPassed = regexp.MustCompile(`100% tests passed, 0 tests? failed out of (\d+)`)
 )
 
 // goTestTotal is the number of top-level tests that passed in a verbose run, or
@@ -195,6 +196,7 @@ var invariants = map[compressor.Format]invariant{
 	compressor.FormatRspec:        runnerInvariant(lastOf(reRspecN)),
 	compressor.FormatAgentDesktop: agentDesktopInvariant,
 	compressor.FormatDotnetTest:   runnerInvariant(lastOf(reDotnetN)),
+	compressor.FormatCTest:        runnerInvariant(lastOf(reCTestPassed)),
 	compressor.FormatRubocop:      rubocopInvariant,
 	compressor.FormatGrep:         grepInvariant,
 	compressor.FormatGrepRows:     grepRowsInvariant,

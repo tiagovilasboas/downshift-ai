@@ -79,6 +79,9 @@ func detectFormat(input []byte) (Format, bool) {
 	if isGradle(input) {
 		return FormatGradle, reGradleFailure.Match(input)
 	}
+	if isCTest(input) {
+		return FormatCTest, reCTestFailure.Match(input)
+	}
 
 	// Verbose Go output ends with PASS, which otherwise matches Jest's generic
 	// PASS header. Identify a Go test transcript before the broader Jest check.

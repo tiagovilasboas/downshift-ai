@@ -4,14 +4,14 @@
 > Repositório oficial: https://github.com/tiagovilasboas/downshift-ai  
 > Licença: Apache 2.0
 
-Este documento apresenta a análise técnica detalhada e os resultados oficiais do benchmark de compactação de saídas de comando do **Downshift**, gerados diretamente a partir do corpus sintético de 121 fixtures compactadas (`internal/compressor/testdata/corpus`) através do comando `make bench`.
+Este documento apresenta a análise técnica detalhada e os resultados oficiais do benchmark de compactação de saídas de comando do **Downshift**, gerados diretamente a partir do corpus sintético de 122 fixtures compactadas (`internal/compressor/testdata/corpus`) através do comando `make bench`.
 
 ---
 
 ## 1. Metodologia do Benchmark
 
 ### Critérios de Medição:
-- **Corpus Oficial:** Composto por **121 fixtures** compactadas, reais e sintéticas, que simulam transcripts de comandos de desenvolvimento comuns (testes, builds, linters e git) e leituras do desktop pelo `agent-desktop`.
+- **Corpus Oficial:** Composto por **122 fixtures** compactadas, reais e sintéticas, que simulam transcripts de comandos de desenvolvimento comuns (testes, builds, linters e git) e leituras do desktop pelo `agent-desktop`.
 - **Modo Seguro e Exit 0:** Apenas fixtures que o Downshift reconhece e compacta com sucesso são computadas. Fixtures em formatos não suportados passam diretamente pelo comportamento *fail-open* e não são computadas como taxas falsas de economia.
 - **Aproximação de Tokens:** A quantidade de tokens é estimada usando a convenção padrão de engenharia de `bytes / 4` (representando uma média realista para saídas textuais em inglês e código-fonte nos tokenizers modernos).
 - **Inclusão do Marcador de Execução:** Tanto os bytes do Downshift quanto os do CCR já incluem o tamanho do marcador informativo injetado ao final de cada execução (`[downshift compact: ...]`).
@@ -23,7 +23,7 @@ Este documento apresenta a análise técnica detalhada e os resultados oficiais 
 
 | Métrica Avaliada | Tamanho Bruto (Raw) | Downshift (sem CCR) | Economia sem CCR | Downshift (com CCR) | Economia com CCR |
 |---|--:|--:|--:|--:|--:|
-| **Total do Corpus (121 fixtures)** | **198.472 bytes**<br>*(~49.618 tokens)* | **93.562 bytes**<br>*(~23.390 tokens)* | **52.9%** | **60.914 bytes**<br>*(~15.228 tokens)* | **69.3%** |
+| **Total do Corpus (122 fixtures)** | **199.831 bytes**<br>*(~49.957 tokens)* | **93.652 bytes**<br>*(~23.413 tokens)* | **53.1%** | **61.009 bytes**<br>*(~15.252 tokens)* | **69.5%** |
 
 ### Divisão entre Famílias Sem Perda (*Lossless*) e Com Sumarização (*Lossy*)
 
@@ -34,10 +34,10 @@ O Downshift divide formalmente suas gramáticas em duas categorias de segurança
 
 | Categoria | Fixtures | Bytes Brutos (Raw) | Bytes Downshift | Economia (%) |
 |---|--:|--:|--:|--:|
-| **Lossless (Sem Perda)** | **72** | **107.985** | **43.813** | **59.4%** |
+| **Lossless (Sem Perda)** | **73** | **109.344** | **43.903** | **59.8%** |
 | **Lossy (Sumarizada)** | **49** | **90.487** | **49.749** | **45.0%** |
 
-> **Destaque:** Nas famílias *lossless*, o Downshift obtém **59.4% de economia média de bytes** sem sacrificar absolutamente nenhuma linha de diagnóstico ou stack trace relevante.
+> **Destaque:** Nas famílias *lossless*, o Downshift obtém **59.8% de economia média de bytes** sem sacrificar absolutamente nenhuma linha de diagnóstico ou stack trace relevante.
 
 ---
 
@@ -51,6 +51,7 @@ A tabela a seguir reflete a execução oficial do benchmark:
 | **bazel** | lossy | 2 | 911 | 340 | 62.7% | 227 | 85 | 368 | 59.6% |
 | **cargo_build** | lossy | 1 | 440 | 183 | 58.4% | 110 | 45 | 197 | 55.2% |
 | **cargo_test** | lossless | 3 | 3.660 | 284 | **92.2%** | 915 | 71 | 299 | 91.8% |
+| **ctest** | lossless | 1 | 1.359 | 90 | **93.4%** | 339 | 22 | 95 | 93.0% |
 | **cypress** | lossless | 1 | 910 | 162 | **82.2%** | 227 | 40 | 164 | 82.0% |
 | **docker_build** | lossy | 1 | 388 | 196 | 49.5% | 97 | 49 | 210 | 45.9% |
 | **docker_images** | lossy | 1 | 248 | 133 | 46.4% | 62 | 33 | 147 | 40.7% |
@@ -101,7 +102,7 @@ A tabela a seguir reflete a execução oficial do benchmark:
 | **turbo** | lossless | 1 | 494 | 110 | 77.7% | 123 | 27 | 124 | 74.9% |
 | **vitest** | lossless | 4 | 3.624 | 967 | 73.3% | 906 | 241 | 989 | 72.7% |
 | **uncompacted** | lossy | 3 | 6.150 | 6.150 | 0.0% | 1.537 | 1.537 | 1.152 | 81.3% |
-| **TOTAL** | — | **121** | **198.472** | **93.562** | **52.9%** | **49.618** | **23.390** | **60.914** | **69.3%** |
+| **TOTAL** | — | **122** | **199.831** | **93.652** | **53.1%** | **49.957** | **23.413** | **61.009** | **69.5%** |
 
 ---
 
@@ -127,7 +128,7 @@ A tabela a seguir reflete a execução oficial do benchmark:
 O Downshift adota um compromisso de transparência científica em relação a métricas de economia:
 
 1. **Degrau A — Preço de Tabela Teórico:** Suposições matemáticas de quanto um modelo custaria. O Downshift não baseia seus produtos nisso.
-2. **Degrau B — Bytes e Tokens Medidos no Corpus:** O benchmark formal desta página (52.9% e 69.3% de economia medidos byte a byte em 121 fixtures).
+2. **Degrau B — Bytes e Tokens Medidos no Corpus:** O benchmark formal desta página (53.1% e 69.5% de economia medidos byte a byte em 122 fixtures).
 3. **Degrau C — Telemetria Local Real:** O que o seu ambiente registrou em `events.jsonl` e `exec-events.jsonl` (consultável via `downshift stats`).
 4. **Degrau D — Experimento Controlado A/B com Grupo de Controle:** Medição de tarefas reais comparando execuções com e sem Downshift em condições idênticas.
 5. **Degrau E — Fatura e Custo por Tarefa Aceita:** A redução real observada na fatura do provedor de IA no final do mês.

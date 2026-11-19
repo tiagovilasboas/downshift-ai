@@ -30,7 +30,7 @@ var expectedFormatLists = [][]Format{
 	{FormatRubocop}, {FormatDotnetTest}, {FormatPHPStan}, {FormatDockerBuild},
 	{FormatDockerPs}, {FormatDockerImages}, {FormatKubectlPods}, {FormatGitStash},
 	{FormatGoTestRuns}, {FormatGitRemote}, {FormatFileRead}, {FormatGlab},
-	{FormatAgentDesktop}, {FormatHTTPFetch}, {FormatGeneric},
+	{FormatAgentDesktop}, {FormatHTTPFetch}, {FormatCTest}, {FormatGeneric},
 }
 
 // corpusInputs reads every fixture under testdata: inputs (.txt, .in) and

@@ -18,6 +18,7 @@ pass through unchanged.
 | Maven | `mvn test`, `./mvnw test` |
 | Playwright | `playwright test`, `npx playwright test` |
 | Cypress | `cypress run` |
+| CMake (CTest) | `ctest` |
 
 A passing run of these is one count line (`Pytest: PASS (25 passed in 0.42s)`). When
 CCR keeps the raw output (the default), the kept form is shorter for `go test`

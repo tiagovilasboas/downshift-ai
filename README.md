@@ -8,7 +8,7 @@
 
 ### Cut the token waste in Claude Code, Codex and other coding agents.
 
-AI coding agents spend much of their context on test logs, build output and status dumps, and every subagent runs on your main model unless something sets another. That burns tokens and fills the context window. Downshift is an open-source CLI that compacts supported command output before the agent reads it, with failures and exit codes kept: 69.3% fewer bytes on a 121-fixture benchmark. It also applies the model and effort chosen for each subagent, within the policy you declare. Single Go binary.
+AI coding agents spend much of their context on test logs, build output and status dumps, and every subagent runs on your main model unless something sets another. That burns tokens and fills the context window. Downshift is an open-source CLI that compacts supported command output before the agent reads it, with failures and exit codes kept: 69.5% fewer bytes on a 122-fixture benchmark. It also applies the model and effort chosen for each subagent, within the policy you declare. Single Go binary.
 
 Works with coding harnesses including Claude Code and Codex CLI; integration capabilities and available models vary by harness and session.
 
@@ -188,8 +188,8 @@ Models available to one harness or session are not assumed to be available to an
 
 | Measurement | Result | Scope |
 | --- | --- | --- |
-| Lossless output compaction | **59.4% fewer bytes** | 72 lossless fixtures in a synthetic corpus. |
-| Output compaction with CCR | **69.3% fewer bytes** | 121-fixture synthetic corpus (52.9% with CCR off), command output and agent-desktop reads; displayed repetitions may be folded and raw output is recoverable. |
+| Lossless output compaction | **59.8% fewer bytes** | 73 lossless fixtures in a synthetic corpus. |
+| Output compaction with CCR | **69.5% fewer bytes** | 122-fixture synthetic corpus (53.1% with CCR off), command output and agent-desktop reads; displayed repetitions may be folded and raw output is recoverable. |
 | Balanced compaction, large outputs | **80.9% fewer bytes** | 4 real outputs of this repository over 16 KB (`go test -v`, `git show`, `git log -p`, `grep -rn`); 45.2% with the lossless compressor alone. Cut lines stay retrievable with `downshift retrieve`. |
 | Subagent routing | **24.1% fewer tokens per accepted run** | Controlled 46-run Claude Code study on mechanical tasks, conducted before decision O8. |
 

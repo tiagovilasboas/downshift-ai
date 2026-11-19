@@ -18,6 +18,7 @@ Downshift and CCR bytes include the marker line the compactor appends at runtime
 | cargo_test | lossless | 3 | 3660 | 284 | 92.2 | 915 | 71 | 299 | 91.8 |
 | cargo_tree | lossless | 2 | 393 | 225 | 42.7 | 98 | 56 | 239 | 39.2 |
 | composer | lossless | 1 | 405 | 104 | 74.3 | 101 | 26 | 118 | 70.9 |
+| ctest | lossless | 1 | 1359 | 90 | 93.4 | 339 | 22 | 95 | 93.0 |
 | cypress | lossless | 1 | 910 | 162 | 82.2 | 227 | 40 | 164 | 82.0 |
 | docker_build | lossy | 1 | 388 | 196 | 49.5 | 97 | 49 | 210 | 45.9 |
 | docker_images | lossy | 1 | 248 | 133 | 46.4 | 62 | 33 | 147 | 40.7 |
@@ -69,7 +70,7 @@ Downshift and CCR bytes include the marker line the compactor appends at runtime
 | turbo | lossless | 1 | 494 | 110 | 77.7 | 123 | 27 | 124 | 74.9 |
 | vitest | lossless | 4 | 3624 | 967 | 73.3 | 906 | 241 | 989 | 72.7 |
 | uncompacted (CCR only) | lossy | 3 | 6150 | 6150 | 0.0 | 1537 | 1537 | 1152 | 81.3 |
-| TOTAL | - | 121 | 198472 | 93562 | 52.9 | 49618 | 23390 | 60914 | 69.3 |
+| TOTAL | - | 122 | 199831 | 93652 | 53.1 | 49957 | 23413 | 61009 | 69.5 |
 
 ## Lossless and lossy split
 
@@ -77,16 +78,16 @@ Downshift and CCR bytes include the marker line the compactor appends at runtime
 
 | Class | Fixtures | Raw bytes | Downshift bytes | Saving % |
 |---|--:|--:|--:|--:|
-| lossless | 72 | 107985 | 43813 | 59.4 |
+| lossless | 73 | 109344 | 43903 | 59.8 |
 | lossy | 49 | 90487 | 49749 | 45.0 |
 
 ## Relationship to live token savings
 
-The figures above measure raw byte reduction across a synthetic corpus of 121 compacted fixtures: command output and agent-desktop reads.
+The figures above measure raw byte reduction across a synthetic corpus of 122 compacted fixtures: command output and agent-desktop reads.
 
 - In live LLM sessions, compaction cuts verbose command outputs before they enter the prompt context, directly saving input tokens and subsequent prompt cache reads.
-- With CCR enabled, overall corpus reduction is **69.3% fewer bytes** (and **52.9%** with CCR disabled).
-- Lossless families (72 fixtures) have **59.4% fewer bytes** while keeping every failure line, exit code and stack trace.
+- With CCR enabled, overall corpus reduction is **69.5% fewer bytes** (and **53.1%** with CCR disabled).
+- Lossless families (73 fixtures) have **59.8% fewer bytes** while keeping every failure line, exit code and stack trace.
 - Compaction operates on tool output bytes, whereas model routing operates on subagent model pricing. These levers are orthogonal and multiply when combined.
 - Detailed empirical reconciliation: [anthropic-references-benchmark-reconciliation-2026-11-07.md](../evidence/anthropic-references-benchmark-reconciliation-2026-11-07.md).
 

@@ -717,6 +717,7 @@ written. The family name is the only command fact telemetry keeps.
 | `pdm` | `pdm` | passes through |
 | `make` | `make <target>` (a go test run in its output folds; a failed target cuts only the passing go tests, every other line is kept) | compresses |
 | `cmake` | `cmake` | passes through |
+| `ctest` | `ctest`; `-S`/`--script`, `-SP`/`--script-new-process`, `--build-and-test`, `--output-log`, `--output-junit`, `-D`/`--dashboard` refused | compresses |
 | `ninja` | `ninja` | passes through |
 | `bazel` | `bazel` | compresses |
 | `just` | `just` | passes through |
