@@ -83,9 +83,28 @@ func benchCorpus(t *testing.T) []benchRow {
 		}
 		row.files++
 		row.raw += len(in)
-		row.reduced += len(res.Output) + len(execwrap.Marker(len(in), len(res.Output)))
+		if res.Format == compressor.FormatGlab {
+			// glab is redaction-only: emitted without a marker and never stored in CCR.
+			row.reduced += len(res.Output)
+			row.ccr += len(res.Output)
+			continue
+		}
+		withMarker := len(res.Output) + len(execwrap.Marker(len(in), len(res.Output)))
+		if withMarker >= len(in) {
+			// When the marker would make the output >= raw, execwrap passes raw
+			// through unchanged (no marker).
+			row.reduced += len(in)
+			row.ccr += len(in)
+			continue
+		}
+		row.reduced += withMarker
 		folded := foldedLen(res.Output)
-		row.ccr += folded + len(execwrap.MarkerWithID(len(in), folded, benchID))
+		withID := folded + len(execwrap.MarkerWithID(len(in), folded, benchID))
+		if withID < len(in) {
+			row.ccr += withID
+		} else {
+			row.ccr += withMarker
+		}
 	}
 	rows := make([]benchRow, 0, len(by)+1)
 	total := benchRow{family: "TOTAL"}
@@ -213,6 +232,17 @@ func renderBench(rows []benchRow) string {
 	b.WriteString("- Detailed empirical reconciliation: [anthropic-references-benchmark-reconciliation-2026-11-07.md](../evidence/anthropic-references-benchmark-reconciliation-2026-11-07.md).\n")
 	b.WriteString(balancedSection(balancedRows()))
 	return b.String()
+}
+
+func TestBenchReportNoNegativeSavings(t *testing.T) {
+	for _, r := range benchCorpus(t) {
+		if r.saving() < 0 {
+			t.Errorf("family %s has negative Downshift saving: %.1f%% (%d -> %d bytes)", r.family, r.saving(), r.raw, r.reduced)
+		}
+		if got := savingPct(r.raw, r.ccr); got < 0 {
+			t.Errorf("family %s has negative CCR saving: %.1f%% (%d -> %d bytes)", r.family, got, r.raw, r.ccr)
+		}
+	}
 }
 
 func TestBenchReport(t *testing.T) {

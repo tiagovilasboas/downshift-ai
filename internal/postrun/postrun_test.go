@@ -335,3 +335,56 @@ func TestCompact_ShellDualKeptIDs(t *testing.T) {
 		t.Fatalf("duplicate kept IDs: kept=%q extra=%v", dup.KeptID, dup.ExtraKeptIDs)
 	}
 }
+
+func TestCompact_GlabAndSmallDiffPassthrough(t *testing.T) {
+	t.Run("glab with secrets redacts without marker", func(t *testing.T) {
+		raw := "title:\tWebhook delivery fails behind the corporate proxy\n" +
+			"url:\thttps://gitlab.example.com/platform/webhooks/-/issues/311\n--\n" +
+			"Deliveries time out when HTTPS_PROXY points at http://svc-proxy:pr0xyS3cretValue@proxy.corp.example.com:3128\n" +
+			"and the request is sent with `PRIVATE-TOKEN: example-deploy-secret`.\n"
+		res := Compact(allCaps, hookport.ToolOutput{
+			Category:  core.CategoryShell,
+			Command:   "glab issue view 311",
+			Stdout:    raw,
+			HasStdout: true,
+		}, Options{Keep: keepOK})
+		if !res.Replaced || !res.Compacted {
+			t.Fatalf("expected glab secrets to be replaced: %+v", res)
+		}
+		if strings.Contains(res.Output.Stdout, "pr0xyS3cretValue") || strings.Contains(res.Output.Stdout, "example-deploy-secret") {
+			t.Fatalf("glab secret leaked: %q", res.Output.Stdout)
+		}
+		if strings.Contains(res.Output.Stdout, "[downshift compact:") {
+			t.Fatalf("unexpected marker on glab output: %q", res.Output.Stdout)
+		}
+		if len(res.Output.Stdout) >= len(raw) {
+			t.Fatalf("redacted glab grew: %d >= %d", len(res.Output.Stdout), len(raw))
+		}
+	})
+
+	t.Run("glab without secrets stays raw", func(t *testing.T) {
+		raw := "Showing 2 pipelines\n(success) #1\n"
+		res := Compact(allCaps, hookport.ToolOutput{
+			Category:  core.CategoryShell,
+			Command:   "glab ci list",
+			Stdout:    raw,
+			HasStdout: true,
+		}, Options{Keep: keepOK})
+		if res.Replaced || res.Compacted || res.Output.Stdout != raw {
+			t.Fatalf("plain glab changed: %+v", res)
+		}
+	})
+
+	t.Run("small git diff passes through without marker", func(t *testing.T) {
+		raw := "diff --git a/src/main.go b/src/main.go\nindex 73d83e6..63294b2 100644\n--- a/src/main.go\n+++ b/src/main.go\n@@ -1,5 +1,5 @@\n package main\n \n func main() {\n-\tprintln(\"hello, world\")\n+\tprintln(\"hello, team\")\n }\n"
+		res := Compact(allCaps, hookport.ToolOutput{
+			Category:  core.CategoryShell,
+			Command:   "git diff",
+			Stdout:    raw,
+			HasStdout: true,
+		}, Options{Keep: keepOK})
+		if res.Replaced || res.Compacted || res.Output.Stdout != raw || res.Passthrough != execwrap.PassthroughSmallOutput {
+			t.Fatalf("small git diff not passed through raw: %+v", res)
+		}
+	})
+}

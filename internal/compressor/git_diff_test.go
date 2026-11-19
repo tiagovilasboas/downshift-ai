@@ -61,3 +61,27 @@ func TestGitDiffDangerGate(t *testing.T) {
 		})
 	}
 }
+
+func TestGitDiffAndShow_NoGainPassesThroughRaw(t *testing.T) {
+	cases := []struct {
+		name string
+		in   string
+	}{
+		{
+			name: "git diff without index or excess context",
+			in:   "diff --git a/a.go b/a.go\n--- a/a.go\n+++ b/a.go\n@@ -1,3 +1,3 @@\n x\n-old\n+new\n y\n",
+		},
+		{
+			name: "git show without index or excess context",
+			in:   "commit 0123456789abcdef0123456789abcdef01234567\nAuthor: Dev <dev@example.com>\nDate: Mon Nov 19 10:00:00 2026 -0300\n\n    fix\n\ndiff --git a/a.go b/a.go\n--- a/a.go\n+++ b/a.go\n@@ -1,3 +1,3 @@\n x\n-old\n+new\n y\n",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			res := compressor.CompressExit([]byte(tc.in), compressor.ModeSafe, 0)
+			if res.Applied || res.Reason != "no_compression_gain" || string(res.Output) != tc.in {
+				t.Fatalf("got applied=%v reason=%q out=%q, want raw with no_compression_gain", res.Applied, res.Reason, res.Output)
+			}
+		})
+	}
+}

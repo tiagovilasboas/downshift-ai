@@ -23,7 +23,7 @@ Este documento apresenta a análise técnica detalhada e os resultados oficiais 
 
 | Métrica Avaliada | Tamanho Bruto (Raw) | Downshift (sem CCR) | Economia sem CCR | Downshift (com CCR) | Economia com CCR |
 |---|--:|--:|--:|--:|--:|
-| **Total do Corpus (121 fixtures)** | **198.472 bytes**<br>*(~49.618 tokens)* | **93.943 bytes**<br>*(~23.485 tokens)* | **52.7%** | **61.415 bytes**<br>*(~15.353 tokens)* | **69.1%** |
+| **Total do Corpus (121 fixtures)** | **198.472 bytes**<br>*(~49.618 tokens)* | **93.562 bytes**<br>*(~23.390 tokens)* | **52.9%** | **60.914 bytes**<br>*(~15.228 tokens)* | **69.3%** |
 
 ### Divisão entre Famílias Sem Perda (*Lossless*) e Com Sumarização (*Lossy*)
 
@@ -34,10 +34,10 @@ O Downshift divide formalmente suas gramáticas em duas categorias de segurança
 
 | Categoria | Fixtures | Bytes Brutos (Raw) | Bytes Downshift | Economia (%) |
 |---|--:|--:|--:|--:|
-| **Lossless (Sem Perda)** | **72** | **107.985** | **44.023** | **59.2%** |
-| **Lossy (Sumarizada)** | **49** | **90.487** | **49.920** | **44.8%** |
+| **Lossless (Sem Perda)** | **72** | **107.985** | **43.813** | **59.4%** |
+| **Lossy (Sumarizada)** | **49** | **90.487** | **49.749** | **45.0%** |
 
-> **Destaque:** Nas famílias *lossless*, o Downshift obtém **59.2% de economia média de bytes** sem sacrificar absolutamente nenhuma linha de diagnóstico ou stack trace relevante.
+> **Destaque:** Nas famílias *lossless*, o Downshift obtém **59.4% de economia média de bytes** sem sacrificar absolutamente nenhuma linha de diagnóstico ou stack trace relevante.
 
 ---
 
@@ -65,23 +65,23 @@ A tabela a seguir reflete a execução oficial do benchmark:
 | **gh_pr** | lossless | 2 | 1.843 | 1.774 | 3.7% | 460 | 443 | 1.802 | 2.2% |
 | **gh_run_list** | lossless | 1 | 378 | 230 | 39.2% | 94 | 57 | 244 | 35.4% |
 | **gh_run_log** | lossy | 2 | 2.451 | 655 | 73.3% | 612 | 163 | 683 | 72.1% |
-| **git_diff** | lossless | 3 | 810 | 849 | -4.8% | 202 | 212 | 891 | -10.0% |
+| **git_diff** | lossless | 3 | 810 | 807 | 0.4% | 202 | 201 | 807 | 0.4% |
 | **git_log** | lossy | 5 | 2.265 | 655 | 71.1% | 566 | 163 | 725 | 68.0% |
-| **git_show** | lossless | 2 | 786 | 828 | -5.3% | 196 | 207 | 856 | -8.9% |
-| **git_stash** | lossy | 1 | 192 | 184 | 4.2% | 48 | 46 | 198 | -3.1% |
-| **git_status** | lossless | 5 | 1.113 | 583 | 47.6% | 278 | 145 | 653 | 41.3% |
-| **glab** | lossy | 2 | 1.673 | 1.690 | -1.0% | 418 | 422 | 1.718 | -2.7% |
-| **go_build** | lossy | 2 | 632 | 518 | 18.0% | 158 | 129 | 546 | 13.6% |
-| **go_test** | lossless | 13 | 13.425 | 6.167 | 54.1% | 3.356 | 1.541 | 4.516 | 66.4% |
+| **git_show** | lossless | 2 | 786 | 786 | 0.0% | 196 | 196 | 786 | 0.0% |
+| **git_stash** | lossy | 1 | 192 | 184 | 4.2% | 48 | 46 | 184 | 4.2% |
+| **git_status** | lossless | 5 | 1.113 | 545 | 51.0% | 278 | 136 | 587 | 47.3% |
+| **glab** | lossy | 2 | 1.673 | 1.574 | 5.9% | 418 | 393 | 1.574 | 5.9% |
+| **go_build** | lossy | 2 | 632 | 515 | 18.5% | 158 | 128 | 529 | 16.3% |
+| **go_test** | lossless | 13 | 13.425 | 6.079 | 54.7% | 3.356 | 1.519 | 4.504 | 66.5% |
 | **golangci_lint** | lossy | 2 | 569 | 415 | 27.1% | 142 | 103 | 443 | 22.1% |
-| **gradle** | lossy | 4 | 1.875 | 854 | 54.5% | 468 | 213 | 910 | 51.5% |
+| **gradle** | lossy | 4 | 1.875 | 840 | 55.2% | 468 | 210 | 882 | 53.0% |
 | **grep_counts** | lossy | 1 | 226 | 123 | 45.6% | 56 | 30 | 137 | 39.4% |
 | **grep_rows** | lossless | 1 | 1.920 | 1.307 | 31.9% | 480 | 326 | 975 | 49.2% |
 | **http_fetch** | lossy | 1 | 4.980 | 1.850 | 62.9% | 1.245 | 462 | 1.275 | 74.4% |
 | **jest** | lossless | 2 | 459 | 226 | 50.8% | 114 | 56 | 254 | 44.7% |
 | **kubectl_pods** | lossy | 1 | 229 | 191 | 16.6% | 57 | 47 | 205 | 10.5% |
 | **lockfile_diff** | lossy | 2 | 4.998 | 675 | **86.5%** | 1.249 | 168 | 703 | 85.9% |
-| **markdown** | lossy | 2 | 1.063 | 939 | 11.7% | 265 | 234 | 967 | 9.0% |
+| **markdown** | lossy | 2 | 1.063 | 901 | 15.2% | 265 | 225 | 915 | 13.9% |
 | **maven** | lossy | 3 | 6.676 | 907 | **86.4%** | 1.669 | 226 | 949 | 85.8% |
 | **mypy** | lossy | 2 | 710 | 391 | 44.9% | 177 | 97 | 419 | 41.0% |
 | **next_build** | lossless | 1 | 578 | 144 | 75.1% | 144 | 36 | 158 | 72.7% |
@@ -101,7 +101,7 @@ A tabela a seguir reflete a execução oficial do benchmark:
 | **turbo** | lossless | 1 | 494 | 110 | 77.7% | 123 | 27 | 124 | 74.9% |
 | **vitest** | lossless | 4 | 3.624 | 967 | 73.3% | 906 | 241 | 989 | 72.7% |
 | **uncompacted** | lossy | 3 | 6.150 | 6.150 | 0.0% | 1.537 | 1.537 | 1.152 | 81.3% |
-| **TOTAL** | — | **121** | **198.472** | **93.943** | **52.7%** | **49.618** | **23.485** | **61.415** | **69.1%** |
+| **TOTAL** | — | **121** | **198.472** | **93.562** | **52.9%** | **49.618** | **23.390** | **60.914** | **69.3%** |
 
 ---
 
@@ -117,8 +117,8 @@ A tabela a seguir reflete a execução oficial do benchmark:
 2. **Diferença do CCR em Saídas Genéricas:**
    - Na família `generic`, a redução sem CCR foi de 18.4%. Com a ativação do CCR e a dobra de repetições (*FoldRepeats*), a economia disparou para **93.1%** (de 41.608 bytes para 2.865 bytes), pois centenas de linhas de logs repetitivos foram dobradas mantendo a garantia de recuperação integral.
 
-3. **Valores Negativos Marginais:**
-   - Em saídas minúsculas (como um `git show` ou `git diff` de 300 bytes), a adição do marcador informativo do CCR (`[downshift compact: ...]`) pode adicionar algumas dezenas de bytes. Esse comportamento é esperado e desejável, pois fornece a rastreabilidade necessária para o agente.
+3. **Pass-through em Saídas Pequenas:**
+   - Em saídas minúsculas (como um `git show` ou `git diff` de ~200–400 bytes), quando a adição do marcador (`[downshift compact: ...]`) tornaria o resultado maior ou igual ao original, o wrapper devolve a saída bruta inalterada sem marcador (0% de overhead). Comandos somente de redação (`glab`) removem segredos sem acrescentar marcador.
 
 ---
 
@@ -127,7 +127,7 @@ A tabela a seguir reflete a execução oficial do benchmark:
 O Downshift adota um compromisso de transparência científica em relação a métricas de economia:
 
 1. **Degrau A — Preço de Tabela Teórico:** Suposições matemáticas de quanto um modelo custaria. O Downshift não baseia seus produtos nisso.
-2. **Degrau B — Bytes e Tokens Medidos no Corpus:** O benchmark formal desta página (52.7% e 69.1% de economia medidos byte a byte em 121 fixtures).
+2. **Degrau B — Bytes e Tokens Medidos no Corpus:** O benchmark formal desta página (52.9% e 69.3% de economia medidos byte a byte em 121 fixtures).
 3. **Degrau C — Telemetria Local Real:** O que o seu ambiente registrou em `events.jsonl` e `exec-events.jsonl` (consultável via `downshift stats`).
 4. **Degrau D — Experimento Controlado A/B com Grupo de Controle:** Medição de tarefas reais comparando execuções com e sem Downshift em condições idênticas.
 5. **Degrau E — Fatura e Custo por Tarefa Aceita:** A redução real observada na fatura do provedor de IA no final do mês.

@@ -171,7 +171,7 @@ func (g *gate) finish(exitCode int, family Family) (raw, emitted int64, compacte
 	h := compactHeld(g.argv, data, family, exitCode, g.nErr > 0, g.keeper(exitCode, family), g.desktop, g.balanced, g.bal)
 	out := h.out
 	compacted, folded, passthrough, g.detail = h.compacted, h.folded, h.passthrough, h.detail
-	if compacted && !folded && g.noteBytes > 0 && len(out)+g.noteBytes >= len(data) {
+	if compacted && !folded && family != FamilyGlab && g.noteBytes > 0 && len(out)+g.noteBytes >= len(data) {
 		// The notes Run appends count against the never-longer-than-raw rule.
 		compacted, passthrough = false, PassthroughSmallOutput
 	}
