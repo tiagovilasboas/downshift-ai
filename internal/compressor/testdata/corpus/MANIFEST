@@ -504,6 +504,8 @@ clean     rspec         rspec_pass_clean.txt
 preserve  rspec         rspec_fail.txt
 clean     dotnet_test   dotnet_test_pass_clean.txt
 preserve  dotnet_test   dotnet_test_fail.txt
+clean     mix_test      mix_test_pass_clean.txt
+preserve  mix_test      mix_test_fail.txt
 clean     phpstan       phpstan_clean.txt
 preserve  phpstan       phpstan_version_banner.txt
 clean     docker_build  docker_build_clean.txt

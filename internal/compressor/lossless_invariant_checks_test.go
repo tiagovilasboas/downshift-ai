@@ -104,6 +104,7 @@ var (
 	reSwiftXCAll   = regexp.MustCompile(`(?m)^Test Suite 'All tests' passed at .+\n\s*Executed (\d+) tests?, with (?:(\d+) tests? skipped and )?0 failures?`)
 	reSwiftXCExec  = regexp.MustCompile(`(?m)^\s*Executed (\d+) tests?, with (?:(\d+) tests? skipped and )?0 failures?`)
 	reSwiftSTTotal = regexp.MustCompile(`(?m)^✔ Test run with (\d+) tests?(?: in \d+ suites?)? passed`)
+	reMixTestN     = regexp.MustCompile(`(\d+) tests?,`)
 )
 
 func swiftTestTotal(in []byte) (int, bool) {
@@ -230,6 +231,7 @@ var invariants = map[compressor.Format]invariant{
 	compressor.FormatDotnetTest:   runnerInvariant(lastOf(reDotnetN)),
 	compressor.FormatCTest:        runnerInvariant(lastOf(reCTestPassed)),
 	compressor.FormatSwiftTest:    runnerInvariant(swiftTestTotal),
+	compressor.FormatMixTest:      runnerInvariant(sumOf(reMixTestN)),
 	compressor.FormatRubocop:      rubocopInvariant,
 	compressor.FormatGrep:         grepInvariant,
 	compressor.FormatGrepRows:     grepRowsInvariant,

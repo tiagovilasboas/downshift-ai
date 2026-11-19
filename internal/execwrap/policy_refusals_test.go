@@ -54,6 +54,11 @@ func TestFamilyOf_WiredFamiliesAcceptAndRefuse(t *testing.T) {
 		{"swift test --filter MathTests", FamilySwiftTest},
 		{"swift build", FamilySwift},
 
+		{"mix test", FamilyMixTest},
+		{"mix test test/ledger/invoice_test.exs", FamilyMixTest},
+		{"mix test --listen-on-stdin", FamilyNone},
+		{"mix compile", FamilyMix},
+
 		{"phpstan", FamilyPHPStan},
 		{"phpstan analyse src --level=8", FamilyPHPStan},
 		{"vendor/bin/phpstan analyze", FamilyPHPStan},
@@ -123,7 +128,7 @@ func TestFamilyOf_ContainerExecInheritsRefusals(t *testing.T) {
 // Every wired family has a compressor format, so a refusal never hides a
 // family that compacts.
 func TestWiredFamiliesHaveFormats(t *testing.T) {
-	for _, f := range []Family{FamilyRspec, FamilyRubocop, FamilyDotnetTest, FamilySwiftTest, FamilyPHPStan, FamilyDockerBuild,
+	for _, f := range []Family{FamilyRspec, FamilyRubocop, FamilyDotnetTest, FamilySwiftTest, FamilyMixTest, FamilyPHPStan, FamilyDockerBuild,
 		FamilyDockerPS, FamilyDockerImages, FamilyKubectlGet, FamilyGitStash} {
 		if !compactibleFamily(f) {
 			t.Errorf("%q has no expectedFormats entry", f)

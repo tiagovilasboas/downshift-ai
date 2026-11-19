@@ -17,6 +17,7 @@ var adviseFamilies = map[Family]bool{
 	FamilyGradle:      true,
 	FamilyMaven:       true,
 	FamilyPHPUnit:     true,
+	FamilyMixTest:     true,
 	FamilyVitest:      true,
 	FamilyJest:        true,
 	FamilyPlaywright:  true,

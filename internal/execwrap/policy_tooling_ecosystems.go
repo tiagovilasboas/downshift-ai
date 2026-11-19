@@ -78,7 +78,9 @@ func otherLanguagesFamily(argv []string) Family {
 	case "mix":
 		if len(argv) >= 2 {
 			switch argv[1] {
-			case "test", "compile", "deps.get", "deps.compile", "format", "clean", "run", "do", "hex.info":
+			case "test":
+				return FamilyMixTest
+			case "compile", "deps.get", "deps.compile", "format", "clean", "run", "do", "hex.info":
 				return FamilyMix
 			}
 		}

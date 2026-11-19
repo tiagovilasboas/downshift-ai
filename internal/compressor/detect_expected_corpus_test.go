@@ -27,7 +27,7 @@ var expectedFormatLists = [][]Format{
 	{FormatEslint}, {FormatRuff}, {FormatMypy}, {FormatGolangciLint},
 	{FormatGoBuild}, {FormatCargoBuild}, {FormatDotnetBuild}, {FormatPipInstall},
 	{FormatBazel}, {FormatTurbo}, {FormatNx}, {FormatMarkdown}, {FormatRspec},
-	{FormatRubocop}, {FormatDotnetTest}, {FormatSwiftTest}, {FormatPHPStan}, {FormatDockerBuild},
+	{FormatRubocop}, {FormatDotnetTest}, {FormatSwiftTest}, {FormatMixTest}, {FormatPHPStan}, {FormatDockerBuild},
 	{FormatDockerPs}, {FormatDockerImages}, {FormatKubectlPods}, {FormatGitStash},
 	{FormatGoTestRuns}, {FormatGitRemote}, {FormatFileRead}, {FormatGlab},
 	{FormatAgentDesktop}, {FormatHTTPFetch}, {FormatCTest}, {FormatGeneric},

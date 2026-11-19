@@ -123,6 +123,7 @@ const (
 	FamilyPipInstall Family = "pip-install"
 
 	// Other languages
+	FamilyMixTest   Family = "mix-test"
 	FamilyMix       Family = "mix"
 	FamilySwift     Family = "swift"
 	FamilySwiftTest Family = "swift-test"
