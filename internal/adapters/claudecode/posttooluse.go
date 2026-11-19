@@ -154,17 +154,11 @@ func observeSkillUse(payload map[string]any, binaryVersion string) {
 	if evName := stringFieldAny(payload, "hook_event_name"); evName != "" && evName != "PostToolUse" {
 		return
 	}
-	if stringFieldAny(payload, "tool_name", "toolName") != "Skill" {
-		return
-	}
+	toolName := stringFieldAny(payload, "tool_name", "toolName")
 	input, _ := payload["tool_input"].(map[string]any)
-	skill := telemetry.SkillNameLabel(stringFieldAny(input, "skill"))
-	if skill == "" {
-		return
-	}
 	session := stringFieldAny(payload, "session_id", "sessionId", "sessionID")
 	if session == "" {
 		session = sessionFromTranscript(stringFieldAny(payload, "transcript_path", "transcriptPath"))
 	}
-	telemetry.Record(telemetry.SkillUsed(harnessID, telemetry.HashSessionID(session), skill, binaryVersion))
+	telemetry.RecordSkillsFromToolCall(harnessID, telemetry.HashSessionID(session), binaryVersion, toolName, input)
 }

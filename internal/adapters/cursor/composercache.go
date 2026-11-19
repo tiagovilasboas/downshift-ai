@@ -7,10 +7,12 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/paths"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
 )
 
 // Cursor Task preToolUse often omits model and model_id (live 3.27.12) while the
@@ -112,4 +114,17 @@ func saveComposerFile(m map[string]composerEntry) error {
 // TouchFromStop records the parent composer model Cursor sends on subagentStop.
 func TouchFromStop(sessionID, modelID, model string) {
 	rememberComposer(sessionID, modelID, model)
+}
+
+// ObservePromptSkills extracts allowlisted public skill mentions (/ponytail,
+// $ponytail, /downshift-*, /superpowers:*) from a beforeSubmitPrompt payload.
+// Raw prompt text is never logged.
+func ObservePromptSkills(ev Event, binaryVersion string) {
+	if ev.HookEventName != "" && !strings.EqualFold(ev.HookEventName, "beforeSubmitPrompt") {
+		return
+	}
+	if ev.Prompt == "" {
+		return
+	}
+	telemetry.RecordSkillsFromPrompt(harnessID, telemetry.HashSessionID(sessionKey(ev)), binaryVersion, ev.Prompt)
 }

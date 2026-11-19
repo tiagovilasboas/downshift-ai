@@ -12,13 +12,13 @@ import (
 
 // reLsRow reads one `ls -l` row: the type letter, the mode and an optional
 // attribute mark, the link count, owner, group, size, date, then the name.
-// Both date forms are read: BSD and GNU "Mon DD HH:MM" or "Mon DD YYYY", and
-// GNU ISO "YYYY-MM-DD HH:MM[:SS[.frac] +ZZZZ]".
+// Both date forms are read: BSD and GNU "Mon DD HH:MM" / "Mon DD YYYY" (or
+// day-first "DD Mon ..."), and GNU ISO "YYYY-MM-DD HH:MM[:SS[.frac] [+-ZZZZ]]".
 var reLsRow = lazyre.New(`^([-bcdlpsDCMnP?])[-rwxsStTlL]{9}[@+.]? +\d+ +\S+ +\S+ +(\d+(?:\.\d+)?[BKMGTPEZY]?) +` +
-	`((?:[A-Za-z]{3} +\d{1,2} +(?:\d{1,2}:\d{2}|\d{4})|\d{4}-\d{2}-\d{2} +\d{2}:\d{2}(?::\d{2}(?:\.\d+)? [-+]\d{4})?)) +(.+)$`)
+	`((?:(?:[A-Za-z]{3} +\d{1,2}|\d{1,2} +[A-Za-z]{3}) +(?:\d{1,2}:\d{2}|\d{4})|\d{4}-\d{2}-\d{2} +\d{2}:\d{2}(?::\d{2}(?:\.\d+)?(?: [-+]\d{4})?)?)) +(.+)$`)
 
-// reLsTotal is the first line of `ls -l` on a directory: its block count.
-var reLsTotal = lazyre.New(`^total \d+$`)
+// reLsTotal is the first line of `ls -l` / `ls -lh` on a directory: its block count.
+var reLsTotal = lazyre.New(`^total \d+(?:\.\d+)?[BKMGTPEZYk]?$`)
 
 // isLsLong reports whether input is an `ls -l` / `ls -la` listing (with or
 // without directories) so detectFormatTail can recognize file-only directories.

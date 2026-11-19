@@ -18,42 +18,12 @@
 // The main session is never routed; only a session with a parent is.
 
 import { Plugin } from "@opencode/plugin"
-import { type ModelRef, knownModels, modelName, modelRef, resolveTarget } from "./models.ts"
+import { type Child, recordStepUsage } from "./children.ts"
+import { knownModels, modelName, modelRef, resolveTarget } from "./models.ts"
 import { acceptShellRewrite, resolveBin } from "./shell_trust.ts"
 import { createShellSessions } from "./shell_sessions.ts"
-import {
-  HARNESS,
-  SHELL_TIMEOUT_MS,
-  WIRE_VERSION,
-  answer,
-  batchAnswer,
-  count,
-  opaque,
-  taskText,
-} from "./wire.ts"
-
-type Usage = {
-  input: number
-  output: number
-  reasoning: number
-  cache: { read: number; write: number }
-}
-
-type Child = {
-  sessionID: string
-  child: string
-  parent: string
-  agent: string
-  directory: string
-  requested: ModelRef
-  target: ModelRef | null
-  switchResult: "ok" | "error" | ""
-  contextModel: string
-  fallback: boolean
-  usage: Usage
-  steps: Set<string>
-  finished: boolean
-}
+import { observeSkillPrompt, observeSkillTool } from "./skills.ts"
+import { HARNESS, SHELL_TIMEOUT_MS, WIRE_VERSION, answer, batchAnswer, count, opaque, taskText } from "./wire.ts"
 
 export default Plugin.define({
   id: "downshift",
@@ -142,7 +112,10 @@ export default Plugin.define({
         if (!sessionID || typeof text !== "string" || text.length === 0 || children.has(sessionID)) return
         const info: any = await ctx.session.get({ sessionID })
         const parentID = info && typeof info.parentID === "string" ? info.parentID : ""
-        if (!parentID) return
+        if (!parentID) {
+          observeSkillPrompt(bin, version, sessionID, text)
+          return
+        }
         const requested = modelRef(info.model)
         if (!requested) return
         const child: Child = {
@@ -239,7 +212,10 @@ export default Plugin.define({
     // the shared shell policy says the wrapped form saves tokens.
     await ctx.tool.hook("execute.before", (event: any) => {
       try {
-        if (event?.tool !== "shell") return
+        if (event?.tool !== "shell") {
+          observeSkillTool(bin, version, event)
+          return
+        }
         const command = event?.input?.command
         if (typeof command !== "string" || command.length === 0) return
         const sessionID = typeof event?.sessionID === "string" ? event.sessionID : ""
@@ -287,16 +263,7 @@ export default Plugin.define({
         const child = children.get(sessionID)
         if (!child) return
         if (type === "session.step.ended") {
-          const messageID = typeof data.assistantMessageID === "string" ? data.assistantMessageID : ""
-          if (messageID && child.steps.has(messageID)) return
-          if (messageID) child.steps.add(messageID)
-          const tokens = data.tokens && typeof data.tokens === "object" ? data.tokens : {}
-          const cache = tokens.cache && typeof tokens.cache === "object" ? tokens.cache : {}
-          child.usage.input += count(tokens.input)
-          child.usage.output += count(tokens.output)
-          child.usage.reasoning += count(tokens.reasoning)
-          child.usage.cache.read += count(cache.read)
-          child.usage.cache.write += count(cache.write)
+          recordStepUsage(child, data)
           return
         }
         if (type === "session.execution.succeeded") finish(child, "completed")

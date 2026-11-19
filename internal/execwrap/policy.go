@@ -84,7 +84,7 @@ func WithSession(command, session string) string {
 
 // maxCommandBytes bounds the command the policy considers. Longer commands
 // are left alone.
-const maxCommandBytes = 2048
+const maxCommandBytes = 4096
 
 // Decision is the policy answer for one shell command.
 type Decision struct {
@@ -266,6 +266,9 @@ func gitFamilyOf(args []string) Family {
 	}
 	if args[0] == "config" {
 		return gitConfigFamily(args[1:])
+	}
+	if args[0] == "ls-files" {
+		return gitLsFilesFamily(args[1:])
 	}
 	if family, ok := gitSubcommands[args[0]]; ok {
 		return family

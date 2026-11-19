@@ -38,17 +38,17 @@ var rgPipeSpec = pipeFilterSpec{
 	longCount: []string{"after-context", "before-context", "context", "max-count"},
 }
 
-// parsePipeGrep validates a trailing `| grep ...` or `| rg ...` stdin filter
-// stage. Only safe filtering flags and a single pattern (positional or via
-// -e/--regexp) are accepted; file operands, -f/--file, -r/-R, --pre, -z and
-// unsafe redirects are refused.
-func parsePipeGrep(tail string) (outSuffix string, segs []string, quoted, ok bool) {
+// parsePipeFilter validates a trailing `| grep|rg|egrep|fgrep ...` or
+// `| sort|uniq|wc|cut ...` stdin filter stage. Only safe filtering flags (and
+// for grep/rg, a single pattern) are accepted; file operands, dangerous flags,
+// and unsafe redirects are refused.
+func parsePipeFilter(tail string) (outSuffix string, segs []string, quoted, ok bool) {
 	core, redir, redirOK := extractStderrRedirect(tail)
 	if !redirOK || core == "" {
 		return "", nil, false, false
 	}
 	words, bad := lexQuoted(core)
-	if bad >= 0 || len(words) < 2 || !words[0].plain {
+	if bad >= 0 || len(words) == 0 || !words[0].plain {
 		return "", nil, false, false
 	}
 	argv := make([]string, len(words))
@@ -58,14 +58,17 @@ func parsePipeGrep(tail string) (outSuffix string, segs []string, quoted, ok boo
 			quoted = true
 		}
 	}
-	if !validGrepPipeSpec(argv[0], argv[1:]) {
+	if !validGrepPipeSpec(argv[0], argv[1:]) && !validTextPipeSpec(argv[0], argv[1:]) {
 		return "", nil, false, false
 	}
-	outSuffix, segs = formatPipeGrepSuffix(words, argv, redir, quoted)
+	outSuffix, segs = formatPipeSuffix(words, argv, redir, quoted)
 	return outSuffix, segs, quoted, true
 }
 
 func validGrepPipeSpec(prog string, args []string) bool {
+	if len(args) == 0 {
+		return false
+	}
 	switch prog {
 	case "grep", "egrep", "fgrep":
 		return validPipeFilterArgs(args, grepPipeSpec)
@@ -171,7 +174,7 @@ func parsePipeShortFlags(cluster string, args []string, idx int, spec pipeFilter
 	return idx, false, true
 }
 
-func formatPipeGrepSuffix(words []shellWord, argv []string, redir stderrRedirect, quoted bool) (string, []string) {
+func formatPipeSuffix(words []shellWord, argv []string, redir stderrRedirect, quoted bool) (string, []string) {
 	rawWords := make([]string, len(words))
 	quotedWords := make([]string, len(words))
 	for i, w := range words {

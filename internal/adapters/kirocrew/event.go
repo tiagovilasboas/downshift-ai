@@ -10,6 +10,7 @@ import (
 	"github.com/tiagovilasboas/downshift-ai/internal/core"
 	"github.com/tiagovilasboas/downshift-ai/internal/hookutil"
 	"github.com/tiagovilasboas/downshift-ai/internal/quota"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
 )
 
 // spawnToolNames are the KiroCrew tools that spawn a subagent. Only these are
@@ -68,6 +69,16 @@ func (ev Event) TaskText() string {
 		return ""
 	}
 	return hookutil.TaskText(ti, "task", "prompt", "description")
+}
+
+// UsedSkills extracts privacy-safe skill labels when the tool call invokes a
+// Skill tool or reads .../skills/<slug>/SKILL.md.
+func (ev Event) UsedSkills() []string {
+	var ti map[string]any
+	if json.Unmarshal(ev.ToolInput, &ti) != nil {
+		return nil
+	}
+	return telemetry.SkillsFromToolCall(canonicalToolName(ev.ToolName), ti)
 }
 
 // canonicalToolName drops the MCP server prefix KiroCrew adds when the agent

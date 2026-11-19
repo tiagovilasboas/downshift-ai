@@ -60,6 +60,10 @@ func applyFormatCompression(input []byte, f Format) ([]byte, bool, string) {
 		return compressGitShow(input)
 	case FormatGitStash:
 		return compressGitStashList(input)
+	case FormatGitBranch:
+		return compressGitBranch(input)
+	case FormatGitRemoteList:
+		return compressGitRemoteList(input)
 	case FormatGhPr:
 		return compressGhPrView(input)
 	case FormatMarkdown:

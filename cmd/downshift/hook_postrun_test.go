@@ -180,7 +180,7 @@ func TestPostRun_PlainFamilyUsesWrapperCompressor(t *testing.T) {
 
 func TestPostRun_SmallOrUnknownOutputUnchanged(t *testing.T) {
 	state := postRunEnv(t, true)
-	answer, got := honorAnswer(t, portFor("claude-code"), bashPost(t, "ls -la | sort", "a\nb\n", ""))
+	answer, got := honorAnswer(t, portFor("claude-code"), bashPost(t, "ls -la | awk 'NF'", "a\nb\n", ""))
 	if got != nil || strings.TrimSpace(answer) != "{}" {
 		t.Errorf("small output: answer %q, want {}", answer)
 	}

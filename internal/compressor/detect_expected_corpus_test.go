@@ -31,6 +31,7 @@ var expectedFormatLists = [][]Format{
 	{FormatDockerPs}, {FormatDockerImages}, {FormatKubectlPods}, {FormatGitStash},
 	{FormatGoTestRuns}, {FormatGitRemote}, {FormatFileRead}, {FormatGlab},
 	{FormatAgentDesktop}, {FormatHTTPFetch}, {FormatCTest}, {FormatGeneric},
+	{FormatGitBranch}, {FormatGitRemoteList},
 }
 
 // corpusInputs reads every fixture under testdata: inputs (.txt, .in) and

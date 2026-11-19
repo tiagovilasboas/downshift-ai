@@ -51,6 +51,9 @@ type Event struct {
 	// TranscriptPath is the parent conversation JSONL (Claude-shaped). Used when
 	// model_id and model are absent on Task preToolUse (live 3.27.12).
 	TranscriptPath string `json:"transcript_path,omitempty"`
+	// Prompt is sent on beforeSubmitPrompt (never persisted; scanned in memory
+	// only for allowlisted skill mentions such as /ponytail).
+	Prompt string `json:"prompt,omitempty"`
 }
 
 // ToolUseIdentifier returns the harness id of this tool call, if any.

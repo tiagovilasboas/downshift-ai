@@ -12,6 +12,7 @@ package main
 
 import (
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -270,5 +271,52 @@ func TestOpenCodeE2E_HonorObservationLinksTheRoutedDecision(t *testing.T) {
 	}
 	if resolved.RewriteHonored == nil || !*resolved.RewriteHonored || resolved.ToModel != small {
 		t.Fatalf("resolution not confirmed against the decision target: %+v", resolved)
+	}
+}
+
+func TestOpenCodeE2E_SkillObservations(t *testing.T) {
+	log := openCodeEnv(t)
+	reqs := []string{
+		`{"v":1,"kind":"skill","harness":{"id":"opencode","version":"2.2.5"},"event":"skill_used","correlation":{"child":"` + openCodeChild + `","parent":""},"tool":"skill","skill":"ponytail","tsUtc":"2026-11-19T12:00:00Z"}`,
+		`{"v":1,"kind":"skill","harness":{"id":"opencode","version":"2.2.5"},"event":"skill_used","correlation":{"child":"` + openCodeChild + `","parent":""},"tool":"read","path":"/Users/alice/.config/opencode/skills/downshift-audit/SKILL.md","tsUtc":"2026-11-19T12:00:01Z"}`,
+		`{"v":1,"kind":"skill","harness":{"id":"opencode","version":"2.2.5"},"event":"skill_used","correlation":{"child":"` + openCodeChild + `","parent":""},"tool":"skill","skill":"secret-private-skill","tsUtc":"2026-11-19T12:00:02Z"}`,
+		`{"v":1,"kind":"skill","harness":{"id":"opencode","version":"2.2.5"},"event":"skill_used","correlation":{"child":"` + openCodeChild + `","parent":""},"taskText":"run /ponytail on my secret project","tsUtc":"2026-11-19T12:00:03Z"}`,
+	}
+	for _, raw := range reqs {
+		rc, stdout, _ := runOpenCodeHook(t, raw)
+		if rc != 0 {
+			t.Fatalf("rc = %d", rc)
+		}
+		ans, _ := decodeAnswer(t, stdout)
+		if ans.Action != "allow" || ans.ReasonCode != "skill_observed" {
+			t.Fatalf("answer = %+v, want allow/skill_observed", ans)
+		}
+	}
+
+	b, err := os.ReadFile(log)
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(b)
+	for _, forbidden := range []string{openCodeChild, "/Users/alice", "secret-private-skill", "secret project", "SKILL.md"} {
+		if strings.Contains(text, forbidden) {
+			t.Errorf("event log leaked %q:\n%s", forbidden, text)
+		}
+	}
+
+	events, err := telemetry.ReadEventsFrom(log)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(events) != 4 {
+		t.Fatalf("events = %d, want 4: %+v", len(events), events)
+	}
+	wantHash := telemetry.HashSessionID(openCodeChild)
+	wantSkills := []string{"ponytail", "downshift-audit", "other", "ponytail"}
+	for i, ev := range events {
+		if ev.Outcome != telemetry.OutcomeSkillUsed || ev.Harness != "opencode" || ev.SessionID != wantHash || ev.Agent != wantSkills[i] {
+			t.Errorf("event[%d] = %+v, want outcome=%s harness=opencode session=%s agent=%s",
+				i, ev, telemetry.OutcomeSkillUsed, wantHash, wantSkills[i])
+		}
 	}
 }

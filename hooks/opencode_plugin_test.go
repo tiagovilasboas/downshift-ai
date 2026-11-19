@@ -26,20 +26,22 @@ import (
 const driver = `
 import plugin from "./index.ts"
 const cmd = process.env.TEST_COMMAND
-let hook, before
+let hook, before, promptHook
 let clock = 0
 Date.now = () => clock
 const ctx = {
-  session: { hook: async () => {}, get: async () => null, switchModel: async () => {} },
+  session: { hook: async (name, fn) => { if (name === "prompt") promptHook = fn }, get: async () => null, switchModel: async () => {} },
   tool: { hook: async (name, fn) => { if (name === "execute.before") before = fn } },
   shell: { hook: async (name, fn) => { if (name === "create.before") hook = fn } },
   event: { subscribe: async function* () {} },
 }
 if (process.env.TEST_LOCATION) ctx.location = { directory: process.env.TEST_LOCATION }
 await plugin.setup(ctx)
-// TEST_STEPS replays tool calls: {before:{sessionID,command}} or {create:cmd}.
+// TEST_STEPS replays tool calls: {before:{sessionID,command}} or {create:cmd} or {tool:...} or {prompt:...}.
 for (const step of JSON.parse(process.env.TEST_STEPS || "[]")) {
   if (step.before) before({ tool: "shell", ...step.before.event, sessionID: step.before.sessionID, input: { command: step.before.command } })
+  if (step.tool && before) before(step.tool)
+  if (step.prompt && promptHook) await promptHook(step.prompt)
   if (step.advance) { clock += step.advance }
   if (step.create) hook(process.env.TEST_NO_CWD ? { command: step.create } : { command: step.create, cwd: "/tmp" })
 }
@@ -496,6 +498,61 @@ func TestOpenCodePluginPendingTagsAreCappedAcrossQueues(t *testing.T) {
 		}
 		if call.Correlation.Child != want {
 			t.Fatalf("create %d: tag %q, want %q", i, call.Correlation.Child, want)
+		}
+	}
+}
+
+func TestOpenCodePluginForwardsSkillSignalsAndSkipsNoise(t *testing.T) {
+	skipWithoutBun(t)
+	dir, stub := pluginDir(t)
+	t.Setenv("REWRITE", "")
+	capture := filepath.Join(t.TempDir(), "capture")
+	t.Setenv("CAPTURE", capture)
+	steps := `[` +
+		`{"tool":{"tool":"read","sessionID":"s1","input":{"filePath":"/repo/main.go"}}},` +
+		`{"prompt":{"sessionID":"s1","prompt":{"text":"/clear please"}}},` +
+		`{"tool":{"tool":"skill","sessionID":"s1","input":{"name":"ponytail"}}},` +
+		`{"tool":{"tool":"read","sessionID":"s1","input":{"filePath":"/home/u/.config/opencode/skills/downshift-audit/SKILL.md"}}},` +
+		`{"prompt":{"sessionID":"s1","prompt":{"text":"use /ponytail here"}}}` +
+		`]`
+	t.Setenv("TEST_STEPS", steps)
+	runPlugin(t, dir, stub, "")
+
+	raw := readCapture(t, capture, 3)
+	lines := strings.Split(strings.TrimSpace(string(raw)), "\n")
+	if len(lines) != 3 {
+		t.Fatalf("captured %d calls, want 3 (ordinary read and /clear must not spawn):\n%s", len(lines), raw)
+	}
+	wantSess := opaqueID("s1")
+	for i, line := range lines {
+		var call struct {
+			Kind        string                 `json:"kind"`
+			Event       string                 `json:"event"`
+			Tool        string                 `json:"tool"`
+			Skill       string                 `json:"skill"`
+			Path        string                 `json:"path"`
+			TaskText    string                 `json:"taskText"`
+			Correlation struct{ Child string } `json:"correlation"`
+		}
+		if err := json.Unmarshal([]byte(line), &call); err != nil {
+			t.Fatal(err)
+		}
+		if call.Kind != "skill" || call.Event != "skill_used" || call.Correlation.Child != wantSess {
+			t.Fatalf("call[%d] = %+v", i, call)
+		}
+		switch i {
+		case 0:
+			if call.Tool != "skill" || call.Skill != "ponytail" {
+				t.Errorf("call[0] = %+v, want skill/ponytail", call)
+			}
+		case 1:
+			if call.Tool != "read" || !strings.HasSuffix(call.Path, "downshift-audit/SKILL.md") {
+				t.Errorf("call[1] = %+v, want read/.../downshift-audit/SKILL.md", call)
+			}
+		case 2:
+			if call.TaskText != "use /ponytail here" {
+				t.Errorf("call[2] = %+v, want prompt taskText", call)
+			}
 		}
 	}
 }

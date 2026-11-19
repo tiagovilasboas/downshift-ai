@@ -9,7 +9,7 @@ import (
 	"github.com/tiagovilasboas/downshift-ai/internal/execwrap"
 )
 
-const maxPostRunCommandBytes = 2048
+const maxPostRunCommandBytes = 4096
 
 // extractPostRunFamily extracts a safe allowlisted family and normalized argv
 // when execwrap.SimpleFamily returned FamilyNone (for example `/abs/path/cmd`,

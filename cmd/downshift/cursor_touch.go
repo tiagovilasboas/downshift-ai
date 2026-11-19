@@ -34,6 +34,7 @@ func runCursorTouch(in io.Reader, out io.Writer) (rc int) {
 		var ev cursor.Event
 		if json.Unmarshal(raw, &ev) == nil {
 			cursorRemember(ev)
+			cursor.ObservePromptSkills(ev, telemetryVersion())
 		}
 	}
 	fmt.Fprintln(out, `{}`)

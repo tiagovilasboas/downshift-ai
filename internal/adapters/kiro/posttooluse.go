@@ -38,6 +38,8 @@ func HandlePostToolUse(raw []byte, binaryVersion string, r core.Resolver) (any, 
 		observeSensor(payload, toolName, sessionHash)
 	}
 	observeMainWork(payload, toolName, sessionHash)
+	toolInput, _ := payload["tool_input"].(map[string]any)
+	telemetry.RecordSkillsFromToolCall(harnessID, sessionHash, binaryVersion, toolName, toolInput)
 
 	ce, ok := ParseChildEnd(raw)
 	if !ok {

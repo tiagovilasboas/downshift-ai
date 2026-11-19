@@ -140,7 +140,6 @@ clean     maven         maven_pass_test.txt
 preserve  maven         maven_skipped.txt
 preserve  maven         maven_warning.txt
 # Pass-through families (execwrap): never compacted, so no clean fixture. The format column is the family name.
-preserve  git-branch       gitbranch_verbose.txt
 preserve  git-fetch        gitfetch_new_commits.txt
 preserve  git-fetch        gitfetch_up_to_date.txt
 preserve  git-pull         gitpull_fast_forward.txt
@@ -150,10 +149,15 @@ preserve  git-push         gitpush_up_to_date.txt
 preserve  git-commit       gitcommit_summary.txt
 preserve  git-add          gitadd_verbose.txt
 preserve  git-stash        gitstash_push.txt
-preserve  git-remote       gitremote_verbose.txt
 preserve  git-tag          gittag_list.txt
 preserve  git-config-read  gitconfig_list_local.txt
 preserve  git-other        gitother_ls_files.txt
+clean     git_branch       gitbranch_verbose.txt
+clean     git_branch       gitbranch_all_clean.txt
+preserve  git_branch       gitbranch_error_preserve.txt
+clean     git_remote_list  gitremote_verbose.txt
+clean     git_remote_list  gitremote_two_remotes.txt
+preserve  git_remote_list  gitremote_diff_urls.txt
 
 # Package manager wrappers (pass-through)
 preserve  npm-test       npm_test_output.txt

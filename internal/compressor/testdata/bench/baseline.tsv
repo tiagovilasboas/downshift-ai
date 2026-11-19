@@ -25,8 +25,10 @@ gh_checks	1	515	127
 gh_pr	2	1843	1774
 gh_run_list	1	378	230
 gh_run_log	2	2451	655
+git_branch	2	887	789
 git_diff	3	810	807
 git_log	5	2265	655
+git_remote_list	2	488	349
 git_show	2	786	786
 git_stash	1	192	184
 git_status	5	1113	545
@@ -63,6 +65,6 @@ terraform_plan	1	317	82
 tsc	3	946	231
 turbo	1	494	110
 vitest	4	3624	967
-@lossless	75	111824	44101
+@lossless	79	113199	45239
 @lossy	49	90487	49749
-@total	124	202311	93850
+@total	128	203686	94988

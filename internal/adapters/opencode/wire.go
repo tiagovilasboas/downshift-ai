@@ -30,6 +30,9 @@ const (
 	maxAvailableModels = 256
 	maxTsUtcLen        = 64
 	maxDirectoryLen    = 4096
+	maxToolLen         = 64
+	maxSkillLen        = 128
+	maxPathLen         = 4096
 )
 
 // Call kinds and their events, the wire v1 vocabulary.
@@ -37,9 +40,11 @@ const (
 	kindRoute    = "route"
 	kindShell    = "shell"
 	kindRetry    = "retry"
+	kindSkill    = "skill"
 	eventSpawn   = "subagent_spawn_intent"
 	eventShell   = "shell_command"
 	eventRetry   = "child_retry"
+	eventSkill   = "skill_used"
 	maxShellText = 16 << 10
 	// firstRetryAttempt is OpenCode's attempt count at the first retry
 	// opportunity (the initial request is 1); only it is the undo.
@@ -76,7 +81,11 @@ type Request struct {
 	Available []string `json:"available"`
 	// Retry belongs to a "retry" call.
 	Retry *RequestRetry `json:"retry"`
-	TsUtc string        `json:"tsUtc"`
+	// Tool, Skill, and Path belong to a "skill" observation call.
+	Tool  string `json:"tool"`
+	Skill string `json:"skill"`
+	Path  string `json:"path"`
+	TsUtc string `json:"tsUtc"`
 }
 
 // RequestRetry describes the failed child a retry call reports.
@@ -142,6 +151,7 @@ const (
 	reasonUnknownSession = "unknown_session"
 	reasonRetried        = "routed_failed_retried"
 	reasonNoRetry        = "no_retry"
+	reasonSkillObserved  = "skill_observed"
 	// ReasonFailOpen is exported for the CLI wire, which recognizes it to
 	// record the fail-open outcome once.
 	ReasonFailOpen = "fail_open"
