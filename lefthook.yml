@@ -27,6 +27,9 @@ pre-commit:
     tests:
       glob: "*.go"
       run: make test-staged
+    workflows:
+      glob: ".github/workflows/*.{yml,yaml}"
+      run: make -s lint-workflows-staged
 
 pre-push:
   piped: true # stop at the first failure: no mod tests when make check already failed

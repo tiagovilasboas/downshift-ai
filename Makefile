@@ -45,6 +45,7 @@ CHANGED_PKGS = base=$$(git merge-base origin/main HEAD 2>/dev/null); \
 	pkgs=$$(GITHUB_EVENT_NAME=pull_request GITHUB_BASE_SHA=$$base bash scripts/ci-test-packages.sh) || exit 1
 STAGED_PKGS = pkgs=$$(bash scripts/staged-packages.sh) || exit 1
 STATICCHECK = GOTOOLCHAIN="$$(go env GOVERSION)" go run honnef.co/go/tools/cmd/staticcheck@2026.2.2
+ACTIONLINT = GOTOOLCHAIN="$$(go env GOVERSION)" go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
 # Subprocess deadlines in tests stretch by this factor (internal/testenv); the hooks
 # run while other worktrees load the machine.
 HOOK_ENV = DOWNSHIFT_TEST_TIMEOUT_SCALE=$${DOWNSHIFT_TEST_TIMEOUT_SCALE:-4}
@@ -90,6 +91,11 @@ vet-staged:
 ## staticcheck-staged: staticcheck on the packages of the staged .go files; run by the pre-commit hook
 staticcheck-staged:
 	@$(STAGED_PKGS); [ -z "$$pkgs" ] || $(STATICCHECK) $$pkgs
+
+## lint-workflows-staged: actionlint on staged GitHub Actions workflows; run by the pre-commit hook
+lint-workflows-staged:
+	@files=$$(git diff --cached --name-only --diff-filter=ACMR -- '.github/workflows/*.yml' '.github/workflows/*.yaml'); \
+	[ -z "$$files" ] || $(ACTIONLINT) $$files
 
 ## hooks: install the lefthook git hooks (lefthook.yml); lefthook is pinned as a go.mod tool, so no global install
 hooks:
