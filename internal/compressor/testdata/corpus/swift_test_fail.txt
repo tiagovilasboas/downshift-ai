@@ -1,0 +1,14 @@
+Test Suite 'All tests' started at 2026-11-19 10:00:00.000.
+Test Suite 'BillingPackageTests.xctest' started at 2026-11-19 10:00:00.005.
+Test Suite 'InvoiceTests' started at 2026-11-19 10:00:00.006.
+Test Case '-[BillingTests.InvoiceTests testSubtotal]' started.
+Test Case '-[BillingTests.InvoiceTests testSubtotal]' passed (0.002 seconds).
+Test Case '-[BillingTests.InvoiceTests testDiscount]' started.
+/Users/dev/billing/Tests/BillingTests/InvoiceTests.swift:42: error: -[BillingTests.InvoiceTests testDiscount] : XCTAssertEqual failed: ("100") is not equal to ("110")
+Test Case '-[BillingTests.InvoiceTests testDiscount]' failed (0.004 seconds).
+Test Suite 'InvoiceTests' failed at 2026-11-19 10:00:00.012.
+	 Executed 2 tests, with 1 failure (0 unexpected) in 0.006 (0.007) seconds
+Test Suite 'BillingPackageTests.xctest' failed at 2026-11-19 10:00:00.013.
+	 Executed 2 tests, with 1 failure (0 unexpected) in 0.007 (0.008) seconds
+Test Suite 'All tests' failed at 2026-11-19 10:00:00.014.
+	 Executed 2 tests, with 1 failure (0 unexpected) in 0.007 (0.009) seconds

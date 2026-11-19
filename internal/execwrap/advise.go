@@ -11,6 +11,7 @@ var adviseFamilies = map[Family]bool{
 	FamilyGoTest:      true,
 	FamilyPytest:      true,
 	FamilyCargoTest:   true,
+	FamilySwiftTest:   true,
 	FamilyFlutterTest: true,
 	FamilyDartTest:    true,
 	FamilyGradle:      true,

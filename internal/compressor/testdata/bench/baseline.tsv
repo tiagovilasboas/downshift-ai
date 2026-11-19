@@ -57,10 +57,11 @@ pytest	2	1216	180
 rspec	1	443	100
 rubocop	2	685	510
 ruff	2	492	357
+swift_test	1	2254	95
 terraform_plan	1	317	82
 tsc	3	946	231
 turbo	1	494	110
 vitest	4	3624	967
-@lossless	73	109344	43903
+@lossless	74	111598	43998
 @lossy	49	90487	49749
-@total	122	199831	93652
+@total	123	202085	93747

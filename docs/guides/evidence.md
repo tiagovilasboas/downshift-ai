@@ -129,8 +129,8 @@ Three subsequent empirical evaluations expanded this evidence base:
 2. **KiroCrew combined routing and compaction trial:** In a multi-hour session evaluating 6 control tasks, combining native policy
    routing with shell advise compaction achieved **up to ~53% fewer tokens per task** (directional real-use measurement; see
    [`roadmap.md`](../roadmap.md#now-beta) line 68 and [`anthropic-references-benchmark-reconciliation-2026-11-07.md`](../evidence/anthropic-references-benchmark-reconciliation-2026-11-07.md)).
-3. **CCR Compactor benchmark:** On the 122-fixture synthetic corpus ([`bench.md`](../reference/bench.md)), output compaction
-   achieved **69.5% byte reduction with CCR** (53.1% raw without CCR), reaching 59.8% on lossless families while preserving 100% of diagnostic failures.
+3. **CCR Compactor benchmark:** On the 123-fixture synthetic corpus ([`bench.md`](../reference/bench.md)), output compaction
+   achieved **69.8% byte reduction with CCR** (53.6% raw without CCR), reaching 60.6% on lossless families while preserving 100% of diagnostic failures.
 
 What D supports: a saving of about 12% to 24% on mechanical delegated work, a third on pure renames, and up to 53% when combined
 with shell compaction in KiroCrew, with 100% acceptance on mechanical tasks. What it does not: any proven figure for unconstrained natural
