@@ -267,6 +267,9 @@ func gitFamilyOf(args []string) Family {
 	if args[0] == "config" {
 		return gitConfigFamily(args[1:])
 	}
+	if args[0] == "ls-files" {
+		return gitLsFilesFamily(args[1:])
+	}
 	if family, ok := gitSubcommands[args[0]]; ok {
 		return family
 	}

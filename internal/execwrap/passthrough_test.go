@@ -47,8 +47,8 @@ func TestRun_PassthroughReason(t *testing.T) {
 		},
 		{
 			name: "family without a compressor is unrecognized_output", bin: "git",
-			script: "printf '* main\\n'",
-			argv:   []string{"git", "branch"}, wantReason: PassthroughUnrecognized,
+			script: "printf 'add file.go\\n'",
+			argv:   []string{"git", "add", "-v", "file.go"}, wantReason: PassthroughUnrecognized,
 		},
 		{
 			name: "not allowlisted is refused", argv: []string{"rm", "-rf", "x"}, wantReason: PassthroughRefused,

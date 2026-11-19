@@ -1,0 +1,6 @@
+origin	git@github.com:tiagovilasboas/downshift-ai.git (fetch)
+origin	git@github.com:tiagovilasboas/downshift-ai.git (push)
+upstream	https://github.com/example-org/upstream-platform-service.git (fetch)
+upstream	https://github.com/example-org/upstream-platform-service.git (push)
+mirror	https://git.internal.example.com/mirrors/downshift-mirror.git (fetch)
+mirror	https://git.internal.example.com/mirrors/downshift-mirror.git (push)

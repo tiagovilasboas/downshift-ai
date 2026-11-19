@@ -56,6 +56,53 @@ func TestRun_LsLongFormCompacts(t *testing.T) {
 	}
 }
 
+func TestRun_LsHumanSizesCompacts(t *testing.T) {
+	raw := "total 48K\n" +
+		"drwxr-xr-x  12 tiago.boas  staff  384B Nov  4 10:00 .\n" +
+		"drwxr-xr-x   5 tiago.boas  staff  160B Nov  4 09:12 ..\n" +
+		"-rw-r--r--   1 tiago.boas  staff  1.5K Nov  4 10:00 alpha.go\n" +
+		"-rw-r--r--   1 tiago.boas  staff  2.0K Nov  4 10:00 beta.go\n"
+	fakeBin(t, "ls", "cat <<'EOF'\n"+raw+"EOF")
+	r, out, _ := run(t, []string{"ls", "-lah", "internal"}, true)
+	if r.ExitCode != 0 || !r.Compacted || !strings.Contains(out, "1.5K Nov  4 10:00 alpha.go") {
+		t.Fatalf("exit=%d compacted=%v out=%q", r.ExitCode, r.Compacted, out)
+	}
+}
+
+func TestRun_GitBranchRemoteAndLsFilesCompact(t *testing.T) {
+	t.Run("git branch -avv", func(t *testing.T) {
+		raw := "  feat/alpha                           1a2b3c4 [origin/feat/alpha] feat: alpha\n" +
+			"* main                                 2b3c4d5 [origin/main] init\n" +
+			"  remotes/origin/HEAD                  -> origin/main\n" +
+			"  remotes/origin/feat/alpha            1a2b3c4 feat: alpha\n" +
+			"  remotes/origin/main                  2b3c4d5 init\n"
+		fakeBin(t, "git", "cat <<'EOF'\n"+raw+"EOF")
+		r, out, _ := run(t, []string{"git", "branch", "-avv"}, true)
+		if r.ExitCode != 0 || !r.Compacted || r.Family != FamilyGitBranch || !strings.Contains(out, "remotes/origin/:\n") {
+			t.Fatalf("exit=%d compacted=%v family=%q out=%q", r.ExitCode, r.Compacted, r.Family, out)
+		}
+	})
+	t.Run("git remote -v", func(t *testing.T) {
+		raw := "origin\tgit@github.com:org/very-long-repository-name.git (fetch)\n" +
+			"origin\tgit@github.com:org/very-long-repository-name.git (push)\n" +
+			"upstream\tgit@github.com:upstream/very-long-repository-name.git (fetch)\n" +
+			"upstream\tgit@github.com:upstream/very-long-repository-name.git (push)\n"
+		fakeBin(t, "git", "cat <<'EOF'\n"+raw+"EOF")
+		r, out, _ := run(t, []string{"git", "remote", "-v"}, true)
+		if r.ExitCode != 0 || !r.Compacted || r.Family != FamilyGitRemote || !strings.Contains(out, "(fetch, push)") {
+			t.Fatalf("exit=%d compacted=%v family=%q out=%q", r.ExitCode, r.Compacted, r.Family, out)
+		}
+	})
+	t.Run("git ls-files", func(t *testing.T) {
+		raw := findRaw()
+		fakeBin(t, "git", "cat <<'EOF'\n"+raw+"EOF")
+		r, out, _ := run(t, []string{"git", "ls-files"}, true)
+		if r.ExitCode != 0 || !r.Compacted || r.Family != FamilyGitLsFiles || !strings.Contains(out, "internal/\n") {
+			t.Fatalf("exit=%d compacted=%v family=%q out=%.200q", r.ExitCode, r.Compacted, r.Family, out)
+		}
+	})
+}
+
 func TestRun_NonZeroExitStaysRaw(t *testing.T) {
 	cases := []struct {
 		name, argv0 string

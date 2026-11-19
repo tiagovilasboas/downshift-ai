@@ -1,0 +1,8 @@
+  feat/compaction-coverage-expansion     9cde7b51 [origin/feat/compaction-coverage-expansion] feat(compactor): expand coverage
+  feat/issue-162-mix-test                10fd37a4 [origin/feat/issue-162-mix-test] feat(compressor): add mix test family
++ feat/slice-1-text-pipes-cap            9cde7b51 (/repo/worktrees/slice-1) feat(compactor): safe redirects
+* main                                   9cde7b51 [origin/main] feat(compactor,postrun): expand coverage (#171)
+  remotes/origin/HEAD                    -> origin/main
+  remotes/origin/chore/release-v0.19.0   8a1b2c3d chore: release v0.19.0
+  remotes/origin/feat/issue-162-mix-test 10fd37a4 feat(compressor): add mix test family
+  remotes/origin/main                    9cde7b51 feat(compactor,postrun): expand coverage (#171)

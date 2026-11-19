@@ -656,16 +656,17 @@ written. The family name is the only command fact telemetry keeps.
 | `git-log` | `git log` | compresses |
 | `git-diff` | `git diff` | compresses |
 | `git-show` | `git show` | compresses |
-| `git-branch` | `git branch` | passes through |
+| `git-branch` | `git branch` (padding, remote prefix headers; lossless) | compresses |
 | `git-fetch` | `git fetch` (progress and hook noise cut; refs and errors kept) | compresses |
 | `git-pull` | `git pull` (progress and hook noise cut; refs and errors kept) | compresses |
 | `git-push` | `git push` (progress, hook banners and clean go test lines cut; refs, errors, failing tests and the hook summary kept) | compresses |
 | `git-commit` | `git commit` (hook banners and clean go test lines cut; the commit line, errors, failing tests and the hook summary kept) | compresses |
 | `git-add` | `git add` | passes through |
 | `git-stash` | `git stash` (only `git stash list` output is recognised; every other stash form prints raw) | compresses |
-| `git-remote` | `git remote` | passes through |
+| `git-remote` | `git remote -v` (matching fetch/push URLs folded; lossless) | compresses |
 | `git-tag` | `git tag` | passes through |
 | `git-config-read` | `git config --get`, `--get-all`, `--get-regexp`, `--list` (read flags only) | passes through |
+| `git-ls-files` | `git ls-files` (plain path list form, indented directory tree; `-s`, `-u`, `-t`, `-v`, `-z`, `--format` stay `git-other`) | compresses |
 | `git-other` | any other `git <subcommand>` not listed above | passes through |
 | `gh-pr` | `gh pr view`, `gh pr checks` | compresses |
 | `gh-run` | `gh run list`, `gh run view --log` | compresses |
@@ -730,7 +731,7 @@ written. The family name is the only command fact telemetry keeps.
 | `cp` | `cp` | passes through |
 | `mv` | `mv` | passes through |
 | `rm` | `rm`, never recursive (`-r`, `-R` or `--recursive` in any spelling) | passes through |
-| `ls` | `ls` with the flags `-a -A -l -1 -p -r -t -S` and at most one path; `-R`, `-s`, `-h`, `-C`, `--color` and other long options are refused | compresses |
+| `ls` | `ls` with the flags `-a -A -l -1 -p -r -t -S -F` (and `-h` alongside `-l`) and at most one path; `-R`, `-s`, standalone `-h`, `-C`, `--color` and other long options are refused | compresses |
 | `find` | `find`; `-exec`, `-execdir`, `-ok`, `-okdir`, `-delete`, `-fprint`, `-fprint0`, `-fprintf`, `-fls`, `-ls`, `-printf`, `-print0` and `-X` are refused | compresses |
 | `grep` | `grep` with a pattern and a file name on each row (`-r`, `-R`, `-H` or two paths); flags `-r -R -n -H -i -w -x -E -F -G -l -c` and `-e`; rows are `path:line:text` with `-n`, `path:text` without, a path per line with `-l` and `path:count` with `-c` (`-l` with `-c` is refused); context, files-without-match, only-matching, quiet, inverted, NUL output and `-h` are refused | compresses |
 | `rg` | `rg PATTERN PATH...` (or `-e PATTERN PATH...`), with or without `-n`; flags `-n -i -S -s -w -x -F -H -u -L -l -c`, `-e -g -t -T -m` and the long forms of the same; `-l` lists paths and `-c` counts per file (not together); a path is required (rg reads stdin without one); a run whose rows carry no path (one file operand) stays raw; `-r`, `--pre`, `-z`, context, `-o`, `-v`, `--json`, `--heading`, `--files-without-match` and every other flag are refused | compresses |

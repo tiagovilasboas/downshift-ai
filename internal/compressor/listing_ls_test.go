@@ -52,6 +52,15 @@ func TestCompressLsTable(t *testing.T) {
 			wantReason:  "ls long form compacted",
 		},
 		{
+			name: "long form with human-readable total, ISO seconds and day-first date",
+			input: "total 48K\n" +
+				"-rw-r--r--  1 user  staff  1.5K 2026-11-04 10:00:00 app.go\n" +
+				"-rw-r--r--  1 user  staff  512B  4 Nov 10:00 util.go\n",
+			wantApplied: true,
+			wantOut:     "1.5K 2026-11-04 10:00:00 app.go\n512B 4 Nov 10:00 util.go\n",
+			wantReason:  "ls long form compacted",
+		},
+		{
 			name:        "long listing with only dot entries has no entry to keep",
 			input:       "total 16\ndrwxr-xr-x  12 user  staff  384 Nov  4 10:00 .\ndrwxr-xr-x   5 user  staff  160 Nov  4 09:12 ..\n",
 			wantApplied: false,

@@ -51,6 +51,11 @@ func TestGitLogCompaction(t *testing.T) {
 			want: "4f2a9c1 fix: panic on empty input\n",
 		},
 		{
+			name: "format full and fuller headers compacted", applied: true,
+			in:   "commit " + logHash + "\nAuthor: Dev <d@example.com>\nAuthorDate: Mon Oct 19 10:00:00 2026 +0000\nCommit: Dev <d@example.com>\nCommitDate: Mon Oct 19 10:05:00 2026 +0000\n\n    feat: fuller headers\n",
+			want: "4f2a9c1 feat: fuller headers\n",
+		},
+		{
 			name:   "gpg lines preserved",
 			in:     "commit " + logHash + "\ngpg: Signature made Mon\nAuthor: D <d@e.com>\nDate:   x\n\n    s\n\n",
 			reason: "git_log_unrecognized_structure_preserved",

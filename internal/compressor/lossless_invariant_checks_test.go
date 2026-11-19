@@ -213,28 +213,99 @@ func rubocopInvariant(in, out []byte) []string {
 	return lost
 }
 
+var reBranchVerbosePadCheck = regexp.MustCompile(`^((?:\([^)]+\)|\S+)) {2,}((?:[0-9a-f]{7,64}|->)(?: .+)?)$`)
+
+// gitBranchInvariant: every non-empty line's branch name, SHA, tracking ref and
+// subject survive (allowing remotes/<remote>/ header factoring and padding collapse).
+func gitBranchInvariant(in, out []byte) []string {
+	outStr := string(out)
+	var lost []string
+	for _, l := range splitLines(in) {
+		if strings.TrimSpace(l) == "" {
+			continue
+		}
+		if len(l) < 3 || (l[:2] != "* " && l[:2] != "+ " && l[:2] != "  ") {
+			if !strings.Contains(outStr, strings.TrimSpace(l)) {
+				lost = append(lost, l)
+			}
+			continue
+		}
+		body := l[2:]
+		if m := reBranchVerbosePadCheck.FindStringSubmatch(body); m != nil {
+			body = m[1] + " " + m[2]
+		}
+		if after, ok := strings.CutPrefix(body, "remotes/"); ok {
+			if remote, rest, ok := strings.Cut(after, "/"); ok {
+				header := "remotes/" + remote + "/:"
+				if strings.Contains(outStr, header) && strings.Contains(outStr, " "+rest) {
+					continue
+				}
+			}
+		}
+		if !strings.Contains(outStr, body) {
+			lost = append(lost, l)
+		}
+	}
+	return lost
+}
+
+var reRemoteVCheck = regexp.MustCompile(`^(\S+)\t(\S+) \((fetch|push)\)$`)
+
+// gitRemoteListInvariant: every remote name, URL and fetch/push role survives.
+func gitRemoteListInvariant(in, out []byte) []string {
+	outLines := splitLines(out)
+	var lost []string
+	for _, l := range splitLines(in) {
+		if strings.TrimSpace(l) == "" {
+			continue
+		}
+		m := reRemoteVCheck.FindStringSubmatch(l)
+		if m == nil {
+			if !strings.Contains(string(out), strings.TrimSpace(l)) {
+				lost = append(lost, l)
+			}
+			continue
+		}
+		prefix := m[1] + "\t" + m[2] + " ("
+		role := m[3]
+		found := false
+		for _, ol := range outLines {
+			if strings.HasPrefix(ol, prefix) && strings.Contains(ol, role) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			lost = append(lost, l)
+		}
+	}
+	return lost
+}
+
 // invariants maps each lossless Format to its check.
 var invariants = map[compressor.Format]invariant{
-	compressor.FormatCargoTest:    runnerInvariant(sumOf(rePassedN)),
-	compressor.FormatCypress:      runnerInvariant(lastOf(reCypress)),
-	compressor.FormatFlutterTest:  runnerInvariant(lastOf(reFlutter)),
-	compressor.FormatGoTest:       runnerInvariant(goTestTotal),
-	compressor.FormatGoTestRuns:   runnerInvariant(goTestTotal),
-	compressor.FormatJest:         runnerInvariant(maxOf(rePassedN)),
-	compressor.FormatPHPUnit:      runnerInvariant(lastOf(rePHPUnit)),
-	compressor.FormatPlaywright:   runnerInvariant(maxOf(rePassedN)),
-	compressor.FormatPytest:       runnerInvariant(maxOf(rePassedN)),
-	compressor.FormatTSC:          runnerInvariant(lastOf(reTscFound)),
-	compressor.FormatVitest:       runnerInvariant(maxOf(rePassedN)),
-	compressor.FormatRspec:        runnerInvariant(lastOf(reRspecN)),
-	compressor.FormatAgentDesktop: agentDesktopInvariant,
-	compressor.FormatDotnetTest:   runnerInvariant(lastOf(reDotnetN)),
-	compressor.FormatCTest:        runnerInvariant(lastOf(reCTestPassed)),
-	compressor.FormatSwiftTest:    runnerInvariant(swiftTestTotal),
-	compressor.FormatMixTest:      runnerInvariant(sumOf(reMixTestN)),
-	compressor.FormatRubocop:      rubocopInvariant,
-	compressor.FormatGrep:         grepInvariant,
-	compressor.FormatGrepRows:     grepRowsInvariant,
+	compressor.FormatCargoTest:     runnerInvariant(sumOf(rePassedN)),
+	compressor.FormatCypress:       runnerInvariant(lastOf(reCypress)),
+	compressor.FormatFlutterTest:   runnerInvariant(lastOf(reFlutter)),
+	compressor.FormatGoTest:        runnerInvariant(goTestTotal),
+	compressor.FormatGoTestRuns:    runnerInvariant(goTestTotal),
+	compressor.FormatJest:          runnerInvariant(maxOf(rePassedN)),
+	compressor.FormatPHPUnit:       runnerInvariant(lastOf(rePHPUnit)),
+	compressor.FormatPlaywright:    runnerInvariant(maxOf(rePassedN)),
+	compressor.FormatPytest:        runnerInvariant(maxOf(rePassedN)),
+	compressor.FormatTSC:           runnerInvariant(lastOf(reTscFound)),
+	compressor.FormatVitest:        runnerInvariant(maxOf(rePassedN)),
+	compressor.FormatRspec:         runnerInvariant(lastOf(reRspecN)),
+	compressor.FormatAgentDesktop:  agentDesktopInvariant,
+	compressor.FormatDotnetTest:    runnerInvariant(lastOf(reDotnetN)),
+	compressor.FormatCTest:         runnerInvariant(lastOf(reCTestPassed)),
+	compressor.FormatSwiftTest:     runnerInvariant(swiftTestTotal),
+	compressor.FormatMixTest:       runnerInvariant(sumOf(reMixTestN)),
+	compressor.FormatRubocop:       rubocopInvariant,
+	compressor.FormatGrep:          grepInvariant,
+	compressor.FormatGrepRows:      grepRowsInvariant,
+	compressor.FormatGitBranch:     gitBranchInvariant,
+	compressor.FormatGitRemoteList: gitRemoteListInvariant,
 }
 
 // invariantAllowlist names the lossless families that have no invariant yet,

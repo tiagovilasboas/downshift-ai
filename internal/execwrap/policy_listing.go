@@ -20,10 +20,11 @@ const (
 )
 
 // lsFlags are the ls options that keep the output a list of names: the long
-// form (l), one name per line (1), a slash on directories (p), and which
-// entries appear and in what order (a, A, r, t, S). Recursion (R), sizes (s,
-// h), columns (C, x), colour and every long option are refused.
-const lsFlags = "aAl1prtS"
+// form (l), one name per line (1), type indicator (F), a slash on directories
+// (p), and which entries appear and in what order (a, A, r, t, S). Human
+// sizes (h) are accepted only alongside -l. Recursion (R), blocks (s),
+// columns (C, x), colour and every long option are refused.
+const lsFlags = "aAl1prtSFh"
 
 // findRefused are the find primaries that write a file or run a program: the
 // owner's list. -ls, -printf, -print0 and -X change the output from a list of
@@ -60,19 +61,23 @@ func listingFamily(argv []string) Family {
 // operands print a "name:" header before each directory, which is not a list.
 func lsPlainForm(args []string) bool {
 	operands := 0
+	hasLong, hasHuman := false, false
 	for _, a := range args {
 		switch {
 		case a == "-" || strings.HasPrefix(a, "--"):
 			return false
 		case strings.HasPrefix(a, "-"):
-			if !onlyFlags(a[1:], lsFlags) {
+			flags := a[1:]
+			if !onlyFlags(flags, lsFlags) {
 				return false
 			}
+			hasLong = hasLong || strings.ContainsRune(flags, 'l')
+			hasHuman = hasHuman || strings.ContainsRune(flags, 'h')
 		default:
 			operands++
 		}
 	}
-	return operands <= 1
+	return operands <= 1 && (!hasHuman || hasLong)
 }
 
 // findPlainForm accepts any find expression that carries none of the refused

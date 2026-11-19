@@ -99,6 +99,10 @@ func TestLosslessInvariantBites(t *testing.T) {
 			"panic: boom\nok  \tpkg/a\t0.1s\n", "Go test: PASS (1 packages ok)\n"},
 		{"package count wrong", runnerInvariant(goTestTotal),
 			"ok  \tpkg/a\t0.1s\nok  \tpkg/b\t0.1s\n", "Go test: PASS (1 packages ok)\n"},
+		{"git branch dropped", gitBranchInvariant,
+			"* main\n  feat/x\n", "* main\n"},
+		{"git remote push dropped", gitRemoteListInvariant,
+			"origin\t../r.git (fetch)\norigin\t../r.git (push)\n", "origin\t../r.git (fetch)\n"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

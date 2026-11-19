@@ -96,7 +96,8 @@ func parseGitLog(s string) ([]gitLogEntry, bool) {
 		switch {
 		case !inMessage && strings.HasPrefix(line, "Author: "):
 			cur.author = true
-		case !inMessage && (strings.HasPrefix(line, "Merge: ") || strings.HasPrefix(line, "Date:   ")):
+		case !inMessage && (strings.HasPrefix(line, "Merge: ") || strings.HasPrefix(line, "Date:   ") ||
+			strings.HasPrefix(line, "AuthorDate: ") || strings.HasPrefix(line, "Commit: ") || strings.HasPrefix(line, "CommitDate: ")):
 		case line == "":
 			inMessage = true
 		case inMessage && strings.HasPrefix(line, "    "):
