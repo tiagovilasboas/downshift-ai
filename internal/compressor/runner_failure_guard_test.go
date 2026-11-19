@@ -25,6 +25,7 @@ var runnerFormats = []compressor.Format{
 	compressor.FormatVitest, compressor.FormatJest, compressor.FormatPlaywright,
 	compressor.FormatCargoTest, compressor.FormatCypress, compressor.FormatPHPUnit,
 	compressor.FormatFlutterTest, compressor.FormatGradle, compressor.FormatMaven,
+	compressor.FormatSwiftTest,
 	compressor.FormatTSC, compressor.FormatNextBuild, compressor.FormatBazel,
 	compressor.FormatNx, compressor.FormatTurbo, compressor.FormatCTest,
 }

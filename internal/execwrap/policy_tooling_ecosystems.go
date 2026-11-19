@@ -85,7 +85,9 @@ func otherLanguagesFamily(argv []string) Family {
 	case "swift":
 		if len(argv) >= 2 {
 			switch argv[1] {
-			case "build", "test", "run", "package":
+			case "test":
+				return FamilySwiftTest
+			case "build", "run", "package":
 				return FamilySwift
 			}
 		}

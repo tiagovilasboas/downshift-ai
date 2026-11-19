@@ -91,17 +91,49 @@ func lastOf(re *regexp.Regexp) passTotal {
 }
 
 var (
-	reOKLine      = regexp.MustCompile(`(?m)^ok\s`)
-	reTopPass     = regexp.MustCompile(`(?m)^--- PASS:`)
-	rePassedN     = regexp.MustCompile(`(\d+) passed`)
-	reCypress     = regexp.MustCompile(`Passing:\s+(\d+)`)
-	rePHPUnit     = regexp.MustCompile(`OK \((\d+) tests`)
-	reFlutter     = regexp.MustCompile(`\+(\d+)`)
-	reTscFound    = regexp.MustCompile(`Found (\d+) errors?`)
-	reRspecN      = regexp.MustCompile(`(\d+) examples?,`)
-	reDotnetN     = regexp.MustCompile(`Passed:\s+(\d+)`)
-	reCTestPassed = regexp.MustCompile(`100% tests passed, 0 tests? failed out of (\d+)`)
+	reOKLine       = regexp.MustCompile(`(?m)^ok\s`)
+	reTopPass      = regexp.MustCompile(`(?m)^--- PASS:`)
+	rePassedN      = regexp.MustCompile(`(\d+) passed`)
+	reCypress      = regexp.MustCompile(`Passing:\s+(\d+)`)
+	rePHPUnit      = regexp.MustCompile(`OK \((\d+) tests`)
+	reFlutter      = regexp.MustCompile(`\+(\d+)`)
+	reTscFound     = regexp.MustCompile(`Found (\d+) errors?`)
+	reRspecN       = regexp.MustCompile(`(\d+) examples?,`)
+	reDotnetN      = regexp.MustCompile(`Passed:\s+(\d+)`)
+	reCTestPassed  = regexp.MustCompile(`100% tests passed, 0 tests? failed out of (\d+)`)
+	reSwiftXCAll   = regexp.MustCompile(`(?m)^Test Suite 'All tests' passed at .+\n\s*Executed (\d+) tests?, with (?:(\d+) tests? skipped and )?0 failures?`)
+	reSwiftXCExec  = regexp.MustCompile(`(?m)^\s*Executed (\d+) tests?, with (?:(\d+) tests? skipped and )?0 failures?`)
+	reSwiftSTTotal = regexp.MustCompile(`(?m)^✔ Test run with (\d+) tests?(?: in \d+ suites?)? passed`)
 )
+
+func swiftTestTotal(in []byte) (int, bool) {
+	total := 0
+	found := false
+	if m := reSwiftXCAll.FindSubmatch(in); m != nil {
+		n, _ := strconv.Atoi(string(m[1]))
+		skip := 0
+		if len(m[2]) > 0 {
+			skip, _ = strconv.Atoi(string(m[2]))
+		}
+		total += n - skip
+		found = true
+	} else if ms := reSwiftXCExec.FindAllSubmatch(in, -1); len(ms) > 0 {
+		m := ms[len(ms)-1]
+		n, _ := strconv.Atoi(string(m[1]))
+		skip := 0
+		if len(m[2]) > 0 {
+			skip, _ = strconv.Atoi(string(m[2]))
+		}
+		total += n - skip
+		found = true
+	}
+	if m := reSwiftSTTotal.FindSubmatch(in); m != nil {
+		n, _ := strconv.Atoi(string(m[1]))
+		total += n
+		found = true
+	}
+	return total, found && total > 0
+}
 
 // goTestTotal is the number of top-level tests that passed in a verbose run, or
 // else of packages that said ok.
@@ -197,6 +229,7 @@ var invariants = map[compressor.Format]invariant{
 	compressor.FormatAgentDesktop: agentDesktopInvariant,
 	compressor.FormatDotnetTest:   runnerInvariant(lastOf(reDotnetN)),
 	compressor.FormatCTest:        runnerInvariant(lastOf(reCTestPassed)),
+	compressor.FormatSwiftTest:    runnerInvariant(swiftTestTotal),
 	compressor.FormatRubocop:      rubocopInvariant,
 	compressor.FormatGrep:         grepInvariant,
 	compressor.FormatGrepRows:     grepRowsInvariant,

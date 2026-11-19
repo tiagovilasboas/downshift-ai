@@ -89,6 +89,7 @@ var rawFixtures = []string{
 	"gradle_kotlin_warning.txt",
 	"gradle_deprecation.txt",
 	"gradle_test_output.txt",
+	"swift_test_fail.txt",
 }
 
 // cleanFixture is output that may be compacted on exit 0. facts are substrings
@@ -132,6 +133,7 @@ var cleanFixtures = []cleanFixture{
 	{"dart_pass_expanded.txt", []string{"PASS", "3 passed", "1 skipped"}},
 	{"maven_pass_test.txt", []string{"inventory 1.4.0", "surefire:test", "Tests run: 13, Failures: 0, Errors: 0, Skipped: 0", "BUILD SUCCESS", "Total time:  2.915 s"}},
 	{"maven_pass_package.txt", []string{"jar:jar", "Tests run: 13, Failures: 0, Errors: 0, Skipped: 0", "BUILD SUCCESS", "Total time:  4.302 s"}},
+	{"swift_test_pass_clean.txt", []string{"PASS", "9 passed"}},
 	// Colour codes are not content: a coloured clean run compacts like a plain
 	// one, and its summary is plain text (colour.go).
 	{"gotest_ansi.txt", []string{"PASS", "5 packages ok"}},

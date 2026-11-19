@@ -65,12 +65,13 @@ Downshift and CCR bytes include the marker line the compactor appends at runtime
 | rspec | lossless | 1 | 443 | 100 | 77.4 | 110 | 25 | 106 | 76.1 |
 | rubocop | lossless | 2 | 685 | 510 | 25.5 | 171 | 127 | 538 | 21.5 |
 | ruff | lossy | 2 | 492 | 357 | 27.4 | 123 | 89 | 385 | 21.7 |
+| swift_test | lossless | 1 | 2254 | 95 | 95.8 | 563 | 23 | 99 | 95.6 |
 | terraform_plan | lossless | 1 | 317 | 82 | 74.1 | 79 | 20 | 96 | 69.7 |
 | tsc | lossless | 3 | 946 | 231 | 75.6 | 236 | 57 | 273 | 71.1 |
 | turbo | lossless | 1 | 494 | 110 | 77.7 | 123 | 27 | 124 | 74.9 |
 | vitest | lossless | 4 | 3624 | 967 | 73.3 | 906 | 241 | 989 | 72.7 |
 | uncompacted (CCR only) | lossy | 3 | 6150 | 6150 | 0.0 | 1537 | 1537 | 1152 | 81.3 |
-| TOTAL | - | 122 | 199831 | 93652 | 53.1 | 49957 | 23413 | 61009 | 69.5 |
+| TOTAL | - | 123 | 202085 | 93747 | 53.6 | 50521 | 23436 | 61108 | 69.8 |
 
 ## Lossless and lossy split
 
@@ -78,16 +79,16 @@ Downshift and CCR bytes include the marker line the compactor appends at runtime
 
 | Class | Fixtures | Raw bytes | Downshift bytes | Saving % |
 |---|--:|--:|--:|--:|
-| lossless | 73 | 109344 | 43903 | 59.8 |
+| lossless | 74 | 111598 | 43998 | 60.6 |
 | lossy | 49 | 90487 | 49749 | 45.0 |
 
 ## Relationship to live token savings
 
-The figures above measure raw byte reduction across a synthetic corpus of 122 compacted fixtures: command output and agent-desktop reads.
+The figures above measure raw byte reduction across a synthetic corpus of 123 compacted fixtures: command output and agent-desktop reads.
 
 - In live LLM sessions, compaction cuts verbose command outputs before they enter the prompt context, directly saving input tokens and subsequent prompt cache reads.
-- With CCR enabled, overall corpus reduction is **69.5% fewer bytes** (and **53.1%** with CCR disabled).
-- Lossless families (73 fixtures) have **59.8% fewer bytes** while keeping every failure line, exit code and stack trace.
+- With CCR enabled, overall corpus reduction is **69.8% fewer bytes** (and **53.6%** with CCR disabled).
+- Lossless families (74 fixtures) have **60.6% fewer bytes** while keeping every failure line, exit code and stack trace.
 - Compaction operates on tool output bytes, whereas model routing operates on subagent model pricing. These levers are orthogonal and multiply when combined.
 - Detailed empirical reconciliation: [anthropic-references-benchmark-reconciliation-2026-11-07.md](../evidence/anthropic-references-benchmark-reconciliation-2026-11-07.md).
 

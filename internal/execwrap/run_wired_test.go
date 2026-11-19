@@ -25,6 +25,7 @@ func TestRun_WiredFamiliesCompactCleanAndKeepFailures(t *testing.T) {
 		{"rspec", []string{"rspec"}, "rspec_pass_clean.txt", "rspec_fail.txt", "expected: 110", false},
 		{"dotnet", []string{"dotnet", "test"}, "dotnet_test_pass_clean.txt", "dotnet_test_fail.txt", "Expected 110, Actual 100", false},
 		{"ctest", []string{"ctest"}, "ctest_pass_clean.txt", "ctest_fail.txt", "math_div_test (Failed)", false},
+		{"swift", []string{"swift", "test"}, "swift_test_pass_clean.txt", "swift_test_fail.txt", "XCTAssertEqual failed", false},
 		{"rubocop", []string{"rubocop"}, "rubocop_clean.txt", "", "", false},
 		{"rubocop", []string{"rubocop"}, "rubocop_offenses.txt", "", "", false},
 		{"phpstan", []string{"phpstan", "analyse"}, "phpstan_clean.txt", "", "", false},

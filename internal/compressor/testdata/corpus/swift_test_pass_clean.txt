@@ -1,0 +1,36 @@
+Test Suite 'All tests' started at 2026-11-19 10:00:00.000.
+Test Suite 'BillingPackageTests.xctest' started at 2026-11-19 10:00:00.005.
+Test Suite 'AuthTests' started at 2026-11-19 10:00:00.006.
+Test Case '-[BillingTests.AuthTests testTokenValidation]' started.
+Test Case '-[BillingTests.AuthTests testTokenValidation]' passed (0.002 seconds).
+Test Case '-[BillingTests.AuthTests testSessionExpiry]' started.
+Test Case '-[BillingTests.AuthTests testSessionExpiry]' passed (0.001 seconds).
+Test Case '-[BillingTests.AuthTests testRefreshRotation]' started.
+Test Case '-[BillingTests.AuthTests testRefreshRotation]' passed (0.003 seconds).
+Test Suite 'AuthTests' passed at 2026-11-19 10:00:00.013.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.006 (0.007) seconds
+Test Suite 'InvoiceTests' started at 2026-11-19 10:00:00.014.
+Test Case '-[BillingTests.InvoiceTests testSubtotal]' started.
+Test Case '-[BillingTests.InvoiceTests testSubtotal]' passed (0.002 seconds).
+Test Case '-[BillingTests.InvoiceTests testDiscount]' started.
+Test Case '-[BillingTests.InvoiceTests testDiscount]' passed (0.002 seconds).
+Test Case '-[BillingTests.InvoiceTests testTaxCalculation]' started.
+Test Case '-[BillingTests.InvoiceTests testTaxCalculation]' passed (0.004 seconds).
+Test Case '-[BillingTests.InvoiceTests testRounding]' started.
+Test Case '-[BillingTests.InvoiceTests testRounding]' passed (0.001 seconds).
+Test Suite 'InvoiceTests' passed at 2026-11-19 10:00:00.024.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.009 (0.010) seconds
+Test Suite 'BillingPackageTests.xctest' passed at 2026-11-19 10:00:00.025.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.015 (0.020) seconds
+Test Suite 'All tests' passed at 2026-11-19 10:00:00.026.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.015 (0.026) seconds
+◇ Test run started.
+↳ Testing Library Version: 124
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "LedgerTests" started.
+◇ Test "entryBalance" started.
+◇ Test "reconcileBatch" started.
+✔ Test "entryBalance" passed after 0.002 seconds.
+✔ Test "reconcileBatch" passed after 0.004 seconds.
+✔ Suite "LedgerTests" passed after 0.006 seconds.
+✔ Test run with 2 tests in 1 suite passed after 0.019 seconds.

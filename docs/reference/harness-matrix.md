@@ -790,7 +790,8 @@ written. The family name is the only command fact telemetry keeps.
 | `detox-build` | `detox build` or `npx detox build`; `--watch` and remote URLs refused (generic chain only) | compresses |
 | `pip-install` | `pip install` (install form; a run with a WARNING or an error passes through) | compresses |
 | `mix` | `mix` | passes through |
-| `swift` | `swift` | passes through |
+| `swift` | `swift build`, `swift run`, `swift package` | passes through |
+| `swift-test` | `swift test` | compresses |
 | `sbt` | `sbt` | passes through |
 | `downshift` | `downshift` read-only subcommands (`stats`, `discover`, `report`, `doctor`, `version`, `help`, `session`, `models`) | compresses |
 

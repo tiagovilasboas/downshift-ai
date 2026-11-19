@@ -54,6 +54,7 @@ const (
 	FormatRspec        Format = "rspec"         // Ruby RSpec
 	FormatDotnetTest   Format = "dotnet_test"   // .NET test runner
 	FormatCTest        Format = "ctest"         // CMake ctest runner
+	FormatSwiftTest    Format = "swift_test"    // Swift Package Manager swift test
 	FormatNpmInstall   Format = "npm_install"   // npm/pnpm/yarn/bun install
 	FormatPipInstall   Format = "pip_install"   // pip install
 	FormatDockerPs     Format = "docker_ps"     // docker ps

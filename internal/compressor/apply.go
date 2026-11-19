@@ -38,6 +38,8 @@ func applyFormatCompression(input []byte, f Format) ([]byte, bool, string) {
 		return compressDotnetTest(input)
 	case FormatCTest:
 		return compressCTest(input)
+	case FormatSwiftTest:
+		return compressSwiftTest(input)
 	case FormatNpmAudit:
 		return compressNpmAudit(input)
 	case FormatNpmInstall:

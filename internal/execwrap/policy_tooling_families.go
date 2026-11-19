@@ -123,8 +123,9 @@ const (
 	FamilyPipInstall Family = "pip-install"
 
 	// Other languages
-	FamilyMix   Family = "mix"
-	FamilySwift Family = "swift"
-	FamilySbt   Family = "sbt"
+	FamilyMix       Family = "mix"
+	FamilySwift     Family = "swift"
+	FamilySwiftTest Family = "swift-test"
+	FamilySbt       Family = "sbt"
 	// FamilyFlutterBuild already declared in policy_backend.go
 )

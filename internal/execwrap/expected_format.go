@@ -67,6 +67,7 @@ var expectedFormats = map[Family][]compressor.Format{
 	FamilyRubocop:       {compressor.FormatRubocop},
 	FamilyDotnetTest:    {compressor.FormatDotnetTest},
 	FamilyCTest:         {compressor.FormatCTest},
+	FamilySwiftTest:     {compressor.FormatSwiftTest},
 	FamilyPHPStan:       {compressor.FormatPHPStan},
 	FamilyDockerBuild:   {compressor.FormatDockerBuild},
 	FamilyDockerPS:      {compressor.FormatDockerPs},
