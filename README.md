@@ -25,17 +25,26 @@ Works with coding harnesses including Claude Code and Codex CLI; integration cap
 
 Install a compatible release binary, choose your harness, review the proposed configuration, and verify the setup. For integrated routing, the relevant supported harness must be installed; the direct compactor can also be run as a standalone CLI. The interactive setup wizard can configure hooks, MCP, skills and session policy depending on your selections. It shows its proposed changes and asks before writing.
 
-Release archives target macOS and Linux on arm64 and amd64, and Windows on amd64. Asset availability varies by release; check the release page for your platform and verification files. The shell installer in the guide is for macOS and Linux.
+Release archives target macOS and Linux on arm64 and amd64, and Windows on amd64. Asset availability varies by release; check the release page for your platform and verification files. Homebrew (`tiagovilasboas/tap`), macOS/Linux (`install.sh`), and Windows PowerShell (`install.ps1`) are supported.
 
 [Releases](https://github.com/tiagovilasboas/downshift-ai/releases) · [Installation guide](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/guides/install.md) · [Quickstart](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/guides/quickstart.md) · [Configuration](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/guides/config.md) · [Update](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/reference/cli.md#downshift-update) · [Undo setup](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/reference/cli.md#downshift-setup) · [Uninstall](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/reference/cli.md#downshift-uninstall)
 
 ```bash
+# macOS & Linux (Homebrew)
+brew install tiagovilasboas/tap/downshift
+
 # macOS & Linux (arm64 / amd64)
 curl -fsSL https://raw.githubusercontent.com/tiagovilasboas/downshift-ai/main/install.sh | bash
+
+# Windows (PowerShell, amd64)
+irm https://raw.githubusercontent.com/tiagovilasboas/downshift-ai/main/install.ps1 | iex
 
 # In your repository:
 downshift setup
 downshift doctor
+
+# Optional shell completions (bash, zsh, fish, powershell):
+downshift completion zsh > "${fpath[1]}/_downshift"
 
 # Later, on any OS: install the next release and refresh every harness
 downshift update
