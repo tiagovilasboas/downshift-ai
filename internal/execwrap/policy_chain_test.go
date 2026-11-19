@@ -29,7 +29,10 @@ func TestDecide_Chains(t *testing.T) {
 		{"gofmt then go test with tail", "gofmt -l cmd/downshift/doctor.go; go test ./cmd/downshift/ 2>&1 | tail -15", true,
 			"gofmt -l cmd/downshift/doctor.go; " + w + "go test ./cmd/downshift/ 2>&1 | tail -15",
 			"go test ./cmd/downshift/", []string{"gofmt -l cmd/downshift/doctor.go", "tail -15"}, ReasonAllowlistedChain},
-		{"grep pipe stays whole", "git diff --stat && git diff | grep '^[+-]'", false, "", "", nil, ReasonUnsafeChar},
+		{"grep pipe wraps safely", "git diff --stat && git diff | grep '^[+-]'", true,
+			w + "git diff --stat && " + w + "git diff | 'grep' '^[+-]'",
+			"git diff --stat", []string{"grep '^[+-]'", "grep ^[+-]", "git diff"}, ReasonAllowlistedQuoted},
+		{"grep pipe with file operand refused", "git diff --stat && git diff | grep '^[+-]' /etc/passwd", false, "", "", nil, ReasonUnsafeChar},
 
 		// Shapes.
 		{"and list", "go build ./... && go test ./...", true, w + "go build ./... && " + w + "go test ./...", "go build ./...", []string{"go test ./..."}, ReasonAllowlistedChain},

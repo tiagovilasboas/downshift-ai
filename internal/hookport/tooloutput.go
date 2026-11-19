@@ -3,7 +3,11 @@
 
 package hookport
 
-import "github.com/tiagovilasboas/downshift-ai/internal/core"
+import (
+	"encoding/json"
+
+	"github.com/tiagovilasboas/downshift-ai/internal/core"
+)
 
 // ToolOutput is one finished tool call, read from a harness's post-run hook
 // payload into harness-free fields. The adapter fills it (ParseToolOutputFunc)
@@ -24,6 +28,9 @@ type ToolOutput struct {
 	Session string
 	// Command is the shell command that ran (shell tools only).
 	Command string
+	// ToolInput holds the raw JSON tool_input object when needed by a shared
+	// post-run policy (for example Read repeat-read deduplication).
+	ToolInput json.RawMessage
 	// Stdout and Stderr are a shell tool's two streams.
 	Stdout, Stderr       string
 	HasStdout, HasStderr bool

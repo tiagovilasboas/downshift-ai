@@ -164,3 +164,93 @@ func TestCompact_SearchDualKeptIDs(t *testing.T) {
 		t.Fatalf("duplicate search kept IDs: kept=%q extra=%v", dup.KeptID, dup.ExtraKeptIDs)
 	}
 }
+
+func TestCompact_SearchMediumBandAndLineThreshold(t *testing.T) {
+	t.Run("grep over 40 lines under 2KB compacted", func(t *testing.T) {
+		var b strings.Builder
+		for i := 1; i <= 50; i++ {
+			fmt.Fprintf(&b, "pkg/a.go:%d:item%02d := %d\n", i, i, i)
+		}
+		raw := b.String()
+		if len(raw) >= SearchThresholdBytes {
+			t.Fatalf("fixture %d >= 2 KiB", len(raw))
+		}
+		var stored []byte
+		keep := func(data []byte) (string, bool) {
+			stored = append([]byte(nil), data...)
+			return "ccrgrep50ln", true
+		}
+		res := Compact(allCaps, hookport.ToolOutput{Category: core.CategorySearch, Content: raw, HasContent: true}, Options{Keep: keep, Balanced: true})
+		if !res.Replaced || res.KeptID != "ccrgrep50ln" || string(stored) != raw {
+			t.Fatalf("expected 50-line Grep compacted with CCR: replaced=%v id=%q", res.Replaced, res.KeptID)
+		}
+		if res.EmittedBytes >= res.RawBytes {
+			t.Errorf("output grew: %d >= %d", res.EmittedBytes, res.RawBytes)
+		}
+	})
+
+	t.Run("glob over 40 paths under 2KB compacted", func(t *testing.T) {
+		paths := make([]string, 50)
+		for i := range paths {
+			paths[i] = fmt.Sprintf("internal/pkg/component_%02d.go", i)
+		}
+		var stored []byte
+		keep := func(data []byte) (string, bool) {
+			stored = append([]byte(nil), data...)
+			return "ccrglob50ln", true
+		}
+		res := Compact(allCaps, hookport.ToolOutput{Category: core.CategorySearch, Paths: paths, HasPaths: true}, Options{Keep: keep, Balanced: true})
+		if !res.Replaced || res.KeptID != "ccrglob50ln" || string(stored) != strings.Join(paths, "\n")+"\n" {
+			t.Fatalf("expected 50-path Glob compacted with CCR: replaced=%v id=%q", res.Replaced, res.KeptID)
+		}
+		if res.EmittedBytes >= res.RawBytes {
+			t.Errorf("output grew: %d >= %d", res.EmittedBytes, res.RawBytes)
+		}
+	})
+
+	t.Run("under both 2KB and 40 lines passes through raw", func(t *testing.T) {
+		var grep strings.Builder
+		paths := make([]string, 20)
+		for i := 0; i < 20; i++ {
+			fmt.Fprintf(&grep, "a.go:%d:val := %d\n", i+1, i)
+			paths[i] = fmt.Sprintf("pkg/file_%02d.go", i)
+		}
+		called := false
+		keep := func([]byte) (string, bool) {
+			called = true
+			return "nope", true
+		}
+		if res := Compact(allCaps, hookport.ToolOutput{Category: core.CategorySearch, Content: grep.String(), HasContent: true}, Options{Keep: keep, Balanced: true}); res.Replaced {
+			t.Errorf("small grep replaced: %+v", res)
+		}
+		if res := Compact(allCaps, hookport.ToolOutput{Category: core.CategorySearch, Paths: paths, HasPaths: true}, Options{Keep: keep, Balanced: true}); res.Replaced {
+			t.Errorf("small glob replaced: %+v", res)
+		}
+		if called {
+			t.Error("CCR Keep called for small search output")
+		}
+	})
+
+	t.Run("tiny lines > 40 where marker would lengthen stay raw", func(t *testing.T) {
+		var grep strings.Builder
+		paths := make([]string, 41)
+		for i := 0; i < 41; i++ {
+			fmt.Fprintf(&grep, "f%02d.go:1:x\n", i)
+			paths[i] = fmt.Sprintf("f%02d", i)
+		}
+		called := false
+		keep := func([]byte) (string, bool) {
+			called = true
+			return "nope", true
+		}
+		if res := Compact(allCaps, hookport.ToolOutput{Category: core.CategorySearch, Content: grep.String(), HasContent: true}, Options{Keep: keep, Balanced: true}); res.Replaced {
+			t.Errorf("tiny grep lengthened/replaced: %+v", res)
+		}
+		if res := Compact(allCaps, hookport.ToolOutput{Category: core.CategorySearch, Paths: paths, HasPaths: true}, Options{Keep: keep, Balanced: true}); res.Replaced {
+			t.Errorf("tiny glob lengthened/replaced: %+v", res)
+		}
+		if called {
+			t.Error("CCR Keep called when marker would lengthen output")
+		}
+	})
+}

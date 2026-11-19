@@ -73,11 +73,11 @@ func CompressCommandOutputHint(input []byte, f Format, exitCode int, h CommandHi
 	return res
 }
 
-// screenCommandText is screenText, except for an HTTP response: its headers
-// end each line in CRLF and its body need not end in a newline, and neither is
-// a reason to keep the response raw. Any escape byte still is.
+// screenCommandText is screenText, except for HTTP responses and JSON payloads:
+// JSON marshaled by tools or HTTP bodies need not end in a trailing newline,
+// and CRLF whitespace is harmless for JSON parsing. Any escape byte stays raw.
 func screenCommandText(input []byte, f Format) ([]byte, string) {
-	if f != FormatHTTPFetch {
+	if f != FormatHTTPFetch && f != FormatJSONPrune {
 		return screenText(input)
 	}
 	if bytes.IndexByte(input, 0x1b) != -1 {

@@ -35,6 +35,8 @@ func TestDecide_QuotedInsideShapes(t *testing.T) {
 			"gofmt -l x; " + w + "'go' 'test' '-run' 'TestX' './pkg' 2>&1 | tail -5", "go test -run 'TestX' ./pkg", []string{"gofmt -l x", "go test -run TestX ./pkg", "tail -5"}},
 		{"chain with devnull on a segment", `git status && grep -rn "x" . 2>/dev/null`,
 			w + "git status && '" + shapeExe + "' compact --discard-stderr -- 'grep' '-rn' 'x' '.'", "git status", []string{"grep -rn x .", `grep -rn "x" .`}},
+		{"quoted command piped to grep", `go test -run 'X' ./... | grep FAIL`,
+			w + "'go' 'test' '-run' 'X' './...' | grep FAIL", "go test -run 'X' ./...", []string{"go test -run X ./...", "grep FAIL"}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -55,7 +57,7 @@ func TestDecide_QuotedInsideShapesRefuses(t *testing.T) {
 		`go test -run "$(id)" ./... 2>&1 | tail -5`,
 		"go test -run 'X' `id` | tail -5",
 		`go test -run 'X' ./... | sh`,
-		`go test -run 'X' ./... | grep FAIL`,
+		`go test -run 'X' ./... | grep FAIL /etc/passwd`,
 		`go test -run 'X' ./... | tail -5 | sh`,
 		`go test -run 'X' ./... > out.txt`,
 		`go test -run 'X' ./... 2>&1 > out.txt`,

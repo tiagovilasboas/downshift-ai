@@ -4,11 +4,13 @@
 package postrun
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/core"
+	"github.com/tiagovilasboas/downshift-ai/internal/execwrap"
 	"github.com/tiagovilasboas/downshift-ai/internal/hookport"
 )
 
@@ -155,4 +157,122 @@ func TestCompact_VerboseNonBashTools(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCompact_MCPJSONPruningAndFallback(t *testing.T) {
+	caps := core.HarnessCapabilities{
+		ReplacesToolOutput: []core.ToolCategory{core.CategoryOther},
+	}
+
+	makeIssue := func(i int, bodyPad string) map[string]any {
+		return map[string]any{
+			"id":                1000 + i,
+			"node_id":           fmt.Sprintf("MDQ6VXNlcj%06d", i),
+			"html_url":          fmt.Sprintf("https://github.com/org/repo/issues/%d", i),
+			"comments_url":      fmt.Sprintf("https://api.github.com/repos/org/repo/issues/%d/comments", i),
+			"events_url":        fmt.Sprintf("https://api.github.com/repos/org/repo/issues/%d/events", i),
+			"labels_url":        fmt.Sprintf("https://api.github.com/repos/org/repo/issues/%d/labels{/name}", i),
+			"repository_url":    "https://api.github.com/repos/org/repo",
+			"followers_url":     "https://api.github.com/users/dev/followers",
+			"following_url":     "https://api.github.com/users/dev/following{/other_user}",
+			"subscriptions_url": "https://api.github.com/users/dev/subscriptions",
+			"title":             fmt.Sprintf("Issue %d", i),
+			"body":              bodyPad,
+		}
+	}
+
+	t.Run("under 4KB prunable JSON is pruned and raw stored in CCR", func(t *testing.T) {
+		rawBytes, err := json.Marshal(makeIssue(1, "fix login bug"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		raw := string(rawBytes) // ~650 bytes (< 4 KiB, no trailing newline)
+		if len(raw) >= PostRunBalanceThreshold {
+			t.Fatalf("fixture %d >= 4 KiB", len(raw))
+		}
+		var stored []byte
+		keep := func(b []byte) (string, bool) {
+			stored = append([]byte(nil), b...)
+			return "ccrmcpjson01", true
+		}
+		res := Compact(caps, hookport.ToolOutput{
+			Category: core.CategoryOther, VerboseKind: VerboseKindMCP,
+			Content: raw, HasContent: true, ExitCode: -1,
+		}, Options{Keep: keep, Balanced: true, Session: strings.Repeat("ab", 32)})
+		if !res.Replaced || !res.Compacted || res.Family != FamilyMCPTool {
+			t.Fatalf("expected MCP JSON pruned: %+v", res)
+		}
+		if res.KeptID != "ccrmcpjson01" || string(stored) != raw {
+			t.Errorf("CCR stored mismatch: id=%q stored=%d raw=%d", res.KeptID, len(stored), len(raw))
+		}
+		if res.EmittedBytes >= res.RawBytes {
+			t.Errorf("did not shrink: %d >= %d", res.EmittedBytes, res.RawBytes)
+		}
+		if strings.Contains(res.Output.Content, "node_id") || strings.Contains(res.Output.Content, "followers_url") {
+			t.Errorf("noisy fields leaked:\n%s", res.Output.Content)
+		}
+		if !strings.Contains(res.Output.Content, "fix login bug") || !strings.Contains(res.Output.Content, "downshift retrieve --session=abababababab ccrmcpjson01") {
+			t.Errorf("core content or retrieve hint missing:\n%s", res.Output.Content)
+		}
+	})
+
+	t.Run("over 4KB prunable JSON still >4KB after pruning falls back to Balanced", func(t *testing.T) {
+		items := make([]map[string]any, 35)
+		for i := range items {
+			m := makeIssue(i, fmt.Sprintf("detail summary for issue %d", i))
+			for f := 0; f < 10; f++ {
+				m[fmt.Sprintf("field_%02d", f)] = fmt.Sprintf("value %02d for item %d", f, i)
+			}
+			items[i] = m
+		}
+		rawBytes, err := json.MarshalIndent(items, "", "  ")
+		if err != nil {
+			t.Fatal(err)
+		}
+		raw := string(rawBytes)
+		var stored []byte
+		keep := func(b []byte) (string, bool) {
+			stored = append([]byte(nil), b...)
+			return "ccrmcpbig001", true
+		}
+		res := Compact(caps, hookport.ToolOutput{
+			Category: core.CategoryOther, VerboseKind: VerboseKindMCP,
+			Content: raw, HasContent: true, ExitCode: -1,
+		}, Options{Keep: keep, Balanced: true})
+		if !res.Replaced || res.KeptID != "ccrmcpbig001" || string(stored) != raw {
+			t.Fatalf("expected pruned+balanced MCP JSON with full raw in CCR: replaced=%v id=%q", res.Replaced, res.KeptID)
+		}
+		if strings.Contains(res.Output.Content, "node_id") || strings.Contains(res.Output.Content, "followers_url") {
+			t.Errorf("JSON pruning did not run before Balanced:\n%s", res.Output.Content)
+		}
+		if !execwrap.HasMarker(res.Output.Content) || !strings.Contains(res.Output.Content, "lines cut (downshift retrieve)") {
+			t.Errorf("expected Balanced cut after JSON pruning, got:\n%s", res.Output.Content)
+		}
+		if res.EmittedBytes >= res.RawBytes {
+			t.Errorf("did not shrink: %d >= %d", res.EmittedBytes, res.RawBytes)
+		}
+	})
+
+	t.Run("tiny JSON and non-shrinking JSON stay raw without touching CCR", func(t *testing.T) {
+		called := false
+		keep := func([]byte) (string, bool) {
+			called = true
+			return "shouldnot", true
+		}
+		for _, raw := range []string{
+			`{"id":1,"node_id":"abc"}`,
+			`{"id":1,"title":"` + strings.Repeat("x", 900) + `"}`,
+		} {
+			res := Compact(caps, hookport.ToolOutput{
+				Category: core.CategoryOther, VerboseKind: VerboseKindMCP,
+				Content: raw, HasContent: true, ExitCode: -1,
+			}, Options{Keep: keep, Balanced: true})
+			if res.Replaced || res.Output.Content != raw {
+				t.Errorf("expected passthrough for len=%d, got replaced=%v", len(raw), res.Replaced)
+			}
+		}
+		if called {
+			t.Error("CCR Keep must not be called when JSON stays raw")
+		}
+	})
 }

@@ -53,6 +53,16 @@ func decideQuoted(trimmed, exe string) Decision {
 		return Decision{Reason: ReasonTooLong}
 	}
 	core, tail := cutShellTail(trimmed)
+	if !tail.discardStderr {
+		c, kind, ok := extractStderrRedirect(core)
+		if !ok {
+			return Decision{Reason: ReasonUnsafeChar}
+		}
+		if kind == redirDiscard {
+			core = c
+			tail.discardStderr = true
+		}
+	}
 	words, bad := lexQuoted(core)
 	if bad >= 0 || len(words) == 0 {
 		return Decision{Reason: ReasonUnsafeChar}
@@ -218,10 +228,19 @@ func plainAssignments(words []shellWord) (n, at int) {
 // quoted path, or -1 when it lexes: the byte a skip is classified by. A
 // quoted word and the two trailing forms are no longer a refusal.
 func firstRefused(command string) int {
-	core, _ := cutShellTail(strings.TrimRight(command, " "))
+	core, tail := cutShellTail(strings.TrimRight(command, " "))
+	spanStart, delta := -1, 0
+	if !tail.discardStderr {
+		if c, kind, s, d, ok := extractStderrRedirectSpan(core); ok && kind == redirDiscard {
+			core, spanStart, delta = c, s, d
+		}
+	}
 	words, bad := lexQuoted(core)
 	if bad < 0 {
 		_, bad = plainAssignments(words)
+	}
+	if bad >= 0 && spanStart >= 0 && bad >= spanStart {
+		bad += delta
 	}
 	return bad
 }
