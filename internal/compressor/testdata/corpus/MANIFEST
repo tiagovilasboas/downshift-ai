@@ -532,3 +532,5 @@ clean     agent_desktop agent_desktop_snapshot_files.txt
 clean     agent_desktop agent_desktop_snapshot_chat.txt
 clean     agent_desktop agent_desktop_find_buttons.txt
 preserve  agent_desktop agent_desktop_error_stale_ref.txt
+clean     ctest         ctest_pass_clean.txt
+preserve  ctest         ctest_fail.txt

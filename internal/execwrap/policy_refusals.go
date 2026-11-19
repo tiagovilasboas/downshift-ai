@@ -23,6 +23,9 @@ var refusedFlags = map[Family][]string{
 	FamilyRspec: {"init", "out", "o"},
 	// dotnet test --diag writes a log file; --results-directory a result tree.
 	FamilyDotnetTest: {"diag", "d", "results-directory"},
+	// ctest -S/-SP runs arbitrary scripts; --build-and-test builds and runs;
+	// --output-log and --output-junit write files; -D/--dashboard submits.
+	FamilyCTest: {"S", "SP", "script", "script-new-process", "build-and-test", "output-log", "output-junit", "D", "dashboard"},
 	// phpstan writes a baseline or runs a watcher/server.
 	FamilyPHPStan: {"generate-baseline", "watch", "fix", "pro"},
 	// docker build --push publishes; --output exports to the host; the

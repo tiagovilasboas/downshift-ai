@@ -70,6 +70,7 @@ const (
 	// Build systems — high usage
 	FamilyMake       Family = "make"
 	FamilyCMake      Family = "cmake"
+	FamilyCTest      Family = "ctest"
 	FamilyNinja      Family = "ninja"
 	FamilyBazel      Family = "bazel"
 	FamilyJust       Family = "just"

@@ -41,6 +41,15 @@ func TestFamilyOf_WiredFamiliesAcceptAndRefuse(t *testing.T) {
 		{"dotnet test -d log.txt", FamilyNone},
 		{"dotnet test --results-directory out", FamilyNone},
 
+		{"ctest", FamilyCTest},
+		{"ctest --output-on-failure --test-dir build -j4", FamilyCTest},
+		{"ctest -S build.cmake", FamilyNone},
+		{"ctest --script=build.cmake", FamilyNone},
+		{"ctest --build-and-test . build", FamilyNone},
+		{"ctest --output-log test.log", FamilyNone},
+		{"ctest --output-junit out.xml", FamilyNone},
+		{"ctest -D Experimental", FamilyNone},
+
 		{"phpstan", FamilyPHPStan},
 		{"phpstan analyse src --level=8", FamilyPHPStan},
 		{"vendor/bin/phpstan analyze", FamilyPHPStan},

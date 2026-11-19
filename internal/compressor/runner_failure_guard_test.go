@@ -26,7 +26,7 @@ var runnerFormats = []compressor.Format{
 	compressor.FormatCargoTest, compressor.FormatCypress, compressor.FormatPHPUnit,
 	compressor.FormatFlutterTest, compressor.FormatGradle, compressor.FormatMaven,
 	compressor.FormatTSC, compressor.FormatNextBuild, compressor.FormatBazel,
-	compressor.FormatNx, compressor.FormatTurbo,
+	compressor.FormatNx, compressor.FormatTurbo, compressor.FormatCTest,
 }
 
 // failingFixtures returns, per runner format, the fixtures that must stay raw:
