@@ -9,9 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-11-19
+
+Release notes: [docs/releases/v0.19.0.md](docs/releases/v0.19.0.md).
+
 ### Added
 
-- **Quota estimate and skill parity across `stats`, `report`, and the `downshift-agents` pane.** Per harness, `downshift stats` and `downshift report` (markdown, `--text`, and `--json`) weigh the subagent tokens placed against the session model at the session tier and at the tier they ran on (weights small 0.05, cache read 0.1, mid 1, frontier 2, Claude API list rates 2026-11-16) and print how much lower the quota use was. Unitless, never summed across harnesses, labelled as assuming the same tokens. `report --json` carries it as `routing_tokens.quota_by_harness` and `tokens_by_harness[].quota_estimate`; `downshift session --panel` and the `downshift-agents` pane expose and display the harness `quota_short` estimate plus 30-day `skills` (`ponytail`) and `adoption_line` parity.
+- **Quota estimate and skill parity across `stats`, `report`, and the `downshift-agents` pane (`#155`).** Per harness, `downshift stats` and `downshift report` (markdown, `--text`, and `--json`) weigh the subagent tokens placed against the session model at the session tier and at the tier they ran on (weights small 0.05, cache read 0.1, mid 1, frontier 2, Claude API list rates 2026-11-16) and print how much lower the quota use was. Unitless, never summed across harnesses, labelled as assuming the same tokens. `report --json` carries it as `routing_tokens.quota_by_harness` and `tokens_by_harness[].quota_estimate`; `downshift session --panel` and the `downshift-agents` pane expose and display the harness `quota_short` estimate plus 30-day `skills` (`ponytail`) and `adoption_line` parity.
+- **Shell completions (`#158`).** `downshift completion [bash|zsh|fish|powershell]` generates shell completion scripts for all commands, subcommands, and top-level flags (covered by `docscheck`).
+- **Windows installer and Homebrew documentation (`#159`).** Added `install.ps1` with SHA-256 verification and documented `brew install tiagovilasboas/tap/downshift` alongside the PowerShell one-liner.
+- **Open-source community, security, and CI hygiene (`#157`).** Added `.github/FUNDING.yml`, `SUPPORT.md`, `.github/dependabot.yml`, `.devcontainer/devcontainer.json`, `.github/workflows/codeql.yml`, `.github/workflows/scorecard.yml`, `actionlint` in `lefthook.yml`/`Makefile`, and `internal/archtest/workflows_test.go`.
+
+### Changed
+
+- **Documentation clarity (`#156`).** Highlighted practical daily workflows across `README.md`, `docs/pt-br/README.md`, and guides.
+- **Dependencies (`#160`).** Bumped `charm.land/lipgloss/v2` from `2.0.6` to `2.1.1`.
 
 ## [0.18.1] - 2026-11-18
 
