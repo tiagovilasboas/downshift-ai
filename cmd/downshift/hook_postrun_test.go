@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/adapters/claudecode"
+	"github.com/tiagovilasboas/downshift-ai/internal/ccr"
 	"github.com/tiagovilasboas/downshift-ai/internal/core"
 	"github.com/tiagovilasboas/downshift-ai/internal/execwrap"
 	"github.com/tiagovilasboas/downshift-ai/internal/hookport"
@@ -390,5 +391,69 @@ func TestPostRun_SuppressedModeAndBackgroundCompacted(t *testing.T) {
 				t.Errorf("exec rows = %+v, want 1 compacted post_tool_use row", rows)
 			}
 		})
+	}
+}
+
+func TestPostRun_MCPJSONPrunedAndRetrievable(t *testing.T) {
+	state := postRunEnv(t, true)
+	rawJSON, err := json.Marshal(map[string]any{
+		"id":                42,
+		"node_id":           "MDEwOlJlcG9zaXRvcnk0Mg==",
+		"html_url":          "https://github.com/org/repo/issues/42",
+		"comments_url":      "https://api.github.com/repos/org/repo/issues/42/comments",
+		"events_url":        "https://api.github.com/repos/org/repo/issues/42/events",
+		"labels_url":        "https://api.github.com/repos/org/repo/issues/42/labels{/name}",
+		"followers_url":     "https://api.github.com/users/dev/followers",
+		"following_url":     "https://api.github.com/users/dev/following{/other_user}",
+		"subscriptions_url": "https://api.github.com/users/dev/subscriptions",
+		"title":             "fix postrun mcp json",
+		"state":             "open",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	payload := postPayload(t, "mcp__github__get_issue", map[string]any{"number": 42}, map[string]any{
+		"content": []any{map[string]any{"type": "text", "text": string(rawJSON)}},
+	})
+	answer := captureStdout(func() {
+		if rc := runHonor(bytes.NewReader(payload), portFor("claude-code"), cmdCat); rc != 0 {
+			t.Errorf("runHonor exit %d, want 0", rc)
+		}
+	})
+	var out struct {
+		HookSpecificOutput struct {
+			HookEventName        string `json:"hookEventName"`
+			UpdatedMCPToolOutput struct {
+				Content []struct {
+					Type string `json:"type"`
+					Text string `json:"text"`
+				} `json:"content"`
+			} `json:"updatedMCPToolOutput"`
+		} `json:"hookSpecificOutput"`
+	}
+	if err := json.Unmarshal([]byte(answer), &out); err != nil {
+		t.Fatalf("unmarshal answer: %v\n%s", err, answer)
+	}
+	if len(out.HookSpecificOutput.UpdatedMCPToolOutput.Content) != 1 {
+		t.Fatalf("expected updatedMCPToolOutput content, got %s", answer)
+	}
+	text := out.HookSpecificOutput.UpdatedMCPToolOutput.Content[0].Text
+	if strings.Contains(text, "node_id") || !strings.Contains(text, "fix postrun mcp json") {
+		t.Errorf("unexpected pruned text:\n%s", text)
+	}
+	rows := execRows(t, state)
+	if len(rows) != 1 || rows[0].Family != postrun.FamilyMCPTool || !rows[0].Compacted || rows[0].Kept == "" {
+		t.Fatalf("unexpected exec rows: %+v", rows)
+	}
+	store, err := ccr.Default()
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotRaw, err := store.Get(rows[0].Kept)
+	if err != nil {
+		t.Fatalf("store.Get(%q): %v", rows[0].Kept, err)
+	}
+	if string(gotRaw) != string(rawJSON) {
+		t.Errorf("CCR round-trip mismatch:\ngot:  %s\nwant: %s", gotRaw, rawJSON)
 	}
 }

@@ -4,6 +4,8 @@
 package postrun
 
 import (
+	"bytes"
+
 	"github.com/tiagovilasboas/downshift-ai/internal/compressor"
 	"github.com/tiagovilasboas/downshift-ai/internal/execwrap"
 	"github.com/tiagovilasboas/downshift-ai/internal/hookport"
@@ -30,9 +32,9 @@ func verboseFamily(kind string) (execwrap.Family, bool) {
 	}
 }
 
-// compactVerboseText applies safe balanced compaction (BalanceLog) to verbose
-// non-shell tool outputs such as WebFetch and mcp__* when they exceed
-// balanceThreshold(o) and CCR storage succeeds.
+// compactVerboseText applies semantic JSON pruning (for mcp__* JSON payloads
+// >= JSONPruneMinBytes) followed by safe balanced compaction (BalanceLog)
+// when outputs still exceed balanceThreshold(o) and CCR storage succeeds.
 func compactVerboseText(in hookport.ToolOutput, o Options) Result {
 	family, ok := verboseFamily(in.VerboseKind)
 	if !ok || !in.HasContent || in.Content == "" {
@@ -52,12 +54,18 @@ func compactVerboseText(in hookport.ToolOutput, o Options) Result {
 		res.Passthrough = execwrap.PassthroughUnrecognized
 		return settle(res, in)
 	}
-	threshold := balanceThreshold(o)
-	if raw <= threshold || !o.Balanced || o.Keep == nil {
+	if o.Keep == nil {
 		return settle(res, in)
 	}
-	cut, applied := compressor.Balance(compressor.BalanceLog, []byte(in.Content))
+	cut, applied := compactVerboseBody(in.VerboseKind, []byte(in.Content), balanceThreshold(o), o.Balanced)
 	if !applied {
+		return settle(res, in)
+	}
+	if !bytes.HasSuffix(cut, []byte("\n")) {
+		cut = append(append([]byte(nil), cut...), '\n')
+	}
+	worstMarker := execwrap.MarkerWithID(raw, len(cut), readRetrieveArg(o.Session, "000000000000"))
+	if len(cut)+len(worstMarker) >= raw {
 		return settle(res, in)
 	}
 	id, ok := o.Keep([]byte(in.Content))
@@ -72,4 +80,22 @@ func compactVerboseText(in hookport.ToolOutput, o Options) Result {
 	res.Folded = true
 	res.Passthrough = ""
 	return settle(res, in)
+}
+
+func compactVerboseBody(kind string, raw []byte, threshold int, balanced bool) ([]byte, bool) {
+	cur := raw
+	changed := false
+	if kind == VerboseKindMCP && len(raw) >= compressor.JSONPruneMinBytes {
+		if r := compressor.CompressCommandOutput(raw, compressor.FormatJSONPrune, 0); r.Applied {
+			cur = r.Output
+			changed = true
+		}
+	}
+	if len(cur) > threshold && balanced {
+		if cut, ok := compressor.Balance(compressor.BalanceLog, cur); ok {
+			cur = cut
+			changed = true
+		}
+	}
+	return cur, changed
 }
