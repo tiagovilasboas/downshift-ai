@@ -47,6 +47,17 @@ func compactRead(in hookport.ToolOutput, o Options) Result {
 		EmittedBytes: int64(raw),
 		Passthrough:  execwrap.PassthroughSmallOutput,
 	}
+	if raw >= readDedupMinBytes && len(in.ToolInput) > 0 && o.Balanced && o.Keep != nil {
+		if compacted, id, changed := tryDedupRead(in, o); changed {
+			res.Output.Content = compacted
+			res.EmittedBytes = int64(len(compacted))
+			res.KeptID = id
+			res.Compacted = true
+			res.Folded = true
+			res.Passthrough = ""
+			return settle(res, in)
+		}
+	}
 	if raw <= ReadThreshold || !o.Balanced || o.Keep == nil {
 		return settle(res, in)
 	}
@@ -85,6 +96,22 @@ func splitLineSpans(s string) []lineSpan {
 		spans = append(spans, lineSpan{start: start, end: len(s)})
 	}
 	return spans
+}
+
+func tryDedupRead(in hookport.ToolOutput, o Options) (string, string, bool) {
+	sess := o.Session
+	if sess == "" {
+		sess = in.Session
+	}
+	if sess == "" {
+		return "", "", false
+	}
+	id, ok := o.Keep([]byte(in.Content))
+	if !ok || id == "" {
+		return "", "", false
+	}
+	compacted, changed := DedupRead(sess, in.ToolInput, in.Content, id)
+	return compacted, id, changed
 }
 
 // pickHeadTail selects how many whole lines from the start and end fit within

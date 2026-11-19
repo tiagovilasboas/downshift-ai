@@ -46,6 +46,11 @@ func ParseToolOutput(raw []byte) (hookport.ToolOutput, bool) {
 	}
 	if input, ok := payload["tool_input"].(map[string]any); ok {
 		out.Command, _ = input["command"].(string)
+		if out.Category == core.CategoryRead {
+			if rawInput, err := json.Marshal(input); err == nil {
+				out.ToolInput = rawInput
+			}
+		}
 	}
 	resp, ok := payload["tool_response"].(map[string]any)
 	if !ok {
