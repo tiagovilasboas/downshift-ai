@@ -52,7 +52,15 @@ downshift update
 
 [![Interactive setup detects harnesses, lets you choose components and review changes, writes after confirmation, then the user verifies the setup](docs/brand/readme-media/setup-flow.svg)](docs/brand/readme-media/setup-flow.png)
 
-## New in v0.18 (latest: v0.18.1): compaction reaches far more of what agents run
+## New in v0.19.0
+
+- **Quota estimate & skill parity across harnesses**: `downshift stats`, `downshift report` (`--text`, `--json`, markdown), `downshift session --panel`, and the `downshift-agents` pane report per-harness unitless quota estimates (`QuotaUnits`) alongside 30-day `ponytail` adoption parity.
+- **Shell completions & installers**: `downshift completion bash|zsh|fish|powershell`, a verified Windows PowerShell installer (`install.ps1`), and Homebrew tap support (`brew install tiagovilasboas/tap/downshift`).
+- **Open-source & security posture**: CodeQL, OpenSSF Scorecard, Dependabot, Dev Container, and `SUPPORT.md`.
+
+[v0.19.0 release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.19.0.md)
+
+## New in v0.18 (v0.18.1): compaction reaches far more of what agents run
 
 **Projected 3.5x to 4.5x more tokens cut per month on the same workload**, from about 1.0M to about 3.5M to 4.5M (saved bytes / 4). This is a projection over one operator's last 30 days of Claude Code transcripts (69,341 tool results), not yet measured after the release: [method and limits](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/evidence/compaction-projection-2026-11-17.md).
 

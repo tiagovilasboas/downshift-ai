@@ -52,7 +52,15 @@ downshift update
 
 [![O assistente interativo detecta harnesses, permite escolher componentes e revisar alterações, grava após a confirmação e depois o usuário verifica a configuração](../brand/readme-media/setup-flow.svg)](../brand/readme-media/setup-flow.png)
 
-## Novo na v0.18 (última: v0.18.1): a compactação alcança muito mais do que os agentes rodam
+## Novo na v0.19.0
+
+- **Estimativa de cota e paridade de skills entre harnesses**: `downshift stats`, `downshift report` (`--text`, `--json`, markdown), `downshift session --panel` e o painel `downshift-agents` mostram estimativas de cota sem unidade por harness (`QuotaUnits`) junto com a adoção de `ponytail` em 30 dias.
+- **Autocompletar e instaladores**: `downshift completion bash|zsh|fish|powershell`, instalador PowerShell para Windows com verificação SHA-256 (`install.ps1`) e suporte via Homebrew (`brew install tiagovilasboas/tap/downshift`).
+- **Postura open-source e segurança**: CodeQL, OpenSSF Scorecard, Dependabot, Dev Container e `SUPPORT.md`.
+
+[Notas da v0.19.0](../releases/v0.19.0.md)
+
+## Novo na v0.18 (v0.18.1): a compactação alcança muito mais do que os agentes rodam
 
 **Projeção de 3,5 a 4,5 vezes mais tokens cortados por mês com a mesma carga de trabalho**, de cerca de 1,0M para algo entre 3,5M e 4,5M (bytes economizados / 4). É uma projeção calculada sobre os transcripts dos últimos 30 dias de um operador no Claude Code (69.341 resultados de ferramentas), ainda não medida depois da release: [método e limites](../evidence/compaction-projection-2026-11-17.md).
 
