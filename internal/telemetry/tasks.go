@@ -40,6 +40,9 @@ type TaskRecord struct {
 	// Redo lists the failed spawns this one redid (a respawn in the same
 	// session within the respawn window after an error or interrupt).
 	Redo []string
+	// Verification is the child's own check result (passed, failed, none) from
+	// the last usage record of the spawn; "" when none carried one.
+	Verification string
 	// Reworked is set on a failed spawn that a later spawn redid.
 	Reworked bool
 	// TotalTokens is Tokens plus the tokens of every failed attempt it redid,
@@ -126,6 +129,9 @@ func BuildTasks(events []Event) []TaskRecord {
 			if ev.HasTokenUsage() {
 				tasks[i].Observed = true
 				tasks[i].Tokens.add(classesOf(ev.TokenUsageOrZero()))
+			}
+			if ev.Verification != "" {
+				tasks[i].Verification = ev.Verification
 			}
 			// Background children report only "launched" at spawn time; the
 			// usage record written when the child stops is the proof that it ran

@@ -143,6 +143,11 @@ func compactShell(in hookport.ToolOutput, o Options) Result {
 		res.Head = execwrap.CommandHead(in.Command)
 		res.LineBucket = execwrap.LineBucket(execwrap.CountLines(in.Stdout) + execwrap.CountLines(in.Stderr))
 	}
+	// A compound command that runs curl, wget or glab may carry credentials in
+	// its output: offer no store, so the output stays raw (never cut unstored).
+	if family == execwrap.FamilyNone && execwrap.CompoundRefusesRawStore(in.Command) {
+		o.Keep = nil
+	}
 	out, cut := execwrap.Captured{}, false
 	if family == execwrap.FamilyNone && o.Balanced {
 		out, cut = execwrap.CutSearch(in.Command, []byte(in.Stdout), exit, o.Keep, o.Session)

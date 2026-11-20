@@ -28,6 +28,9 @@ const (
 // the compacted view redacts both.
 var rawStoreRefused = map[Family]bool{FamilyCurl: true, FamilyWget: true, FamilyGlab: true}
 
+// RawStoreRefused reports whether f's raw output must never be stored.
+func RawStoreRefused(f Family) bool { return rawStoreRefused[f] }
+
 // curlShortFlags are the letters a cluster such as -sSL may hold: silent,
 // show-error, include headers, head, fail, follow redirects.
 const curlShortFlags = "sSiIfL"
