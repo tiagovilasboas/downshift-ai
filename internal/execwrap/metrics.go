@@ -112,6 +112,11 @@ type Event struct {
 	// inside it ("" when none), Kind its MetacharKind. Codes, never text.
 	Inner string `json:"inner,omitempty"`
 	Kind  string `json:"kind,omitempty"`
+	// Head and LineBucket are set only on a post-run row with no family:
+	// Head is CommandHead (a vocabulary code, "script" or "unknown"),
+	// LineBucket the LineBucket code of the output. Never text.
+	Head       string `json:"head,omitempty"`
+	LineBucket string `json:"line_bucket,omitempty"`
 }
 
 // NetSavedBytes is what the run saved after the agent read part of the raw
