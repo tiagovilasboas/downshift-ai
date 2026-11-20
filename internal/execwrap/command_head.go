@@ -49,8 +49,61 @@ var headWrappers = map[string]bool{
 // wrappers, only when it is in the fixed vocabulary. A script (./x, *.sh) is
 // "script"; anything else is "unknown". It never returns a path, script name
 // or argument.
+//
+// A compound command is split on top-level &&, ||, ; and |, and the first
+// segment whose program is not a trivial setup (cd, export, source ...) names
+// it. When every segment is trivial, the first segment's head is returned.
 func CommandHead(command string) string {
-	fields := strings.Fields(command)
+	first := ""
+	for _, seg := range splitSegments(command) {
+		code, base := segmentHead(strings.Fields(seg))
+		if base == "" {
+			continue
+		}
+		if first == "" {
+			first = code
+		}
+		if !trivialHeads[base] {
+			return code
+		}
+	}
+	if first == "" {
+		return HeadUnknown
+	}
+	return first
+}
+
+// trivialHeads are shell setup programs that never name what a compound runs.
+var trivialHeads = map[string]bool{
+	"cd": true, "pushd": true, "popd": true, "export": true, "set": true,
+	"source": true, ".": true, "unset": true, "true": true, "alias": true,
+}
+
+// splitSegments splits command at top-level &&, ||, ;, | and newlines,
+// ignoring separators inside single or double quotes.
+func splitSegments(command string) []string {
+	var segs []string
+	var quote rune
+	start := 0
+	for i, r := range command {
+		switch {
+		case quote != 0:
+			if r == quote {
+				quote = 0
+			}
+		case r == '\'' || r == '"':
+			quote = r
+		case r == ';' || r == '|' || r == '&' || r == '\n':
+			segs = append(segs, command[start:i])
+			start = i + 1
+		}
+	}
+	return append(segs, command[start:])
+}
+
+// segmentHead returns the head code of one simple command and the basename
+// of its program ("" when it has none).
+func segmentHead(fields []string) (code, base string) {
 	for i := 0; i < len(fields); i++ {
 		tok := strings.Trim(fields[i], `"'`+"`(){}")
 		if tok == "" || tok == "!" || isAssignment(tok) {
@@ -65,14 +118,14 @@ func CommandHead(command string) string {
 			continue
 		}
 		if code, ok := headVocabulary[base]; ok {
-			return code
+			return code, base
 		}
 		if strings.HasPrefix(tok, "./") || strings.HasPrefix(tok, "../") || strings.HasSuffix(base, ".sh") {
-			return HeadScript
+			return HeadScript, base
 		}
-		return HeadUnknown
+		return HeadUnknown, base
 	}
-	return HeadUnknown
+	return HeadUnknown, ""
 }
 
 func isAssignment(tok string) bool {

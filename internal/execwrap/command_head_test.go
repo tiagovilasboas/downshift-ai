@@ -25,6 +25,14 @@ func TestCommandHead(t *testing.T) {
 		{"timeout 30 curl http://x", "curl"},
 		{"/usr/bin/python3 x.py", "python"},
 		{"mysecrettool --flag", "unknown"},
+		{"cd x && node a.js", "node"},
+		{"cd /a; export X=1; go test ./...", "go"},
+		{"source .venv/bin/activate && python3 x.py", "python"},
+		{"cd x", "cd"},
+		{"cd x && ./run.sh", "script"},
+		{"cd x && export A=1", "cd"},
+		{"cd 'a;b' && jq .", "jq"},
+		{"cd x || true; mysecrettool", "unknown"},
 	}
 	for _, c := range cases {
 		if got := CommandHead(c.in); got != c.want {
@@ -41,6 +49,7 @@ func TestCommandHeadNeverLeaksTokens(t *testing.T) {
 	for _, in := range []string{
 		"/opt/secret/bin/foo --token abc", `C:\tools\deploy.exe x`, "./my-private.sh",
 		"FOO=bar customtool arg", "/usr/local/bin/node x", "sudo /srv/app/run", "weirdprog",
+		"cd /home/secret && /opt/priv/tool x", "source /secret/env.sh; ./private.sh",
 	} {
 		got := CommandHead(in)
 		if strings.ContainsAny(got, `/\`) || !vocab[got] {
