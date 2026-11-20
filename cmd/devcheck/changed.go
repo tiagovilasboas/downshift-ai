@@ -97,16 +97,10 @@ func describe(pkgs []string) string {
 
 // runStages starts every stage at once and prints one line per stage as it ends.
 func runStages(w io.Writer, pkgs []string) []outcome {
-	stages := []struct {
-		name string
-		run  func() (string, bool)
-	}{
-		{"gofmt", func() (string, bool) { o, ok := checkFormat(); return string(o), ok }},
-		{"vet host", vetPkgs(nil, pkgs)},
-		{"vet windows", vetPkgs([]string{"GOOS=windows", "GOARCH=amd64"}, pkgs)},
-		{"vet linux", vetPkgs([]string{"GOOS=linux", "GOARCH=amd64"}, pkgs)},
-		{"test", func() (string, bool) { return testPkgs(pkgs) }},
+	if len(pkgs) == 0 {
+		fmt.Fprintln(w, "  note: no Go packages changed: vet/test skipped")
 	}
+	stages := changedStages(pkgs)
 	results := make([]outcome, len(stages))
 	var mu sync.Mutex
 	var wg sync.WaitGroup
@@ -127,6 +121,28 @@ func runStages(w io.Writer, pkgs []string) []outcome {
 	}
 	wg.Wait()
 	return results
+}
+
+// gateStage is one named check of the changed-packages gate.
+type gateStage struct {
+	name string
+	run  func() (string, bool)
+}
+
+// changedStages lists the gate's stages for pkgs. gofmt always runs; vet and
+// test need Go packages, so with none (for example an examples/*.sh change)
+// they are left out instead of running go vet on the repository root.
+func changedStages(pkgs []string) []gateStage {
+	stages := []gateStage{{"gofmt", func() (string, bool) { o, ok := checkFormat(); return string(o), ok }}}
+	if len(pkgs) == 0 {
+		return stages
+	}
+	return append(stages,
+		gateStage{"vet host", vetPkgs(nil, pkgs)},
+		gateStage{"vet windows", vetPkgs([]string{"GOOS=windows", "GOARCH=amd64"}, pkgs)},
+		gateStage{"vet linux", vetPkgs([]string{"GOOS=linux", "GOARCH=amd64"}, pkgs)},
+		gateStage{"test", func() (string, bool) { return testPkgs(pkgs) }},
+	)
 }
 
 func vetPkgs(env []string, pkgs []string) func() (string, bool) {
