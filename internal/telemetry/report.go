@@ -44,6 +44,8 @@ type Report struct {
 	// decisions that were followed by rework and the policy key that turns
 	// the verdict off.
 	ByVerdict []VerdictRework `json:"rework_by_verdict,omitempty"`
+	// Outcomes counts the routed tasks per folded outcome (TaskOutcome).
+	Outcomes OutcomeCounts `json:"outcomes"`
 	// Completion says, per harness, whether the end of a child is measurable.
 	Completion []HarnessCompletion `json:"completion"`
 	// Routing is the plan lens: per harness, the billable tokens that ran
@@ -88,6 +90,7 @@ func BuildReport(events []Event, days int) Report {
 		}
 		g.Spawns++
 		verdicts.add(t)
+		rep.Outcomes.add(t.Outcome())
 		if t.Completed() || t.Failed() {
 			g.Ended++
 		}
