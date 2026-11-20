@@ -78,6 +78,14 @@
       "turn_off": "routing.rules[].enabled: false"
     }
   ],
+  "outcomes": {
+    "errored": 0,
+    "reworked": 0,
+    "check_failed": 0,
+    "accepted_checked": 0,
+    "accepted_unchecked": 1,
+    "unknown": 7
+  },
   "completion": [
     {
       "harness": "claude-code",
@@ -322,6 +330,14 @@
             "turn_off": "routing.rules[].enabled: false"
           }
         ],
+        "outcomes": {
+          "errored": 0,
+          "reworked": 0,
+          "check_failed": 0,
+          "accepted_checked": 0,
+          "accepted_unchecked": 1,
+          "unknown": 5
+        },
         "completion": [
           {
             "harness": "claude-code",
@@ -449,6 +465,14 @@
             "rework_rate": 0
           }
         ],
+        "outcomes": {
+          "errored": 0,
+          "reworked": 0,
+          "check_failed": 0,
+          "accepted_checked": 0,
+          "accepted_unchecked": 0,
+          "unknown": 2
+        },
         "completion": [
           {
             "harness": "claude-code",
