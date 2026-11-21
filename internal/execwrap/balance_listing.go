@@ -59,7 +59,7 @@ func cutBody(family Family, argv []string, exitCode int, raw, body []byte, lim c
 	switch {
 	case family == FamilyNone:
 		if !applied {
-			cut, applied = compressor.BalanceBytes(body)
+			cut, applied = compressor.BalanceBytesScaled(body)
 		}
 	case isListing(family, argv):
 		if exitCode != 0 || argvWithinLimit(argv, raw) {
