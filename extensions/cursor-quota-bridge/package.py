@@ -60,5 +60,5 @@ def package(target: Path) -> None:
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        raise SystemExit("usage: python3 internal/cursorbridge/package.py OUTPUT.vsix")
+        raise SystemExit("usage: python3 extensions/cursor-quota-bridge/package.py OUTPUT.vsix")
     package(Path(sys.argv[1]).expanduser().resolve())

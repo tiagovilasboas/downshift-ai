@@ -25,7 +25,7 @@ packages and commands stay in the binary and keep working.
 | `internal/gateway` | Router-agnostic multi-provider gateway | `cmd/downshift/cmd_gateway*.go`, `cmd_plan.go`, `doctor*.go` | Roadmap F2 marks `gateway` as `Experimental` in clispec. |
 | `internal/missedsavings` | Scans harness transcripts for commands that could have been compacted | `cmd/downshift/cmd_discover.go` | Roadmap F2 marks `discover` as `Experimental`. |
 | `internal/operatorexport` | Builds the artefact an outside operator shares | `cmd/downshift/export.go` | |
-| `internal/cursorbridge` | Cursor extension and its packaging script; it contains no Go code | none in Go | Moves out of `internal/` in its own PR. |
+| `extensions/cursor-quota-bridge` | Cursor extension and its packaging script; it contains no Go code | none in Go | Moved out of `internal/` on 2026-11-20. |
 
 ## Enforcement
 
