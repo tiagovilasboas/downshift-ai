@@ -12,12 +12,12 @@ const (
 	failedKeepBytes = 16384
 )
 
-// Share of the text each budget may take, in percent, so output just over the
-// threshold still saves the quarter the cut needs.
+// Share of the text the head and the tail may take, in percent. The failure
+// lines are never scaled: when the cut then saves under a quarter, the gate
+// leaves the output whole.
 const (
 	failedHeadPct = 10
 	failedTailPct = 35
-	failedKeepPct = 20
 )
 
 // BalanceFailed cuts the output of a run that exited non-zero: a short head,
@@ -30,5 +30,5 @@ func BalanceFailed(text []byte) ([]byte, bool) {
 	return balanceBytes(text,
 		min(failedHeadBytes, n*failedHeadPct/100),
 		min(failedTailBytes, n*failedTailPct/100),
-		min(failedKeepBytes, n*failedKeepPct/100))
+		failedKeepBytes) // never scaled: a dropped error line costs a rerun
 }

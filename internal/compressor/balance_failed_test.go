@@ -30,6 +30,26 @@ func TestBalanceFailedKeepsErrorsAndTail(t *testing.T) {
 	}
 }
 
+func TestBalanceFailedNeverDropsErrorLines(t *testing.T) {
+	var b strings.Builder
+	for i := 0; i < 60; i++ {
+		fmt.Fprintf(&b, "src/f%d.c:1:1: error: undeclared identifier thing%d in this scope\n", i, i)
+		if i%10 == 0 {
+			b.WriteString("  note: some context line that is not a failure at all here\n")
+		}
+	}
+	in := []byte(b.String())
+	if len(in) < 4000 || len(in) > 6000 {
+		t.Fatalf("fixture is %d bytes", len(in))
+	}
+	out, _ := BalanceFailed(in) // cut or whole, every error line stays
+	for i := 0; i < 60; i++ {
+		if !strings.Contains(string(out), fmt.Sprintf("identifier thing%d in", i)) {
+			t.Fatalf("error line %d dropped", i)
+		}
+	}
+}
+
 func TestBalanceFailedSmallStaysWhole(t *testing.T) {
 	in := []byte("a\nb\nerror: x\n")
 	if _, ok := BalanceFailed(in); ok {
