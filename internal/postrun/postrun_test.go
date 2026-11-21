@@ -304,7 +304,7 @@ func TestCompact_InnerAndLeadingFamily(t *testing.T) {
 		{"cd compound go test exit 1 stays unextracted", "cd repo && go test ./...", goTestOut.String(), 1, execwrap.FamilyNone, false},
 		{"abs_path git status", "/opt/homebrew/bin/git status", gitStatusOut.String(), 0, execwrap.FamilyGitStatus, true},
 		{"quoted go test", `CGO_ENABLED=0 go test -run "TestCase" ./...`, goTestOut.String(), 0, execwrap.FamilyGoTest, true},
-		{"pipe stays unextracted", "go test ./... | tail -5", goTestOut.String(), 0, execwrap.FamilyNone, false},
+		{"tee pipe stays unextracted", "go test ./... | tee out.log", goTestOut.String(), 0, execwrap.FamilyNone, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			in := hookport.ToolOutput{Category: core.CategoryShell, Command: tc.cmd, Stdout: tc.stdout, HasStdout: true, ExitCode: tc.exit}

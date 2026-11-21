@@ -148,7 +148,7 @@ func compactShell(in hookport.ToolOutput, o Options) Result {
 	res := Result{Considered: true, Family: family, ExitCode: exit, Output: in}
 	if family == execwrap.FamilyNone {
 		res.Inner, res.Kind = execwrap.CompoundShape(in.Command)
-		if fam, extractedArgv := extractPostRunFamily(in.Command, exit); fam != execwrap.FamilyNone {
+		if fam, extractedArgv := extractPipedPostRunFamily(in.Command, exit); fam != execwrap.FamilyNone && !keepsLimitedRows(fam, in.Command, in.Stdout) {
 			family, argv = fam, extractedArgv
 			res.Family = fam
 		}
@@ -169,6 +169,9 @@ func compactShell(in hookport.ToolOutput, o Options) Result {
 		out, cut = execwrap.CutSearch(in.Command, []byte(in.Stdout), exit, o.Keep, o.Session)
 	}
 	balanced := o.Balanced && exit == 0
+	if res.Family != execwrap.FamilyNone && execwrap.WithinRequestedLimit(in.Command, []byte(in.Stdout)) {
+		balanced = false // the agent's head/tail already chose these rows
+	}
 	threshold := balanceThreshold(o)
 	if !cut {
 		shapes := execwrap.Shapes{}
