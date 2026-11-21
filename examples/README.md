@@ -20,6 +20,7 @@ downshift cursor < examples/cursor-pretooluse-task.json
 | [claude-code-pretooluse-task.json](claude-code-pretooluse-task.json) | Claude Code | `Task` tool, trivial rename |
 | [cursor-pretooluse-task.json](cursor-pretooluse-task.json) | Cursor | `Task` + `updated_input` shape |
 | [claude-code-pretooluse-session.json](claude-code-pretooluse-session.json) | Claude Code | Same task with an explicit `session_models` list in the payload. Without a `[tier=small]` hint or a declared policy the spawn stays on the requested model (owner decision O8: the orchestrator chooses, Downshift applies); with the hint it moves down to `haiku` |
+| [codex-pretooluse-spawn.json](codex-pretooluse-spawn.json) | Codex | `spawn_agent` call. The smoke asserts a row with `harness=codex` and `entry=hook` |
 | [kiro-ide-pretooluse.json](kiro-ide-pretooluse.json) | Kiro IDE | Sample PreToolUse payload shape (no `model` field). Kiro is observation-only: Downshift logs but cannot rewrite |
 | [kiro-steering-advisory.json](kiro-steering-advisory.json) | Kiro IDE | Example hook config with `observe` action and steering advisory prompt |
 
