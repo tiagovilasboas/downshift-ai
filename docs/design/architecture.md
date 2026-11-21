@@ -234,7 +234,7 @@ points down or sideways to an inner package, and `core` never points back out.
  │                           │   │ telemetry · hookport · childend       │
  │                           │   │ contextopt · sensor · mcp/*           │
  │                           │   │ outcome · accounting · postrun        │
- │                           │   │ cursorbridge · workers · plan         │
+ │                           │   │ workers · plan                        │
  │                           │   │ shellwrap · execwrap (compressor)     │
  └───────────────────────────┘   └───────────────────────────────────────┘
  leaf packages used by the layers above: classify semantic quotamodel paths

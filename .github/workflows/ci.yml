@@ -72,10 +72,12 @@ jobs:
           GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
         run: |
           eval "$(bash scripts/ci-classify-changes.sh)"
-          echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
-          echo "go=$go" >> "$GITHUB_OUTPUT"
-          echo "python=$python" >> "$GITHUB_OUTPUT"
-          echo "os_sensitive=$os_sensitive" >> "$GITHUB_OUTPUT"
+          {
+            echo "docs_only=$docs_only"
+            echo "go=$go"
+            echo "python=$python"
+            echo "os_sensitive=$os_sensitive"
+          } >> "$GITHUB_OUTPUT"
 
   # The required `test` check, split into parallel jobs so the go test wall no
   # longer runs behind vet/staticcheck/format on one runner. Three jobs:
@@ -153,7 +155,7 @@ jobs:
 
       - name: Test Cursor quota decoder
         if: needs.changes.outputs.docs_only != '1'
-        run: node --test internal/cursorbridge/extension/decoder.test.cjs
+        run: node --test extensions/cursor-quota-bridge/extension/decoder.test.cjs
 
   test-shard:
     needs: changes
@@ -198,6 +200,8 @@ jobs:
           fi
           echo "Shard $SHARD_INDEX testing $(echo "$pkgs" | wc -l | tr -d ' ') package line(s):"
           echo "$pkgs"
+          # $pkgs is a newline list of packages; split it on purpose.
+          # shellcheck disable=SC2086
           go test $pkgs
 
   # Branch-protection required check. Stays named exactly `test` and stays green
@@ -366,6 +370,8 @@ jobs:
             exit 0
           fi
           echo "Race-testing $(echo "$pkgs" | wc -l | tr -d ' ') package(s) in shard $RACE_SHARD"
+          # $pkgs is a newline list of packages; split it on purpose.
+          # shellcheck disable=SC2086
           go test -race -timeout 15m $pkgs
 
       - name: Test with the race detector (all but internal/core)
@@ -377,6 +383,8 @@ jobs:
             echo "No Go packages to race-test in shard $RACE_SHARD."
             exit 0
           fi
+          # $pkgs is a newline list of packages; split it on purpose.
+          # shellcheck disable=SC2086
           go test -race -timeout 15m $pkgs
 
   # End-to-end battery (`make e2e`: builds ./downshift, then runs
