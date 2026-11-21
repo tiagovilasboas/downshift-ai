@@ -85,8 +85,14 @@ func compactVerboseText(in hookport.ToolOutput, o Options) Result {
 func compactVerboseBody(kind string, raw []byte, threshold int, balanced bool) ([]byte, bool) {
 	cur := raw
 	changed := false
-	if kind == VerboseKindMCP && len(raw) >= compressor.JSONPruneMinBytes {
-		if r := compressor.CompressCommandOutput(raw, compressor.FormatJSONPrune, 0); r.Applied {
+	if kind == VerboseKindMCP {
+		if u, ok := compressor.UnwrapJSONResult(cur); ok {
+			cur = u
+			changed = true
+		}
+	}
+	if kind == VerboseKindMCP && len(cur) >= compressor.JSONPruneMinBytes {
+		if r := compressor.CompressCommandOutput(cur, compressor.FormatJSONPrune, 0); r.Applied {
 			cur = r.Output
 			changed = true
 		}
