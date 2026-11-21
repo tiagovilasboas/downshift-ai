@@ -9,12 +9,23 @@ import "strings"
 // of a run of changes (git's default is 3).
 const contextLines = 2
 
+// largeDiffBytes is the diff size from which context shrinks to
+// largeContextLines: a big diff gains most from fewer unchanged lines.
+const (
+	largeDiffBytes    = 8 << 10
+	largeContextLines = 1
+)
+
 // rewriteUnifiedDiff walks a unified diff (optionally preceded by a git show
 // commit/metadata block, kept verbatim when keepPreamble is true) and emits a
 // compacted version. It returns (output, fileCount, recognized). recognized is
 // false when the input contains no "diff --git" file section at all.
 func rewriteUnifiedDiff(input []byte, keepPreamble bool) ([]byte, int, bool) {
 	lines := strings.Split(strings.TrimSuffix(string(input), "\n"), "\n")
+	ctx := contextLines
+	if len(input) > largeDiffBytes {
+		ctx = largeContextLines
+	}
 
 	var b strings.Builder
 	files := 0
@@ -26,7 +37,7 @@ func rewriteUnifiedDiff(input []byte, keepPreamble bool) ([]byte, int, bool) {
 		if !haveHunk {
 			return
 		}
-		for _, l := range trimContext(hunk) {
+		for _, l := range trimContext(hunk, ctx) {
 			b.WriteString(l)
 			b.WriteByte('\n')
 		}
@@ -78,10 +89,10 @@ func rewriteUnifiedDiff(input []byte, keepPreamble bool) ([]byte, int, bool) {
 
 // trimContext collapses leading/trailing/interior runs of unchanged context
 // lines (those starting with a space, or the "\ No newline at end of file"
-// marker) to at most contextLines, while keeping every +/- change line. A run
+// marker) to at most keep, while keeping every +/- change line. A run
 // of context longer than 2*contextLines between two changes is replaced by the
 // first contextLines, an elision marker, and the last contextLines.
-func trimContext(body []string) []string {
+func trimContext(body []string, keep int) []string {
 	isContext := func(l string) bool {
 		return l == "" || strings.HasPrefix(l, " ") || strings.HasPrefix(l, `\ `)
 	}
@@ -103,15 +114,15 @@ func trimContext(body []string) []string {
 
 	var out []string
 
-	// Leading context: keep at most contextLines immediately before first change.
+	// Leading context: keep at most keep immediately before first change.
 	lead := body[:first]
-	if len(lead) > contextLines {
-		lead = lead[len(lead)-contextLines:]
+	if len(lead) > keep {
+		lead = lead[len(lead)-keep:]
 	}
 	out = append(out, lead...)
 
 	// Middle: walk from first change to last change, collapsing interior
-	// context runs that exceed 2*contextLines.
+	// context runs that exceed 2*keep.
 	mid := body[first : last+1]
 	i := 0
 	for i < len(mid) {
@@ -126,20 +137,20 @@ func trimContext(body []string) []string {
 			j++
 		}
 		run := mid[i:j]
-		if len(run) > 2*contextLines {
-			out = append(out, run[:contextLines]...)
+		if len(run) > 2*keep {
+			out = append(out, run[:keep]...)
 			out = append(out, "...")
-			out = append(out, run[len(run)-contextLines:]...)
+			out = append(out, run[len(run)-keep:]...)
 		} else {
 			out = append(out, run...)
 		}
 		i = j
 	}
 
-	// Trailing context: keep at most contextLines immediately after last change.
+	// Trailing context: keep at most keep immediately after last change.
 	trail := body[last+1:]
-	if len(trail) > contextLines {
-		trail = trail[:contextLines]
+	if len(trail) > keep {
+		trail = trail[:keep]
 	}
 	out = append(out, trail...)
 

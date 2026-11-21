@@ -101,10 +101,11 @@ func CompactCapturedShaped(argv []string, family Family, data []byte, exitCode i
 	// Unclassified output first gets the lossless pass (ANSI, progress,
 	// repeats); the balanced cut then reads that text, while CCR keeps the
 	// original bytes.
+	var kept string
 	work, lossless := data, false
 	if family == FamilyNone {
 		work, lossless = compressor.LosslessText(data)
-		if grouped, ok := shapes.rewrite(work, balanced); ok {
+		if grouped, ok := shapes.rewriteStored(work, balanced, captureKept(keep, &kept, session)); ok {
 			work, lossless = grouped, true
 			if shapes.Limited {
 				balanced = false // inside the agent's own limit: group, never cut
@@ -115,7 +116,6 @@ func CompactCapturedShaped(argv []string, family Family, data []byte, exitCode i
 			keep = func([]byte) (string, bool) { return stored(data) }
 		}
 	}
-	var kept string
 	bal := balanceConfig{threshold: balanceThreshold}
 	h := compactHeld(argv, work, family, exitCode, false, captureKept(keep, &kept, session), nil, balanced, bal)
 	if lossless && !h.compacted {
