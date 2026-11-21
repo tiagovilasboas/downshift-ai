@@ -82,6 +82,8 @@ type RoutingView struct {
 	QuotaByHarness map[string]QuotaUnits `json:"quota_by_harness,omitempty"`
 	// bySpawn is keyed by harness + "\n" + decision key.
 	bySpawn map[string]RoutingRow
+	// originBySpawn has the same key: the placement rule (OriginOf) per spawn.
+	originBySpawn map[string]SpawnOrigin
 }
 
 // Spawn returns the figures of the spawn made by decision d.
@@ -172,7 +174,7 @@ func accumulateRoutingSpawn(ev Event, decisions map[linkKey]Event, refuted map[l
 }
 
 func buildRoutingView(spawns map[string]*spawnPlacement) RoutingView {
-	v := RoutingView{ByHarness: map[string]RoutingRow{}, ByAgentType: map[string]RoutingRow{}, QuotaByHarness: map[string]QuotaUnits{}, bySpawn: map[string]RoutingRow{}}
+	v := RoutingView{ByHarness: map[string]RoutingRow{}, ByAgentType: map[string]RoutingRow{}, QuotaByHarness: map[string]QuotaUnits{}, bySpawn: map[string]RoutingRow{}, originBySpawn: map[string]SpawnOrigin{}}
 	for id, sp := range spawns {
 		if sp.quota.Observed() {
 			q := v.QuotaByHarness[sp.harness]
@@ -181,6 +183,7 @@ func buildRoutingView(spawns map[string]*spawnPlacement) RoutingView {
 		}
 		t := sp.tokens()
 		v.bySpawn[id] = t
+		v.originBySpawn[id] = OriginOf(sp.onSession, sp.belowSession, sp.rewritten)
 		h := v.ByHarness[sp.harness]
 		h.Add(t)
 		v.ByHarness[sp.harness] = h
