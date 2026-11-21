@@ -40,7 +40,7 @@ var consoleCommands = []command.Spec{
 	{Args: []string{"export"}, Group: "savings", Summary: "Counts and token totals to share (no prompts or paths)"},
 	{Args: []string{"plan"}, Group: "savings", Summary: "Validate a plan from stdin and print a table", Terminal: true},
 	{Args: []string{"compact", "--"}, Group: "savings", Summary: "Type a command after -- to cut its output to PASS/FAIL"},
-	{Args: []string{"discover"}, Group: "savings", Summary: "Commands that ran bare but the compactor would have cut"},
+	{Args: []string{"discover"}, Group: "experimental", Summary: "Commands that ran bare but the compactor would have cut"},
 	{Args: []string{"retrieve"}, Group: "savings", Summary: "Print the full output the compactor kept (retrieve <id>)"},
 
 	// Models and quota
@@ -51,7 +51,7 @@ var consoleCommands = []command.Spec{
 	{Args: []string{"models", "pull"}, Group: "models", Summary: "Write the user catalog.json under the state dir", Writes: true},
 	{Args: []string{"route", "--harness"}, Group: "models", Summary: "Type a harness id: what would apply for one spawn"},
 	{Args: []string{"quota", "status", "--harness"}, Group: "models", Summary: "Type a harness id: budget evidence and freshness"},
-	{Args: []string{"gateway", "status"}, Group: "models", Summary: "Check local companion routers"},
+	{Args: []string{"gateway", "status"}, Group: "experimental", Summary: "Check local companion routers"},
 	{Args: []string{"mcp", "serve"}, Group: "models", Summary: "Run the MCP server on stdio (Ctrl-C returns here)", Terminal: true},
 
 	// Rules
