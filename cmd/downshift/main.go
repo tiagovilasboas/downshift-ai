@@ -68,6 +68,11 @@ func main() {
 		os.Exit(runRetrieve(args[1:], os.Stdout, os.Stderr))
 	}
 
+	// ccr samples prints the local measurement samples; no catalog, no console.
+	if args[0] == "ccr" {
+		os.Exit(runCCR(args[1:], os.Stdout, os.Stderr))
+	}
+
 	// Load the effective catalog once at startup — embedded JSON with optional
 	// user override at ~/.harness-downshift/catalog.json. Fail-open: if the
 	// user file is invalid, the embedded catalog is used automatically.

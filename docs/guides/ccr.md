@@ -155,6 +155,19 @@ The MCP tool `retrieve` takes `{id, grep, head, tail, lines}` and returns the sa
   (AWS STS session credentials, SSM parameter values, and AWS environment variables)
   are redacted in place to `[REDACTED]`.
 
+## Samples of uncompressed output
+
+To find where the next compaction gain is, the post-run hook keeps a raw copy of 1 in 10
+outputs that no compressor handled (`no_compressor`) and that are 4 KiB or more. The pick is
+a hash of the (redacted) content, so the same output always gets the same answer. Samples
+live apart from the store, in `~/.downshift/ccr-samples/`, for 24 hours, pruned oldest first
+to 20 MB. Each has a sidecar with only the family, a label (the command head or inner
+program code telemetry already logs), the byte size and the time: no command, path or session text.
+
+`downshift ccr samples` prints, per label, the sample count, the bytes and the share the
+lossless pass would cut. On by default; `DOWNSHIFT_CCR_SAMPLES=0`, `"ccr_samples": false`
+in `context-optimization.json`, or `DOWNSHIFT_CCR=0` turns it off.
+
 ## Privacy
 
 CCR writes command output to disk, which telemetry never does; that is why it was
