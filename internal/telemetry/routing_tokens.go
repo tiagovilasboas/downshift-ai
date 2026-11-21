@@ -103,14 +103,15 @@ type spawnPlacement struct {
 
 func (p *spawnPlacement) tokens() RoutingRow {
 	t := RoutingRow{CacheRead: p.cacheRead}
+	origin := OriginOf(p.onSession, p.belowSession, p.rewritten)
 	switch {
-	case p.onSession:
+	case origin != OriginUnattributed:
 		t.Spawns, t.Billable = 1, p.billable
-		if p.belowSession {
+		if origin != OriginOrchestratorSession {
 			t.BelowSpawns, t.BelowBillable = 1, p.billable
-			if p.rewritten {
-				t.RewrittenSpawns, t.RewrittenBillable = 1, p.billable
-			}
+		}
+		if origin == OriginDownshiftRewrite {
+			t.RewrittenSpawns, t.RewrittenBillable = 1, p.billable
 		}
 	case p.onRequested:
 		t.FallbackSpawns, t.FallbackBillable = 1, p.billable
