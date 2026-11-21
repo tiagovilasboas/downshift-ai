@@ -98,7 +98,7 @@ func CompactCapturedWithThreshold(argv []string, family Family, data []byte, exi
 	work, lossless := data, false
 	if family == FamilyNone {
 		work, lossless = compressor.LosslessText(data)
-		if grouped, ok := compressor.GroupGrepLines(work); ok {
+		if grouped, ok := compressor.GroupGrepLines(work); ok && balanced {
 			work, lossless = grouped, true
 		}
 		if lossless && keep != nil {
