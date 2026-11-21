@@ -46,6 +46,7 @@ func postRunAnswer(port hookport.Port, raw []byte, prev any) (out any) {
 	})
 	if res.Considered {
 		recordPostRun(port.ID, in.Session, res)
+		maybeSample(sampleSink(), res, in.Stdout)
 	}
 	if !res.Replaced {
 		return prev

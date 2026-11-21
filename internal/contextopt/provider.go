@@ -118,6 +118,10 @@ type Config struct {
 	// CCRFailures keeps the raw output of a compacted failed command. On by
 	// default; an explicit false turns it off. DOWNSHIFT_CCR_FAILURES overrides.
 	CCRFailures *bool `json:"ccr_failures,omitempty"`
+	// CCRSamples keeps a local raw sample of 1 in N outputs no compressor
+	// handled, for measurement. On by default; an explicit false turns it off.
+	// DOWNSHIFT_CCR_SAMPLES overrides; DOWNSHIFT_CCR=0 turns it off.
+	CCRSamples *bool `json:"ccr_samples,omitempty"`
 	// Balanced lets the Compactor cut a large output with loss when its raw
 	// output is kept in CCR, so the cut part stays retrievable. On by default:
 	// absent or true; an explicit false keeps every output lossless.
