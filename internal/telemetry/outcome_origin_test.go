@@ -37,3 +37,18 @@ func TestOutcomesByOriginEmpty(t *testing.T) {
 		t.Fatalf("got %+v", got)
 	}
 }
+
+func TestOriginOutcomeNotMeasurableCountsAsAcceptedButNotInCheckedShare(t *testing.T) {
+	o := OriginOutcome{Outcomes: OutcomeCounts{AcceptedChecked: 1, AcceptedUnchecked: 1, AcceptedNotMeasurable: 2}}
+	if got := o.Accepted(); got != 4 {
+		t.Fatalf("Accepted() = %d, want 4", got)
+	}
+	share, ok := o.CheckedShare()
+	if !ok || share != 0.5 {
+		t.Fatalf("CheckedShare() = %v, %v; want 0.5, true", share, ok)
+	}
+	only := OriginOutcome{Outcomes: OutcomeCounts{AcceptedNotMeasurable: 3}}
+	if _, ok := only.CheckedShare(); ok {
+		t.Fatal("CheckedShare() ok with only not-measurable tasks")
+	}
+}
