@@ -72,6 +72,10 @@ EFFICIENCY PER HARNESS (all time)
       completed: 0 of 0 ended · rework: unobserved (no spawn ended)
       by tier: small 0 (0%) · mid 0 (0%) · frontier 0 (0%) · unknown 2 (100%)
 
+OUTCOMES BY ORIGIN (observational)
+   Observational: origins are not randomized, so this does not show that a cheaper model causes fewer or more failures.
+   unattributed (small sample, n<30): n=8 accepted=1 checked=0% check_failed=0 reworked+errored=0 unknown=7
+
 WHY SPAWNS CHANGED (all time)
    claude-code: 6 spawns
       by verdict: hint_down 1 · kept 1 · profile 1 · refused_config 1 · rule 1

@@ -62,6 +62,29 @@ session). It only measures: the worker token budget stays opt-in and off.
 Exec events carry `harness` and `entry` (hook or direct). `accounting.AggregateByHarness`
 groups the compactor totals by harness. Telemetry events carry the harness too.
 
+### Exec log `entry` codes
+
+| `entry` | Written by |
+|---|---|
+| `hook` | the pre-run hook wrapped the command (`--session=` set by the adapter) |
+| `direct` | `downshift compact` run by the agent or the user, outside any hook |
+| `post_tool_use` | the post-run hook (`postrun.Entry`): the command ran unwrapped and its output was compacted afterwards. The row also carries `inner`/`kind` (compound commands) or `head`/`line_bucket` (no family), codes only |
+| absent | written before the field existed |
+
+### Why a row is under the `unknown` harness
+
+`report` adds `unknown_reasons` (JSON) and "Why the harness is unknown" (text,
+Markdown) to the `unknown` harness's compaction detail. Codes, derived from
+`entry` and never stored as text:
+
+| Code | Meaning |
+|---|---|
+| `no_harness_env` | `entry` is `direct`: compact ran outside any hook |
+| `post_tool_use` | `entry` is `post_tool_use`: the post-run hook found no harness |
+| `hook_no_harness` | `entry` is `hook`, yet no harness was identified |
+| `legacy_row` | no `entry`: written before the field existed |
+| `skip_row` | a hook skip row (records a reason, no entry) |
+
 ## Price book
 
 The catalog (`internal/catalog/catalog.json`) keeps model prices as an internal
