@@ -44,6 +44,11 @@ type Report struct {
 	// decisions that were followed by rework and the policy key that turns
 	// the verdict off.
 	ByVerdict []VerdictRework `json:"rework_by_verdict,omitempty"`
+	// Outcomes counts the routed tasks per folded outcome (TaskOutcome).
+	Outcomes OutcomeCounts `json:"outcomes"`
+	// OutcomeMatrix folds those outcomes per origin x ran tier x agent type
+	// (observational: groups are not randomized).
+	OutcomeMatrix []OutcomeMatrixRow `json:"outcome_matrix,omitempty"`
 	// Completion says, per harness, whether the end of a child is measurable.
 	Completion []HarnessCompletion `json:"completion"`
 	// Routing is the plan lens: per harness, the billable tokens that ran
@@ -81,13 +86,16 @@ func BuildReport(events []Event, days int) Report {
 	rep.DecisionsByPermissionMode = CountPermissionModes(windowed)
 	verdicts := verdictTally{}
 	g := &rep.Routed
-	for _, t := range BuildTasks(windowed) {
+	tasks := BuildTasks(windowed)
+	rep.OutcomeMatrix = BuildOutcomeMatrix(windowed, tasks, rep.Routing)
+	for _, t := range tasks {
 		if t.Group != GroupRouted {
 			rep.Excluded++
 			continue
 		}
 		g.Spawns++
 		verdicts.add(t)
+		rep.Outcomes.addTask(t)
 		if t.Completed() || t.Failed() {
 			g.Ended++
 		}

@@ -35,7 +35,6 @@ Models and quota
   downshift playbook list|show|edit|add|remove|restore|check   The working rules a delegated worker receives
   downshift models discover      Ask each harness which models the account can use; hooks read the result
   downshift quota status         Inspect budget evidence and freshness for a harness/model
-  downshift gateway [status]     Check local companion routers (9router)
 
 Plumbing (your harness or statusline calls these, you do not)
   downshift claude-code          Run as a Claude Code PreToolUse hook (reads stdin)
@@ -63,6 +62,8 @@ Experimental (kept, not part of the routing pitch; may change or move)
   downshift context metrics      Show token reduction metrics from active provider
   downshift context compress     Compress tool output from stdin (observe/safe)
   downshift context benchmark    Compare 4 optimization scenarios (routing vs compression)
+  downshift discover [--since=D] [--json]   Commands the compactor would have changed but that ran bare (frozen)
+  downshift gateway [status]     Check local companion routers (9router) (frozen)
   downshift learning stats|suggestions|export|clear   Compressor learning store: unrecognised outputs, candidate compressors (in development)
   downshift loop --task=T --sensor=CMD   Sensor retry loop: runs a check and records the outcome per task (no automatic upgrade since O8)
   go build -o dsmon ./cmd/dsmon  Live terminal widget (separate binary; downshift watch is the supported live view)

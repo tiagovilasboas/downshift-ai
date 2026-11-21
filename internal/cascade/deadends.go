@@ -8,8 +8,6 @@
 package cascade
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -23,7 +21,7 @@ import (
 // DeadEnd records one failed subagent execution or test run.
 type DeadEnd struct {
 	SessionID   string    `json:"session_id"`
-	Fingerprint string    `json:"fingerprint"` // SHA256 of task description or command
+	Fingerprint string    `json:"fingerprint"` // keyed digest, see TaskFingerprint
 	FailedModel string    `json:"failed_model,omitempty"`
 	Reason      string    `json:"reason"`
 	Timestamp   time.Time `json:"timestamp"`
@@ -32,16 +30,6 @@ type DeadEnd struct {
 var (
 	mu sync.RWMutex
 )
-
-// TaskFingerprint computes a 16-hex deterministic hash of a task or command.
-func TaskFingerprint(text string) string {
-	cleaned := strings.TrimSpace(strings.ToLower(text))
-	if cleaned == "" {
-		return ""
-	}
-	h := sha256.Sum256([]byte(cleaned))
-	return hex.EncodeToString(h[:8])
-}
 
 // deadEndsPath returns the path to dead_ends.json in the state directory.
 func deadEndsPath() (string, error) {
@@ -76,8 +64,8 @@ func acquireLock() func() {
 // Thread-safe, multi-process safe and fail-open.
 func RecordFailure(sessionID, taskText, failedModel, reason string) {
 	fp := TaskFingerprint(taskText)
-	if sessionID == "" && fp == "" {
-		return
+	if sessionID == "" && fp == "" || fp == "" && !blank(taskText) {
+		return // no task and no session, or no salt to key the task by
 	}
 	p, err := deadEndsPath()
 	if err != nil {
@@ -123,6 +111,9 @@ func RecordFailure(sessionID, taskText, failedModel, reason string) {
 // HasRecentFailure checks if a matching task or session failed within the given duration.
 func HasRecentFailure(sessionID, taskText string, window time.Duration) (DeadEnd, bool) {
 	fp := TaskFingerprint(taskText)
+	if fp == "" && !blank(taskText) {
+		return DeadEnd{}, false
+	}
 	p, err := deadEndsPath()
 	if err != nil {
 		return DeadEnd{}, false
@@ -184,8 +175,15 @@ func loadEntries(path string) []DeadEnd {
 	if err != nil {
 		return nil
 	}
-	var entries []DeadEnd
-	_ = json.Unmarshal(data, &entries)
+	var all []DeadEnd
+	_ = json.Unmarshal(data, &all)
+	entries := all[:0]
+	for _, e := range all {
+		// Drop the unsalted hashes older builds wrote.
+		if e.Fingerprint == "" || strings.HasPrefix(e.Fingerprint, fingerprintPrefix) {
+			entries = append(entries, e)
+		}
+	}
 	return entries
 }
 

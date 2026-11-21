@@ -17,7 +17,7 @@ var modelCommands = []Command{
 	{Name: "policy", Summary: "Validate the routing policy without routing anything", Flags: f("--dry-run", "--yes|-y", "--harness", "--bare")},
 	{Name: "playbook", Summary: "Edit the working rules a delegated worker receives"},
 	{Name: "plan", Summary: "Validate a delegation plan and print it as a table", Flags: f("--json")},
-	{Name: "gateway", Summary: "Check local companion routers (9router)", Flags: f("--json", "--endpoint")},
+	{Name: "gateway", Summary: "Check local companion routers (9router)", Flags: f("--json", "--endpoint"), Experimental: true},
 	{Name: "mcp", Summary: "Run the MCP server the orchestrator can ask"},
 	{Name: "learning", Summary: "Compressor learning status", Experimental: true},
 	{Name: "context", Summary: "Context optimisation status, providers and compression (experimental)", Experimental: true},

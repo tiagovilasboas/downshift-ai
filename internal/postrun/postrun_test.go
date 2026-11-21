@@ -195,7 +195,11 @@ func TestCompact_SearchLedCut(t *testing.T) {
 		t.Errorf("cut within the head count the agent asked for:\n%s", res.Output.Stdout)
 	}
 	in.Command = "grep -rn keep internal && sed -n 1,60p rows.txt"
-	in.Stdout = stdout + strings.Repeat("plain file text line\n", 40)
+	var rows strings.Builder
+	for i := 1; i <= 40; i++ {
+		fmt.Fprintf(&rows, "plain file text line %d\n", i) // distinct: identical rows would be folded losslessly
+	}
+	in.Stdout = stdout + rows.String()
 	if res := Compact(allCaps, in, Options{Keep: keepOK, Balanced: true}); res.Replaced {
 		t.Errorf("chained file text cut:\n%s", res.Output.Stdout)
 	}
@@ -241,9 +245,9 @@ func TestCompact_PostRun4KBBand(t *testing.T) {
 		t.Errorf("5 KB nonzero exit was cut: replaced=%v", failRes.Replaced)
 	}
 
-	// < 25% gain stays whole (100 lines * ~55 bytes = ~5.5 KB; balanceLog keeps 60+80 >= 100 lines).
+	// < 25% gain stays whole (80 lines * ~55 bytes = ~4.4 KB; the line cut keeps all, the byte cut saves ~20%).
 	var smallGain strings.Builder
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 80; i++ {
 		fmt.Fprintf(&smallGain, "row %03d: %s\n", i, strings.Repeat("x", 45))
 	}
 	sg := smallGain.String()

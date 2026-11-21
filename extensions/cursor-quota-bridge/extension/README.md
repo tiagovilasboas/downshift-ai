@@ -22,7 +22,7 @@ For a future compatible host or reproduction of this limitation, package and
 install explicitly from the Downshift repository root:
 
 ```bash
-python3 internal/cursorbridge/package.py /tmp/downshift-cursor-quota-bridge.vsix
+python3 extensions/cursor-quota-bridge/package.py /tmp/downshift-cursor-quota-bridge.vsix
 cursor --install-extension /tmp/downshift-cursor-quota-bridge.vsix
 cursor --new-window --enable-proposed-api tiagovilasboas.downshift-cursor-quota-bridge /path/to/trusted/workspace
 ```

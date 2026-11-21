@@ -31,6 +31,11 @@ type HarnessCompaction struct {
 	// metacharacter class. Both are absent when no row carries the field.
 	PassthroughDetails []ReasonCount `json:"passthrough_details,omitempty"`
 	SkipMetachars      []ReasonCount `json:"skip_metachars,omitempty"`
+	// UnknownReasons says why the rows of the unknown harness have no harness
+	// (Unknown* codes). Present only on that row.
+	UnknownReasons []ReasonCount `json:"unknown_reasons,omitempty"`
+	// Other splits the `other` family by program; absent when it has no run.
+	Other *OtherBreakdown `json:"other,omitempty"`
 }
 
 // FamilyCompaction is one command family in one harness. RawTokens is the
@@ -59,16 +64,23 @@ func BuildCompactionDetail(execEvents []execwrap.Event, skips []execwrap.SkipEve
 			h = UnknownHarness
 		}
 		if acc[h] == nil {
-			acc[h] = &detailAcc{families: map[string]*FamilyCompaction{}, rawBytes: map[string]int64{}, savedBytes: map[string]int64{}, notCompacted: map[string]int64{}, skipped: map[string]int64{}, details: map[string]int64{}, metachars: map[string]int64{}}
+			acc[h] = &detailAcc{families: map[string]*FamilyCompaction{}, rawBytes: map[string]int64{}, savedBytes: map[string]int64{}, notCompacted: map[string]int64{}, skipped: map[string]int64{}, details: map[string]int64{}, metachars: map[string]int64{}, other: otherAcc{}}
 		}
 		return acc[h]
 	}
 	for _, ev := range scopeExec(execEvents, scope, now) {
-		get(ev.Harness).addRun(ev)
+		a := get(ev.Harness)
+		a.addRun(ev)
+		if isUnknownHarness(ev.Harness) {
+			a.addUnknown(UnknownHarnessReason(ev.Entry))
+		}
 	}
 	for _, sk := range scopeSkips(skips, scope, now) {
 		a := get(sk.Harness)
 		a.skipped[sk.Reason]++
+		if isUnknownHarness(sk.Harness) {
+			a.addUnknown(UnknownSkipRow)
+		}
 		if sk.Metachar != "" {
 			a.metachars[sk.Metachar]++
 		}
@@ -94,6 +106,8 @@ type detailAcc struct {
 	families              map[string]*FamilyCompaction
 	notCompacted, skipped map[string]int64
 	details, metachars    map[string]int64
+	unknownWhy            map[string]int64
+	other                 otherAcc
 }
 
 func (a *detailAcc) addRun(ev execwrap.Event) {
@@ -105,6 +119,9 @@ func (a *detailAcc) addRun(ev execwrap.Event) {
 	if f == nil {
 		f = &FamilyCompaction{Family: fam}
 		a.families[fam] = f
+	}
+	if fam == "other" {
+		a.other.add(ev)
 	}
 	a.commands++
 	f.Commands++
@@ -139,6 +156,7 @@ func (a *detailAcc) row(h string) HarnessCompaction {
 		}
 		return a.Family < b.Family
 	})
+	r.Other = a.other.breakdown()
 	r.NotCompacted = sortedReasons(a.notCompacted)
 	r.Skipped = sortedReasons(a.skipped)
 	if len(a.details) > 0 {
@@ -146,6 +164,9 @@ func (a *detailAcc) row(h string) HarnessCompaction {
 	}
 	if len(a.metachars) > 0 {
 		r.SkipMetachars = sortedReasons(a.metachars)
+	}
+	if len(a.unknownWhy) > 0 {
+		r.UnknownReasons = sortedReasons(a.unknownWhy)
 	}
 	return r
 }

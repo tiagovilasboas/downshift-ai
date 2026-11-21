@@ -58,6 +58,8 @@ COMPACTION DETAIL PER HARNESS (tokens are bytes / 4, an estimate)
    claude-code: 1 commands, 1 compacted
       family             commands compacted output tokens tokens avoided   cut
       other                     1         1          1.1k           1.0k   91%
+      inside other: program                           runs output tokens net saved  lines per run
+                    unknown (before head telemetry)      1          1.1k       91%  -
 
 EFFICIENCY PER HARNESS (all time)
    More work done, less premium intelligence consumed. Compactor tokens: see the section above.
@@ -69,6 +71,10 @@ EFFICIENCY PER HARNESS (all time)
       premium preserved: unobserved
       completed: 0 of 0 ended · rework: unobserved (no spawn ended)
       by tier: small 0 (0%) · mid 0 (0%) · frontier 0 (0%) · unknown 2 (100%)
+
+OUTCOMES BY ORIGIN (observational)
+   Observational: origins are not randomized, so this does not show that a cheaper model causes fewer or more failures.
+   unattributed (small sample, n<30): n=8 accepted=1 checked=0% check_failed=0 reworked+errored=0 unknown=7
 
 WHY SPAWNS CHANGED (all time)
    claude-code: 6 spawns

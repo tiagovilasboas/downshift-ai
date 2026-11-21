@@ -94,6 +94,7 @@ func recordPostRun(harness, session string, res postrun.Result) {
 	}
 	ev.Harness, ev.Entry, ev.Client = harness, postrun.Entry, envClient()
 	ev.Inner, ev.Kind = res.Inner, res.Kind
+	ev.Head, ev.LineBucket = res.Head, res.LineBucket
 	_ = execwrap.Append(path, ev)
 }
 

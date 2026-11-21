@@ -183,7 +183,7 @@ hold. Equal-tier ties use the catalog output-token price; this does not promise
 lower total cost for every input/output mix. A classified downshift cannot become
 a higher-tier selection, or a higher output-token price within the same tier,
 because another pool exhausted.
-See the [bridge instructions](../../internal/cursorbridge/extension/README.md).
+See the [bridge instructions](../../extensions/cursor-quota-bridge/extension/README.md).
 
 Runtime validation on Cursor **3.24.9** found that the proposed `cursor` API is
 restricted to built-in extensions. The external experimental bridge failed at

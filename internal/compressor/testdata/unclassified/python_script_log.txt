@@ -1,0 +1,369 @@
+2026-03-01 10:00:00 INFO worker-0 processed batch 0 rows=100
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:00:01 INFO worker-1 processed batch 1 rows=101
+2026-03-01 10:00:02 INFO worker-2 processed batch 2 rows=102
+2026-03-01 10:00:03 INFO worker-3 processed batch 3 rows=103
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:00:04 INFO worker-0 processed batch 4 rows=104
+2026-03-01 10:00:05 INFO worker-1 processed batch 5 rows=105
+2026-03-01 10:00:06 INFO worker-2 processed batch 6 rows=106
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:00:07 INFO worker-3 processed batch 7 rows=107
+2026-03-01 10:00:08 INFO worker-0 processed batch 8 rows=108
+2026-03-01 10:00:09 INFO worker-1 processed batch 9 rows=109
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:00:10 INFO worker-2 processed batch 10 rows=110
+2026-03-01 10:00:11 INFO worker-3 processed batch 11 rows=111
+2026-03-01 10:00:12 INFO worker-0 processed batch 12 rows=112
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:00:13 INFO worker-1 processed batch 13 rows=113
+2026-03-01 10:00:14 INFO worker-2 processed batch 14 rows=114
+2026-03-01 10:00:15 INFO worker-3 processed batch 15 rows=115
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:00:16 INFO worker-0 processed batch 16 rows=116
+2026-03-01 10:00:17 INFO worker-1 processed batch 17 rows=100
+2026-03-01 10:00:18 INFO worker-2 processed batch 18 rows=101
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:00:19 INFO worker-3 processed batch 19 rows=102
+2026-03-01 10:00:20 INFO worker-0 processed batch 20 rows=103
+2026-03-01 10:00:21 INFO worker-1 processed batch 21 rows=104
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:00:22 INFO worker-2 processed batch 22 rows=105
+2026-03-01 10:00:23 INFO worker-3 processed batch 23 rows=106
+2026-03-01 10:00:24 INFO worker-0 processed batch 24 rows=107
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:00:25 INFO worker-1 processed batch 25 rows=108
+2026-03-01 10:00:26 INFO worker-2 processed batch 26 rows=109
+2026-03-01 10:00:27 INFO worker-3 processed batch 27 rows=110
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:00:28 INFO worker-0 processed batch 28 rows=111
+2026-03-01 10:00:29 INFO worker-1 processed batch 29 rows=112
+2026-03-01 10:00:30 INFO worker-2 processed batch 30 rows=113
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:00:31 INFO worker-3 processed batch 31 rows=114
+2026-03-01 10:00:32 INFO worker-0 processed batch 32 rows=115
+2026-03-01 10:00:33 INFO worker-1 processed batch 33 rows=116
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:00:34 INFO worker-2 processed batch 34 rows=100
+2026-03-01 10:00:35 INFO worker-3 processed batch 35 rows=101
+2026-03-01 10:00:36 INFO worker-0 processed batch 36 rows=102
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:00:37 INFO worker-1 processed batch 37 rows=103
+2026-03-01 10:00:38 INFO worker-2 processed batch 38 rows=104
+2026-03-01 10:00:39 INFO worker-3 processed batch 39 rows=105
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:00:40 INFO worker-0 processed batch 40 rows=106
+2026-03-01 10:00:41 INFO worker-1 processed batch 41 rows=107
+2026-03-01 10:00:42 INFO worker-2 processed batch 42 rows=108
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:00:43 INFO worker-3 processed batch 43 rows=109
+2026-03-01 10:00:44 INFO worker-0 processed batch 44 rows=110
+2026-03-01 10:00:45 INFO worker-1 processed batch 45 rows=111
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:00:46 INFO worker-2 processed batch 46 rows=112
+2026-03-01 10:00:47 INFO worker-3 processed batch 47 rows=113
+2026-03-01 10:00:48 INFO worker-0 processed batch 48 rows=114
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:00:49 INFO worker-1 processed batch 49 rows=115
+2026-03-01 10:00:50 INFO worker-2 processed batch 50 rows=116
+2026-03-01 10:00:51 INFO worker-3 processed batch 51 rows=100
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:00:52 INFO worker-0 processed batch 52 rows=101
+2026-03-01 10:00:53 INFO worker-1 processed batch 53 rows=102
+2026-03-01 10:00:54 INFO worker-2 processed batch 54 rows=103
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:00:55 INFO worker-3 processed batch 55 rows=104
+2026-03-01 10:00:56 INFO worker-0 processed batch 56 rows=105
+2026-03-01 10:00:57 INFO worker-1 processed batch 57 rows=106
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:00:58 INFO worker-2 processed batch 58 rows=107
+2026-03-01 10:00:59 INFO worker-3 processed batch 59 rows=108
+2026-03-01 10:01:00 INFO worker-0 processed batch 60 rows=109
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:01:01 INFO worker-1 processed batch 61 rows=110
+2026-03-01 10:01:02 INFO worker-2 processed batch 62 rows=111
+2026-03-01 10:01:03 INFO worker-3 processed batch 63 rows=112
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:01:04 INFO worker-0 processed batch 64 rows=113
+2026-03-01 10:01:05 INFO worker-1 processed batch 65 rows=114
+2026-03-01 10:01:06 INFO worker-2 processed batch 66 rows=115
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:01:07 INFO worker-3 processed batch 67 rows=116
+2026-03-01 10:01:08 INFO worker-0 processed batch 68 rows=100
+2026-03-01 10:01:09 INFO worker-1 processed batch 69 rows=101
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:01:10 INFO worker-2 processed batch 70 rows=102
+2026-03-01 10:01:11 INFO worker-3 processed batch 71 rows=103
+2026-03-01 10:01:12 INFO worker-0 processed batch 72 rows=104
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:01:13 INFO worker-1 processed batch 73 rows=105
+2026-03-01 10:01:14 INFO worker-2 processed batch 74 rows=106
+2026-03-01 10:01:15 INFO worker-3 processed batch 75 rows=107
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:01:16 INFO worker-0 processed batch 76 rows=108
+2026-03-01 10:01:17 INFO worker-1 processed batch 77 rows=109
+2026-03-01 10:01:18 INFO worker-2 processed batch 78 rows=110
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:01:19 INFO worker-3 processed batch 79 rows=111
+2026-03-01 10:01:20 INFO worker-0 processed batch 80 rows=112
+2026-03-01 10:01:21 INFO worker-1 processed batch 81 rows=113
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:01:22 INFO worker-2 processed batch 82 rows=114
+2026-03-01 10:01:23 INFO worker-3 processed batch 83 rows=115
+2026-03-01 10:01:24 INFO worker-0 processed batch 84 rows=116
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:01:25 INFO worker-1 processed batch 85 rows=100
+2026-03-01 10:01:26 INFO worker-2 processed batch 86 rows=101
+2026-03-01 10:01:27 INFO worker-3 processed batch 87 rows=102
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:01:28 INFO worker-0 processed batch 88 rows=103
+2026-03-01 10:01:29 INFO worker-1 processed batch 89 rows=104
+2026-03-01 10:01:30 INFO worker-2 processed batch 90 rows=105
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:01:31 INFO worker-3 processed batch 91 rows=106
+2026-03-01 10:01:32 INFO worker-0 processed batch 92 rows=107
+2026-03-01 10:01:33 INFO worker-1 processed batch 93 rows=108
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:01:34 INFO worker-2 processed batch 94 rows=109
+2026-03-01 10:01:35 INFO worker-3 processed batch 95 rows=110
+2026-03-01 10:01:36 INFO worker-0 processed batch 96 rows=111
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:01:37 INFO worker-1 processed batch 97 rows=112
+2026-03-01 10:01:38 INFO worker-2 processed batch 98 rows=113
+2026-03-01 10:01:39 INFO worker-3 processed batch 99 rows=114
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:01:40 INFO worker-0 processed batch 100 rows=115
+2026-03-01 10:01:41 INFO worker-1 processed batch 101 rows=116
+2026-03-01 10:01:42 INFO worker-2 processed batch 102 rows=100
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:01:43 INFO worker-3 processed batch 103 rows=101
+2026-03-01 10:01:44 INFO worker-0 processed batch 104 rows=102
+2026-03-01 10:01:45 INFO worker-1 processed batch 105 rows=103
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:01:46 INFO worker-2 processed batch 106 rows=104
+2026-03-01 10:01:47 INFO worker-3 processed batch 107 rows=105
+2026-03-01 10:01:48 INFO worker-0 processed batch 108 rows=106
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:01:49 INFO worker-1 processed batch 109 rows=107
+2026-03-01 10:01:50 INFO worker-2 processed batch 110 rows=108
+2026-03-01 10:01:51 INFO worker-3 processed batch 111 rows=109
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:01:52 INFO worker-0 processed batch 112 rows=110
+2026-03-01 10:01:53 INFO worker-1 processed batch 113 rows=111
+2026-03-01 10:01:54 INFO worker-2 processed batch 114 rows=112
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:01:55 INFO worker-3 processed batch 115 rows=113
+2026-03-01 10:01:56 INFO worker-0 processed batch 116 rows=114
+2026-03-01 10:01:57 INFO worker-1 processed batch 117 rows=115
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:01:58 INFO worker-2 processed batch 118 rows=116
+2026-03-01 10:01:59 INFO worker-3 processed batch 119 rows=100
+2026-03-01 10:02:00 INFO worker-0 processed batch 120 rows=101
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:02:01 INFO worker-1 processed batch 121 rows=102
+2026-03-01 10:02:02 INFO worker-2 processed batch 122 rows=103
+2026-03-01 10:02:03 INFO worker-3 processed batch 123 rows=104
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:02:04 INFO worker-0 processed batch 124 rows=105
+2026-03-01 10:02:05 INFO worker-1 processed batch 125 rows=106
+2026-03-01 10:02:06 INFO worker-2 processed batch 126 rows=107
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:02:07 INFO worker-3 processed batch 127 rows=108
+2026-03-01 10:02:08 INFO worker-0 processed batch 128 rows=109
+2026-03-01 10:02:09 INFO worker-1 processed batch 129 rows=110
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:02:10 INFO worker-2 processed batch 130 rows=111
+2026-03-01 10:02:11 INFO worker-3 processed batch 131 rows=112
+2026-03-01 10:02:12 INFO worker-0 processed batch 132 rows=113
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:02:13 INFO worker-1 processed batch 133 rows=114
+2026-03-01 10:02:14 INFO worker-2 processed batch 134 rows=115
+2026-03-01 10:02:15 INFO worker-3 processed batch 135 rows=116
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:02:16 INFO worker-0 processed batch 136 rows=100
+2026-03-01 10:02:17 INFO worker-1 processed batch 137 rows=101
+2026-03-01 10:02:18 INFO worker-2 processed batch 138 rows=102
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:02:19 INFO worker-3 processed batch 139 rows=103
+2026-03-01 10:02:20 INFO worker-0 processed batch 140 rows=104
+2026-03-01 10:02:21 INFO worker-1 processed batch 141 rows=105
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:02:22 INFO worker-2 processed batch 142 rows=106
+2026-03-01 10:02:23 INFO worker-3 processed batch 143 rows=107
+2026-03-01 10:02:24 INFO worker-0 processed batch 144 rows=108
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:02:25 INFO worker-1 processed batch 145 rows=109
+2026-03-01 10:02:26 INFO worker-2 processed batch 146 rows=110
+2026-03-01 10:02:27 INFO worker-3 processed batch 147 rows=111
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:02:28 INFO worker-0 processed batch 148 rows=112
+2026-03-01 10:02:29 INFO worker-1 processed batch 149 rows=113
+2026-03-01 10:02:30 INFO worker-2 processed batch 150 rows=114
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:02:31 INFO worker-3 processed batch 151 rows=115
+2026-03-01 10:02:32 INFO worker-0 processed batch 152 rows=116
+2026-03-01 10:02:33 INFO worker-1 processed batch 153 rows=100
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:02:34 INFO worker-2 processed batch 154 rows=101
+2026-03-01 10:02:35 INFO worker-3 processed batch 155 rows=102
+2026-03-01 10:02:36 INFO worker-0 processed batch 156 rows=103
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:02:37 INFO worker-1 processed batch 157 rows=104
+2026-03-01 10:02:38 INFO worker-2 processed batch 158 rows=105
+2026-03-01 10:02:39 INFO worker-3 processed batch 159 rows=106
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:02:40 INFO worker-0 processed batch 160 rows=107
+2026-03-01 10:02:41 INFO worker-1 processed batch 161 rows=108
+2026-03-01 10:02:42 INFO worker-2 processed batch 162 rows=109
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:02:43 INFO worker-3 processed batch 163 rows=110
+2026-03-01 10:02:44 INFO worker-0 processed batch 164 rows=111
+2026-03-01 10:02:45 INFO worker-1 processed batch 165 rows=112
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:02:46 INFO worker-2 processed batch 166 rows=113
+2026-03-01 10:02:47 INFO worker-3 processed batch 167 rows=114
+2026-03-01 10:02:48 INFO worker-0 processed batch 168 rows=115
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:02:49 INFO worker-1 processed batch 169 rows=116
+2026-03-01 10:02:50 INFO worker-2 processed batch 170 rows=100
+2026-03-01 10:02:51 INFO worker-3 processed batch 171 rows=101
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:02:52 INFO worker-0 processed batch 172 rows=102
+2026-03-01 10:02:53 INFO worker-1 processed batch 173 rows=103
+2026-03-01 10:02:54 INFO worker-2 processed batch 174 rows=104
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:02:55 INFO worker-3 processed batch 175 rows=105
+2026-03-01 10:02:56 INFO worker-0 processed batch 176 rows=106
+2026-03-01 10:02:57 INFO worker-1 processed batch 177 rows=107
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:02:58 INFO worker-2 processed batch 178 rows=108
+2026-03-01 10:02:59 INFO worker-3 processed batch 179 rows=109
+2026-03-01 10:03:00 INFO worker-0 processed batch 180 rows=110
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:03:01 INFO worker-1 processed batch 181 rows=111
+2026-03-01 10:03:02 INFO worker-2 processed batch 182 rows=112
+2026-03-01 10:03:03 INFO worker-3 processed batch 183 rows=113
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:03:04 INFO worker-0 processed batch 184 rows=114
+2026-03-01 10:03:05 INFO worker-1 processed batch 185 rows=115
+2026-03-01 10:03:06 INFO worker-2 processed batch 186 rows=116
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:03:07 INFO worker-3 processed batch 187 rows=100
+2026-03-01 10:03:08 INFO worker-0 processed batch 188 rows=101
+2026-03-01 10:03:09 INFO worker-1 processed batch 189 rows=102
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:03:10 INFO worker-2 processed batch 190 rows=103
+2026-03-01 10:03:11 INFO worker-3 processed batch 191 rows=104
+2026-03-01 10:03:12 INFO worker-0 processed batch 192 rows=105
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:03:13 INFO worker-1 processed batch 193 rows=106
+2026-03-01 10:03:14 INFO worker-2 processed batch 194 rows=107
+2026-03-01 10:03:15 INFO worker-3 processed batch 195 rows=108
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:03:16 INFO worker-0 processed batch 196 rows=109
+2026-03-01 10:03:17 INFO worker-1 processed batch 197 rows=110
+2026-03-01 10:03:18 INFO worker-2 processed batch 198 rows=111
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:03:19 INFO worker-3 processed batch 199 rows=112
+2026-03-01 10:03:20 INFO worker-0 processed batch 200 rows=113
+2026-03-01 10:03:21 INFO worker-1 processed batch 201 rows=114
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:03:22 INFO worker-2 processed batch 202 rows=115
+2026-03-01 10:03:23 INFO worker-3 processed batch 203 rows=116
+2026-03-01 10:03:24 INFO worker-0 processed batch 204 rows=100
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:03:25 INFO worker-1 processed batch 205 rows=101
+2026-03-01 10:03:26 INFO worker-2 processed batch 206 rows=102
+2026-03-01 10:03:27 INFO worker-3 processed batch 207 rows=103
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:03:28 INFO worker-0 processed batch 208 rows=104
+2026-03-01 10:03:29 INFO worker-1 processed batch 209 rows=105
+2026-03-01 10:03:30 INFO worker-2 processed batch 210 rows=106
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:03:31 INFO worker-3 processed batch 211 rows=107
+2026-03-01 10:03:32 INFO worker-0 processed batch 212 rows=108
+2026-03-01 10:03:33 INFO worker-1 processed batch 213 rows=109
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:03:34 INFO worker-2 processed batch 214 rows=110
+2026-03-01 10:03:35 INFO worker-3 processed batch 215 rows=111
+2026-03-01 10:03:36 INFO worker-0 processed batch 216 rows=112
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+2026-03-01 10:03:37 INFO worker-1 processed batch 217 rows=113
+2026-03-01 10:03:38 INFO worker-2 processed batch 218 rows=114
+2026-03-01 10:03:39 INFO worker-3 processed batch 219 rows=115
+/opt/app/venv/lib/python3.11/site-packages/pandas/core/frame.py:3401: DeprecationWarning: use of positional index is deprecated
+  warnings.warn(
+done: 220 batches

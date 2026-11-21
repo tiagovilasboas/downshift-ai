@@ -167,6 +167,7 @@
     {
       "name": "discover",
       "summary": "Find commands the compactor would have changed but that ran bare",
+      "experimental": true,
       "flags": [
         {
           "name": "--since"
@@ -280,6 +281,7 @@
     {
       "name": "gateway",
       "summary": "Check local companion routers (9router)",
+      "experimental": true,
       "flags": [
         {
           "name": "--json"
@@ -806,6 +808,7 @@
       "SessionEnv": "",
       "ShellEnv": "",
       "AgentEnv": null,
+      "ReportsChildVerification": false,
       "ChildEndEvent": "",
       "UsageSource": "",
       "HookEntries": null,
@@ -842,6 +845,7 @@
       "SessionEnv": "CLAUDE_CODE_SESSION_ID",
       "ShellEnv": "CLAUDE_CODE_ENTRYPOINT",
       "AgentEnv": null,
+      "ReportsChildVerification": true,
       "ChildEndEvent": "SubagentStop",
       "UsageSource": "transcript",
       "HookEntries": [
@@ -899,6 +903,7 @@
       "SessionEnv": "",
       "ShellEnv": "CODEX_THREAD_ID",
       "AgentEnv": null,
+      "ReportsChildVerification": false,
       "ChildEndEvent": "PostToolUse",
       "UsageSource": "none",
       "HookEntries": null,
@@ -935,6 +940,7 @@
       "SessionEnv": "",
       "ShellEnv": "",
       "AgentEnv": null,
+      "ReportsChildVerification": false,
       "ChildEndEvent": "subagentStop",
       "UsageSource": "none",
       "HookEntries": null,
@@ -976,6 +982,7 @@
       "SessionEnv": "",
       "ShellEnv": "",
       "AgentEnv": null,
+      "ReportsChildVerification": false,
       "ChildEndEvent": "PostToolUse",
       "UsageSource": "none",
       "HookEntries": null,
@@ -1017,6 +1024,7 @@
       "SessionEnv": "KIRO_SESSION_ID",
       "ShellEnv": "",
       "AgentEnv": null,
+      "ReportsChildVerification": false,
       "ChildEndEvent": "postToolUse",
       "UsageSource": "none",
       "HookEntries": null,
@@ -1055,6 +1063,7 @@
       "AgentEnv": [
         "OPENCODE"
       ],
+      "ReportsChildVerification": false,
       "ChildEndEvent": "child_done",
       "UsageSource": "payload",
       "HookEntries": null,
