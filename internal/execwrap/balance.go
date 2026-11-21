@@ -19,6 +19,9 @@ const BalanceThreshold = 16 << 10
 type balanceConfig struct {
 	threshold int // bytes; 0 means BalanceThreshold
 	limits    compressor.BalanceLimits
+	// fallbackOnly limits a run to the fallback cut of balance_fallback.go
+	// (a captured failed run: the family's own result is never cut).
+	fallbackOnly bool
 }
 
 // limit is the size above which the balanced cut applies.

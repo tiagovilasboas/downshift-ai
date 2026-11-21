@@ -32,7 +32,7 @@ func compactHeld(argv []string, data []byte, family Family, exitCode int, wroteS
 	} else if folded, ok := keepUncompacted(keep, data, exitCode, family, wroteStderr); ok {
 		h = held{out: folded, compacted: true, folded: true}
 	}
-	if balanced {
+	if balanced && !bal.fallbackOnly {
 		shown := data
 		if h.compacted {
 			shown = h.out
@@ -43,6 +43,11 @@ func compactHeld(argv []string, data []byte, family Family, exitCode int, wroteS
 			if cut, ok := capSearchFamily(keep, family, exitCode, data, shown); ok {
 				h = held{out: cut, compacted: true, folded: true}
 			}
+		}
+	}
+	if balanced && !h.compacted {
+		if cut, ok := fallbackCut(keep, family, argv, exitCode, data, h.detail, bal); ok {
+			h = held{out: cut, compacted: true, folded: true, detail: DetailFallbackCut}
 		}
 	}
 	if !h.compacted {
@@ -81,7 +86,19 @@ func CompactCapturedWithThreshold(argv []string, family Family, data []byte, exi
 
 // CompactCapturedShaped is CompactCapturedWithThreshold with the shape rewrites
 // of shapes.go for unclassified output (the zero Shapes applies none).
-func CompactCapturedShaped(argv []string, family Family, data []byte, exitCode int, keep func([]byte) (string, bool), balanced bool, balanceThreshold int, session string, shapes Shapes) (res Captured) {
+func CompactCapturedShaped(argv []string, family Family, data []byte, exitCode int, keep func([]byte) (string, bool), balanced bool, balanceThreshold int, session string, shapes Shapes) Captured {
+	return compactCaptured(argv, family, data, exitCode, keep, balanced, balanceThreshold, session, shapes, false)
+}
+
+// CompactCapturedFailed is CompactCapturedShaped for the output of a run that
+// exited non-zero, where the balanced cut stays off: only the family's own
+// compressor and then the fallback cut (balance_fallback.go) may shorten it,
+// and unclassified output (no family) stays whole.
+func CompactCapturedFailed(argv []string, family Family, data []byte, exitCode int, keep func([]byte) (string, bool), balanceThreshold int, session string, shapes Shapes) Captured {
+	return compactCaptured(argv, family, data, exitCode, keep, family != FamilyNone, balanceThreshold, session, shapes, true)
+}
+
+func compactCaptured(argv []string, family Family, data []byte, exitCode int, keep func([]byte) (string, bool), balanced bool, balanceThreshold int, session string, shapes Shapes, fallbackOnly bool) (res Captured) {
 	res = Captured{Output: data, Passthrough: PassthroughUnrecognized}
 	defer func() {
 		if recover() != nil {
@@ -116,7 +133,7 @@ func CompactCapturedShaped(argv []string, family Family, data []byte, exitCode i
 			keep = func([]byte) (string, bool) { return stored(data) }
 		}
 	}
-	bal := balanceConfig{threshold: balanceThreshold}
+	bal := balanceConfig{threshold: balanceThreshold, fallbackOnly: fallbackOnly}
 	h := compactHeld(argv, work, family, exitCode, false, captureKept(keep, &kept, session), nil, balanced, bal)
 	if lossless && !h.compacted {
 		h.compacted, h.passthrough, h.detail = true, "", ""

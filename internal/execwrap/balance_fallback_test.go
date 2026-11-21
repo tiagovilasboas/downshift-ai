@@ -1,0 +1,118 @@
+// Copyright (c) 2026 Tiago Vilas Boas.
+// SPDX-License-Identifier: Apache-2.0
+
+package execwrap
+
+import (
+	"bytes"
+	"fmt"
+	"strings"
+	"testing"
+)
+
+// noisyGoTest is verbose go test output no compressor recognizes whose lines
+// nearly all carry a keep word, so the line cut saves nothing.
+func noisyGoTest(n int) []byte {
+	var b bytes.Buffer
+	for i := 0; i < n; i++ {
+		fmt.Fprintf(&b, "    retry_test.go:%d: warning: retrying request %d after a transient delay\n", i, i)
+	}
+	return b.Bytes()
+}
+
+// failingMake is a make build of many compile lines with a few errors.
+func failingMake(units int) []byte {
+	var b bytes.Buffer
+	for i := 0; i < units; i++ {
+		fmt.Fprintf(&b, "gcc -O2 -c src/file%d.c -o obj/file%d.o -Wall -Wextra\n", i, i)
+		if i%100 == 50 {
+			fmt.Fprintf(&b, "src/file%d.c:12:5: error: unknown type name foo%d\n", i, i)
+		}
+	}
+	b.WriteString("make: *** [Makefile:10: all] Error 2\n")
+	return b.Bytes()
+}
+
+func fallbackKeep() (func([]byte) (string, bool), *[]byte) {
+	var stored []byte
+	return func(r []byte) (string, bool) { stored = r; return "0123456789ab", true }, &stored
+}
+
+func TestFallbackCutUnrecognizedCleanRun(t *testing.T) {
+	raw := noisyGoTest(500)
+	keep, stored := fallbackKeep()
+	r := CompactCaptured([]string{"go", "test", "-v", "./..."}, FamilyGoTest, raw, 0, keep, true, "")
+	if !r.Compacted || r.Detail != DetailFallbackCut || r.Passthrough != "" {
+		t.Fatalf("compacted=%v detail=%q pass=%q", r.Compacted, r.Detail, r.Passthrough)
+	}
+	if !bytes.Equal(*stored, raw) || len(r.Output)*2 > len(raw) {
+		t.Errorf("stored original=%v, %d of %d bytes", bytes.Equal(*stored, raw), len(r.Output), len(raw))
+	}
+	if !strings.Contains(string(r.Output), "downshift retrieve 0123456789ab]") {
+		t.Error("no retrieve marker")
+	}
+}
+
+func TestFallbackCutFailedRunKeepsErrorsAndTail(t *testing.T) {
+	raw := failingMake(400)
+	keep, stored := fallbackKeep()
+	r := CompactCapturedFailed([]string{"make"}, FamilyMake, raw, 2, keep, 0, "", Shapes{})
+	if !r.Compacted || r.Detail != DetailFallbackCut {
+		t.Fatalf("compacted=%v detail=%q pass=%q", r.Compacted, r.Detail, r.Passthrough)
+	}
+	out := string(r.Output)
+	for _, want := range []string{"error: unknown type name foo50\n", "foo150\n", "foo250\n", "foo350\n", "make: *** [Makefile:10: all] Error 2\n", "file399.c"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("missing %q", want)
+		}
+	}
+	if len(out) >= len(raw)*3/4 || !bytes.Equal(*stored, raw) {
+		t.Errorf("%d of %d bytes, stored=%v", len(out), len(raw), bytes.Equal(*stored, raw))
+	}
+}
+
+func TestFallbackCutUntouched(t *testing.T) {
+	big, small := noisyGoTest(500), noisyGoTest(5)
+	danger := append([]byte("diff --git a/x b/x\n@@ -1 +1 @@\n"), bytes.Repeat([]byte("+\tif err != nil { panic(\"error handling the thing\") }\n"), 400)...)
+	cases := []struct {
+		name   string
+		family Family
+		argv   []string
+		data   []byte
+		exit   int
+		keep   bool
+	}{
+		{"small output", FamilyGoTest, []string{"go", "test"}, small, 0, true},
+		{"no store", FamilyGoTest, []string{"go", "test", "-v"}, big, 0, false},
+		{"failed, no store", FamilyMake, []string{"make"}, failingMake(400), 2, false},
+		{"file read", FamilyFileRead, []string{"cat", "x"}, big, 0, true},
+		{"curl never stored", FamilyCurl, []string{"curl", "x"}, big, 0, true},
+	}
+	for _, c := range cases {
+		keep, _ := fallbackKeep()
+		if !c.keep {
+			keep = nil
+		}
+		r := CompactCapturedFailed(c.argv, c.family, c.data, c.exit, keep, 0, "", Shapes{})
+		if r.Detail == DetailFallbackCut || !bytes.Equal(r.Output, c.data) && !r.Compacted {
+			t.Errorf("%s: cut or altered: detail=%q", c.name, r.Detail)
+		}
+	}
+	// A git diff holding a danger word is read verbatim: the fallback leaves it.
+	keep, _ := fallbackKeep()
+	if _, ok := fallbackCut(keep, FamilyGitDiff, []string{"git", "diff"}, 0, danger, DetailDangerWord, balanceConfig{}); ok {
+		t.Error("a danger-word diff was cut")
+	}
+	if _, ok := fallbackCut(keep, FamilyGitDiff, []string{"git", "diff"}, 0, danger, DetailUnknownShape, balanceConfig{}); !ok {
+		t.Error("a diff with another detail should take the cut")
+	}
+}
+
+func TestFallbackCutKeepsExitCodeOnWrapper(t *testing.T) {
+	raw := failingMake(400)
+	keep, _ := fallbackKeep()
+	h := compactHeld([]string{"make"}, raw, FamilyMake, 2, false, keep, nil, true, balanceConfig{fallbackOnly: true})
+	if !h.compacted || h.detail != DetailFallbackCut || h.passthrough != "" {
+		t.Fatalf("held: %+v", h.detail)
+	}
+}
