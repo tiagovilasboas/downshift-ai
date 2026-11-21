@@ -117,6 +117,9 @@ type Event struct {
 	// LineBucket the LineBucket code of the output. Never text.
 	Head       string `json:"head,omitempty"`
 	LineBucket string `json:"line_bucket,omitempty"`
+	// Prog is ProducerProgram: the bounded code of the program that most
+	// likely produced the output. Rows written before it carry none.
+	Prog string `json:"prog,omitempty"`
 }
 
 // NetSavedBytes is what the run saved after the agent read part of the raw

@@ -89,6 +89,8 @@ type Result struct {
 	// Head and LineBucket describe a command with no family: codes from
 	// execwrap.CommandHead and execwrap.LineBucket, never text.
 	Head, LineBucket string
+	// Prog is execwrap.ProducerProgram, a bounded code, never text.
+	Prog string
 }
 
 // Compact returns the compaction of in, a finished tool call on a harness
@@ -151,6 +153,7 @@ func compactShell(in hookport.ToolOutput, o Options) Result {
 	res.RawBytes = int64(len(in.Stdout) + len(in.Stderr))
 	if res.Family == execwrap.FamilyNone {
 		res.Head = execwrap.CommandHead(in.Command)
+		res.Prog = execwrap.ProducerProgram(in.Command)
 		res.LineBucket = execwrap.LineBucket(execwrap.CountLines(in.Stdout) + execwrap.CountLines(in.Stderr))
 	}
 	// A compound command that runs curl, wget or glab may carry credentials in
