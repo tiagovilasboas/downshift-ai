@@ -812,7 +812,17 @@
           }
         ],
         "not_compacted": [],
-        "skipped": []
+        "skipped": [],
+        "other": {
+          "top": [
+            {
+              "label": "unknown (before head telemetry)",
+              "runs": 1,
+              "raw_bytes": 4400,
+              "net_saved_pct": 90.9090909090909
+            }
+          ]
+        }
       }
     ]
   },
