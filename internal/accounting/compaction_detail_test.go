@@ -51,9 +51,10 @@ func TestBuildCompactionDetail(t *testing.T) {
 		},
 		{
 			Harness: UnknownHarness, Commands: 1,
-			Families:     []FamilyCompaction{{Family: "make", Commands: 1, RawTokens: 100}},
-			NotCompacted: []ReasonCount{{Reason: execwrap.PassthroughNonZeroExit, Count: 1}},
-			Skipped:      []ReasonCount{},
+			Families:       []FamilyCompaction{{Family: "make", Commands: 1, RawTokens: 100}},
+			NotCompacted:   []ReasonCount{{Reason: execwrap.PassthroughNonZeroExit, Count: 1}},
+			Skipped:        []ReasonCount{},
+			UnknownReasons: []ReasonCount{{Reason: UnknownLegacyRow, Count: 1}},
 		},
 		{
 			Harness: "kirocrew", Families: []FamilyCompaction{}, NotCompacted: []ReasonCount{},

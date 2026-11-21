@@ -86,6 +86,68 @@
     "accepted_unchecked": 1,
     "unknown": 7
   },
+  "outcome_matrix": [
+    {
+      "origin": "unattributed",
+      "tier": "frontier",
+      "agent_type": "untyped",
+      "n": 3,
+      "outcomes": {
+        "errored": 0,
+        "reworked": 0,
+        "check_failed": 0,
+        "accepted_checked": 0,
+        "accepted_unchecked": 0,
+        "unknown": 3
+      },
+      "no_check_share": 0
+    },
+    {
+      "origin": "unattributed",
+      "tier": "mid",
+      "agent_type": "untyped",
+      "n": 1,
+      "outcomes": {
+        "errored": 0,
+        "reworked": 0,
+        "check_failed": 0,
+        "accepted_checked": 0,
+        "accepted_unchecked": 0,
+        "unknown": 1
+      },
+      "no_check_share": 0
+    },
+    {
+      "origin": "unattributed",
+      "tier": "small",
+      "agent_type": "untyped",
+      "n": 2,
+      "outcomes": {
+        "errored": 0,
+        "reworked": 0,
+        "check_failed": 0,
+        "accepted_checked": 0,
+        "accepted_unchecked": 1,
+        "unknown": 1
+      },
+      "no_check_share": 0.5
+    },
+    {
+      "origin": "unattributed",
+      "tier": "unknown",
+      "agent_type": "untyped",
+      "n": 2,
+      "outcomes": {
+        "errored": 0,
+        "reworked": 0,
+        "check_failed": 0,
+        "accepted_checked": 0,
+        "accepted_unchecked": 0,
+        "unknown": 2
+      },
+      "no_check_share": 0
+    }
+  ],
   "completion": [
     {
       "harness": "claude-code",
@@ -338,6 +400,53 @@
           "accepted_unchecked": 1,
           "unknown": 5
         },
+        "outcome_matrix": [
+          {
+            "origin": "unattributed",
+            "tier": "frontier",
+            "agent_type": "untyped",
+            "n": 3,
+            "outcomes": {
+              "errored": 0,
+              "reworked": 0,
+              "check_failed": 0,
+              "accepted_checked": 0,
+              "accepted_unchecked": 0,
+              "unknown": 3
+            },
+            "no_check_share": 0
+          },
+          {
+            "origin": "unattributed",
+            "tier": "mid",
+            "agent_type": "untyped",
+            "n": 1,
+            "outcomes": {
+              "errored": 0,
+              "reworked": 0,
+              "check_failed": 0,
+              "accepted_checked": 0,
+              "accepted_unchecked": 0,
+              "unknown": 1
+            },
+            "no_check_share": 0
+          },
+          {
+            "origin": "unattributed",
+            "tier": "small",
+            "agent_type": "untyped",
+            "n": 2,
+            "outcomes": {
+              "errored": 0,
+              "reworked": 0,
+              "check_failed": 0,
+              "accepted_checked": 0,
+              "accepted_unchecked": 1,
+              "unknown": 1
+            },
+            "no_check_share": 0.5
+          }
+        ],
         "completion": [
           {
             "harness": "claude-code",
@@ -473,6 +582,23 @@
           "accepted_unchecked": 0,
           "unknown": 2
         },
+        "outcome_matrix": [
+          {
+            "origin": "unattributed",
+            "tier": "unknown",
+            "agent_type": "untyped",
+            "n": 2,
+            "outcomes": {
+              "errored": 0,
+              "reworked": 0,
+              "check_failed": 0,
+              "accepted_checked": 0,
+              "accepted_unchecked": 0,
+              "unknown": 2
+            },
+            "no_check_share": 0
+          }
+        ],
         "completion": [
           {
             "harness": "claude-code",
@@ -686,7 +812,17 @@
           }
         ],
         "not_compacted": [],
-        "skipped": []
+        "skipped": [],
+        "other": {
+          "top": [
+            {
+              "label": "unknown (before head telemetry)",
+              "runs": 1,
+              "raw_bytes": 4400,
+              "net_saved_pct": 90.9090909090909
+            }
+          ]
+        }
       }
     ]
   },
