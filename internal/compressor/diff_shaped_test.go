@@ -51,6 +51,7 @@ func TestDiffShaped(t *testing.T) {
 		{"diff after pipe noise", "12 files changed\n" + plain, true, []string{"12 files changed", "-old value"}},
 		{"binary file diff", shapedHeader + binary, true, []string{"Binary files a/logo.png and b/logo.png differ", "-old value"}},
 		{"rename", shapedHeader + rename, true, []string{"rename from old.go", "rename to new.go", "similarity index 95%"}},
+		{"gain of about 11 percent passes the 10 percent gate", strings.Repeat(shapedHunk("a.go", 2), 2) + strings.Repeat("+"+strings.Repeat("x", 60)+"\n", 3), true, []string{"+" + strings.Repeat("x", 60)}},
 		{"no diff", "just some text\nnothing here\n", false, nil},
 		{"change-heavy diff under gain", changeHeavy(), false, nil},
 		{"crlf", strings.ReplaceAll(shapedHeader+plain, "\n", "\r\n"), true, []string{"-old value\r", "+new value\r", "tidy the config loader\r"}},

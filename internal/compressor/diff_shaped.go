@@ -7,7 +7,7 @@ import "bytes"
 
 // diffShapedMinGain is the least share of bytes DiffShaped must save; a
 // smaller cut is not worth the rewrite.
-const diffShapedMinGain = 0.15
+const diffShapedMinGain = 0.10
 
 // DiffShaped compresses output that carries "diff --git" blocks but did not
 // come from a plain `git diff` or `git show` command, for example a diff piped
@@ -19,7 +19,7 @@ const diffShapedMinGain = 0.15
 // A diff whose stray lines hold a danger word, or whose droppable context holds
 // a secret, comes back unchanged (the git diff safety gate).
 // It returns false when there is no diff block, the diff cannot be rewritten
-// safely, or the gain is under 15%.
+// safely, or the gain is under 10%.
 func DiffShaped(data []byte) ([]byte, bool) {
 	start := diffStart(data)
 	if start < 0 {

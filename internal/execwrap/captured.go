@@ -75,7 +75,13 @@ func CompactCaptured(argv []string, family Family, data []byte, exitCode int, ke
 
 // CompactCapturedWithThreshold is CompactCaptured with an explicit balanced
 // cut threshold in bytes (<= 0 uses BalanceThreshold).
-func CompactCapturedWithThreshold(argv []string, family Family, data []byte, exitCode int, keep func([]byte) (string, bool), balanced bool, balanceThreshold int, session string) (res Captured) {
+func CompactCapturedWithThreshold(argv []string, family Family, data []byte, exitCode int, keep func([]byte) (string, bool), balanced bool, balanceThreshold int, session string) Captured {
+	return CompactCapturedShaped(argv, family, data, exitCode, keep, balanced, balanceThreshold, session, Shapes{})
+}
+
+// CompactCapturedShaped is CompactCapturedWithThreshold with the shape rewrites
+// of shapes.go for unclassified output (the zero Shapes applies none).
+func CompactCapturedShaped(argv []string, family Family, data []byte, exitCode int, keep func([]byte) (string, bool), balanced bool, balanceThreshold int, session string, shapes Shapes) (res Captured) {
 	res = Captured{Output: data, Passthrough: PassthroughUnrecognized}
 	defer func() {
 		if recover() != nil {
@@ -98,7 +104,7 @@ func CompactCapturedWithThreshold(argv []string, family Family, data []byte, exi
 	work, lossless := data, false
 	if family == FamilyNone {
 		work, lossless = compressor.LosslessText(data)
-		if grouped, ok := compressor.GroupGrepLines(work); ok && balanced {
+		if grouped, ok := shapes.rewrite(work, balanced); ok {
 			work, lossless = grouped, true
 		}
 		if lossless && keep != nil {
