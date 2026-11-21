@@ -200,11 +200,21 @@ func parseSubagentStop(payload map[string]any) (hookport.ChildEnd, bool) {
 		return hookport.ChildEnd{}, false
 	}
 	got, ok := readSettledSubagentUsage(path, transcriptSettle)
+	// A child that ended on an API error or a cancel has no usage to price,
+	// but its end is still recorded (status only, no usage).
+	end := transcriptEnd(path)
 	if !ok {
-		return hookport.ChildEnd{}, false
+		if end == telemetry.ChildUnknown {
+			return hookport.ChildEnd{}, false
+		}
+		return hookport.ChildEnd{
+			Harness: harnessID, AgentKey: agent, SessionID: session,
+			Source: hookport.SourceTranscript, IsChild: true, Status: end,
+		}, true
 	}
 	usage := got.Usage
 	return hookport.ChildEnd{
+		Status:       end,
 		Harness:      harnessID,
 		AgentKey:     agent,
 		SessionID:    session,
