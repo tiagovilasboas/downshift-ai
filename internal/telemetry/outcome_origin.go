@@ -16,12 +16,13 @@ type OriginOutcome struct {
 
 // Accepted is accepted_checked plus accepted_unchecked.
 func (o OriginOutcome) Accepted() int {
-	return o.Outcomes.AcceptedChecked + o.Outcomes.AcceptedUnchecked
+	return o.Outcomes.AcceptedChecked + o.Outcomes.AcceptedUnchecked + o.Outcomes.AcceptedNotMeasurable
 }
 
-// CheckedShare is accepted_checked over accepted; ok is false with no accepted task.
+// CheckedShare is accepted_checked over the accepted tasks whose harness can
+// report a check; ok is false when there is none.
 func (o OriginOutcome) CheckedShare() (share float64, ok bool) {
-	if a := o.Accepted(); a > 0 {
+	if a := o.Outcomes.AcceptedChecked + o.Outcomes.AcceptedUnchecked; a > 0 {
 		return float64(o.Outcomes.AcceptedChecked) / float64(a), true
 	}
 	return 0, false

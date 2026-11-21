@@ -73,6 +73,10 @@ type HarnessCapabilities struct {
 	// Declared only from the harness's own source or documentation; empty means
 	// unverified, not absent.
 	AgentEnv []string
+	// ReportsChildVerification: the child-end hook reads the child's own check
+	// result. False means accepted_unchecked there is "not measurable". End
+	// status is reported wherever ChildEndEvent is set.
+	ReportsChildVerification bool
 	// ChildEndEvent is the hook event name that carries the end of a child
 	// spawn (N5). Empty means no such event is known; the shared end runner
 	// then records nothing for the harness. Setup wires the end hook from this.
@@ -169,7 +173,7 @@ var (
 	// family names (haiku/sonnet/opus/fable); a full id fails schema validation.
 	// The same hook can return updatedInput.command for the Bash tool
 	// (CanRewriteShellCommand, opt-in exec wrapper).
-	ClaudeCodeCaps = HarnessCapabilities{CanRewriteModel: true, CanApplyEffort: false, RewritePreservesInput: true, StrictModelName: true, ModelOverrideEnv: "CLAUDE_CODE_SUBAGENT_MODEL", ModelForceEnv: "CLAUDE_CODE_SUBAGENT_MODEL_FORCE", SessionFromCatalog: true, CanShowChildLine: true, CanReturnNote: true, SessionEnv: "CLAUDE_CODE_SESSION_ID", ShellEnv: "CLAUDE_CODE_ENTRYPOINT", ChildEndEvent: "SubagentStop", UsageSource: UsageTranscript, HookEntries: []string{"settings-hook", "mod"}, CanRewriteShellCommand: true, ShellDialect: ShellPOSIX, SquadAgentPrefix: "downshift:", WorkerAgent: "claude", WorkerReadOnlyVerified: true, MainToolEvent: "PostToolUse", MainToolCategories: claudeCodeToolCategories, SessionWideTranscript: true,
+	ClaudeCodeCaps = HarnessCapabilities{CanRewriteModel: true, CanApplyEffort: false, RewritePreservesInput: true, StrictModelName: true, ModelOverrideEnv: "CLAUDE_CODE_SUBAGENT_MODEL", ModelForceEnv: "CLAUDE_CODE_SUBAGENT_MODEL_FORCE", SessionFromCatalog: true, CanShowChildLine: true, CanReturnNote: true, SessionEnv: "CLAUDE_CODE_SESSION_ID", ShellEnv: "CLAUDE_CODE_ENTRYPOINT", ChildEndEvent: "SubagentStop", UsageSource: UsageTranscript, ReportsChildVerification: true, HookEntries: []string{"settings-hook", "mod"}, CanRewriteShellCommand: true, ShellDialect: ShellPOSIX, SquadAgentPrefix: "downshift:", WorkerAgent: "claude", WorkerReadOnlyVerified: true, MainToolEvent: "PostToolUse", MainToolCategories: claudeCodeToolCategories, SessionWideTranscript: true,
 		// PostToolUse updatedToolOutput replaces a built-in tool's result when
 		// the value keeps the tool's output shape (hooks reference, 2026-11-10),
 		// and updatedMCPToolOutput replaces an MCP tool's result.
