@@ -234,3 +234,15 @@ raw output is not written: the run keeps the raw text.
   do not move.
 - A small run can end at zero: the marker that names the id costs bytes, and a
   `retrieve` of the whole output returns more than the run saved.
+
+## Repeated file reads
+
+When a session reads the same text again (the Read tool, or a shell `cat`, `sed`, `head`,
+`tail` or `bat`), and it is at least 2 KiB, byte-identical, and the harness can replace
+tool output, the post-run hook replaces it with one line naming the earlier handle:
+"unchanged ... downshift retrieve --session=<ref> <id>". The record is keyed by hashed
+session plus a hash of the bytes (no path, no text) under `~/.downshift/read-seen`, and
+expires after 10 minutes. It needs CCR on (`DOWNSHIFT_CCR=0` turns it off) and
+`DOWNSHIFT_POST_COMPACT=0` disables it with the rest of post-run compaction. Different
+content, another session, a small output or any error leaves the output unchanged.
+The row counts as a folded post-run compaction, so the report shows the saving.
