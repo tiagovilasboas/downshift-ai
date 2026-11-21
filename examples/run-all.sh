@@ -19,27 +19,30 @@ if ! command -v downshift >/dev/null 2>&1; then
   exit 1
 fi
 
-# count_rows <harness> prints how many event rows carry that harness value.
+# count_rows <harness> [entry] prints how many event rows carry that harness
+# value and, when given, that entry value (the hook path records "hook").
 count_rows() {
   if [ -f "$DOWNSHIFT_EVENT_LOG" ]; then
-    grep -c "\"harness\":\"$1\"" "$DOWNSHIFT_EVENT_LOG" || true
+    grep "\"harness\":\"$1\"" "$DOWNSHIFT_EVENT_LOG" | grep -c "\"entry\":\"${2:-}" || true
   else
     echo 0
   fi
 }
 
-# run_fixture <label> <harness> <payload>: runs the fixture and fails unless
-# the event log gained at least one row written for that harness.
+# run_fixture <label> <harness> <payload> [entry]: runs the fixture and fails
+# unless the event log gained at least one row written for that harness (and
+# entry, when given).
 run_fixture() {
   label="$1"
   harness="$2"
   payload="$3"
+  entry="${4:-}"
   echo "== $label =="
-  before="$(count_rows "$harness")"
+  before="$(count_rows "$harness" "$entry")"
   downshift "$harness" < "$payload" >/dev/null
-  after="$(count_rows "$harness")"
+  after="$(count_rows "$harness" "$entry")"
   if [ "$after" -le "$before" ]; then
-    echo "FAIL: $label wrote no event row with harness=\"$harness\" to $DOWNSHIFT_EVENT_LOG" >&2
+    echo "FAIL: $label wrote no event row with harness=\"$harness\" entry=\"$entry\" to $DOWNSHIFT_EVENT_LOG" >&2
     exit 1
   fi
 }
@@ -47,5 +50,6 @@ run_fixture() {
 run_fixture "claude-code (task fixture)" claude-code examples/claude-code-pretooluse-task.json
 run_fixture "cursor (task fixture)" cursor examples/cursor-pretooluse-task.json
 run_fixture "claude-code (session_models rewrite)" claude-code examples/claude-code-pretooluse-session.json
+run_fixture "codex (spawn fixture)" codex examples/codex-pretooluse-spawn.json hook
 
 echo "OK: all adapter smoke checks passed"

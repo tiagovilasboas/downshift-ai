@@ -5,6 +5,8 @@ package execwrap
 
 import (
 	"strings"
+
+	"github.com/tiagovilasboas/downshift-ai/internal/compressor"
 )
 
 // held is what a finished run prints: the compacted text, or the raw output
@@ -90,9 +92,22 @@ func CompactCapturedWithThreshold(argv []string, family Family, data []byte, exi
 	if rawStoreRefused[family] {
 		keep = nil
 	}
+	// Unclassified output first gets the lossless pass (ANSI, progress,
+	// repeats); the balanced cut then reads that text, while CCR keeps the
+	// original bytes.
+	work, lossless := data, false
+	if family == FamilyNone {
+		if work, lossless = compressor.LosslessText(data); lossless && keep != nil {
+			stored := keep
+			keep = func([]byte) (string, bool) { return stored(data) }
+		}
+	}
 	var kept string
 	bal := balanceConfig{threshold: balanceThreshold}
-	h := compactHeld(argv, data, family, exitCode, false, captureKept(keep, &kept, session), nil, balanced, bal)
+	h := compactHeld(argv, work, family, exitCode, false, captureKept(keep, &kept, session), nil, balanced, bal)
+	if lossless && !h.compacted {
+		h.compacted, h.passthrough, h.detail = true, "", ""
+	}
 	res = Captured{Output: h.out, Compacted: h.compacted, Folded: h.folded, Passthrough: h.passthrough, Detail: h.detail}
 	if h.compacted {
 		res.KeptID = kept

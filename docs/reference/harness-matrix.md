@@ -149,6 +149,7 @@ so flip the code and this table together. `NativeUsageSource` and
 | `AgentEnv` | no | no | no | no | no | no | yes | Env vars whose presence means an agent runs the command. |
 | `ChildEndEvent` | yes | yes | yes | yes | yes | no | yes | A hook event carries the end of a child spawn. |
 | `UsageSource` | yes | no | no | no | no | no | yes | Child token usage is read (payload or transcript). |
+| `ReportsChildVerification` | yes | no | no | no | no | no | no | The child-end hook reads the child's own check result (passed, failed, none) from its transcript. Without it a normal end is `accepted_not_measurable` in the report, not `accepted_unchecked`. The end status itself is reported wherever `ChildEndEvent` is set. |
 | `HookEntries` | yes | no | no | no | no | no | no | Known spawn-time entry points are listed. |
 | `PayloadMarkers` | no | yes | no | no | no | no | no | Payload keys only this harness sends. |
 | `CanRewriteShellCommand` | yes | yes | yes | no | no | yes | yes | The hook can rewrite the shell command in place. |

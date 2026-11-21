@@ -1,0 +1,10 @@
+{
+  "hook_event_name": "PreToolUse",
+  "tool_name": "spawn_agent",
+  "session_id": "smoke-codex-1",
+  "tool_use_id": "call_smoke_1",
+  "model": "gpt-5.6-sol",
+  "tool_input": {
+    "message": "rename the variable userId to accountId in one file"
+  }
+}

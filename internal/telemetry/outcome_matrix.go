@@ -66,7 +66,7 @@ func BuildOutcomeMatrix(events []Event, tasks []TaskRecord, view RoutingView) []
 			rows[k] = r
 		}
 		r.N++
-		r.Outcomes.add(t.Outcome())
+		r.Outcomes.addTask(t)
 	}
 	out := make([]OutcomeMatrixRow, 0, len(rows))
 	for _, r := range rows {
