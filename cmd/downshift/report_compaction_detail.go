@@ -57,6 +57,14 @@ var metacharLabel = map[string]string{
 	"backslash": "backslash", "paren": "parenthesis", "other": "other character",
 }
 
+var unknownLabel = map[string]string{
+	"no_harness_env":  "compact run outside any hook",
+	"post_tool_use":   "post-run hook, harness not resolved",
+	"hook_no_harness": "pre-run hook, harness not resolved",
+	"legacy_row":      "row written before the entry field",
+	"skip_row":        "hook skip row (no entry recorded)",
+}
+
 func reasonLabel(labels map[string]string, code string) string {
 	if l, ok := labels[code]; ok {
 		return l
@@ -86,6 +94,7 @@ func printCompactionDetailMarkdown(w io.Writer, d accounting.CompactionDetail) {
 		reasonTableMarkdown(w, "**Left unwrapped by the hook**", "calls", h.Skipped, skippedLabel)
 		reasonTableMarkdown(w, "**Not compacted, detail** (output shape not recognized)", "commands", h.PassthroughDetails, detailLabel)
 		reasonTableMarkdown(w, "**Left unwrapped, metacharacter**", "calls", h.SkipMetachars, metacharLabel)
+		reasonTableMarkdown(w, "**Why the harness is unknown**", "rows", h.UnknownReasons, unknownLabel)
 	}
 }
 
@@ -122,6 +131,7 @@ func printCompactionDetailText(w io.Writer, d accounting.CompactionDetail) {
 		reasonLinesText(w, "left unwrapped by the hook", h.Skipped, skippedLabel)
 		reasonLinesText(w, "not compacted, detail", h.PassthroughDetails, detailLabel)
 		reasonLinesText(w, "left unwrapped, metacharacter", h.SkipMetachars, metacharLabel)
+		reasonLinesText(w, "why the harness is unknown", h.UnknownReasons, unknownLabel)
 	}
 }
 
