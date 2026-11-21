@@ -18,11 +18,19 @@ const maxPostRunCommandBytes = 4096
 // command substitutions, backgrounding, and mixed-family compounds return
 // FamilyNone so postrun falls back to search-cut or balanced-cut rules.
 func extractPostRunFamily(command string, exit int) (execwrap.Family, []string) {
+	return extractFamily(command, exit, false)
+}
+
+func extractFamily(command string, exit int, allowPipes bool) (execwrap.Family, []string) {
 	trimmed := strings.TrimSpace(command)
 	if trimmed == "" || len(trimmed) > maxPostRunCommandBytes {
 		return execwrap.FamilyNone, nil
 	}
-	segs, ok := splitSafeChain(trimmed)
+	head, stages, piped, ok := splitPipeStages(trimmed)
+	if !ok || (piped && !pipeAllowed(trimmed, exit, allowPipes)) {
+		return execwrap.FamilyNone, nil
+	}
+	segs, ok := splitSafeChain(head)
 	if !ok || len(segs) == 0 {
 		return execwrap.FamilyNone, nil
 	}
@@ -47,6 +55,9 @@ func extractPostRunFamily(command string, exit int) (execwrap.Family, []string) 
 		} else if fam != firstFam {
 			return execwrap.FamilyNone, nil
 		}
+	}
+	if piped && !pipeStagesHarmless(stages, firstFam) {
+		return execwrap.FamilyNone, nil
 	}
 	return firstFam, firstArgv
 }
