@@ -55,7 +55,7 @@ file or from `AGENTS.md`.
 | `internal/console/surface` | UI | Pure decision: console or plain text for an invocation; doubt is plain |
 | `internal/contextopt` | Shell | Config for compaction and headroom |
 | `internal/core` | Routing | `Route`, `Check` (R1-R9), `PlanSession`, `HarnessCapabilities` |
-| `internal/cursorbridge` | Adapters | Cursor native session bridge |
+| `extensions/cursor-quota-bridge` | Adapters | Cursor native session bridge (JS extension, not Go) |
 | `internal/discovery` | Routing | `models discover/list/check/pull` |
 | `internal/docscheck` | Quality | CI gates for markdown layout and package inventory |
 | `internal/execwrap` | Shell | Allowlist policy, family classification, compactor runner |
