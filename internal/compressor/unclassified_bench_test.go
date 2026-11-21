@@ -35,11 +35,11 @@ func unclassifiedBaseline(data []byte, exit int) []byte {
 // DOWNSHIFT_UPDATE_BASELINE=1 and read the logged table.
 var unclassifiedWant = map[string]struct{ raw, out int }{
 	"ansi_build_progress.txt":    {4319, 123},
-	"base64_blob.txt":            {5674, 3552},
+	"base64_blob.txt":            {5674, 3167},
 	"curl_jq_json.txt":           {9057, 5700},
-	"docker_ps_table.txt":        {6103, 3516},
-	"error_traceback_middle.txt": {5244, 3857},
-	"find_xargs_listing.txt":     {6480, 3639},
+	"docker_ps_table.txt":        {6103, 3370},
+	"error_traceback_middle.txt": {5244, 3191},
+	"find_xargs_listing.txt":     {6480, 3531},
 	"grep_pipe_matches.txt":      {11376, 3637},
 	"grep_pipe_small.txt":        {3803, 2864},
 	"git_show_piped.txt":         {14932, 3618},
