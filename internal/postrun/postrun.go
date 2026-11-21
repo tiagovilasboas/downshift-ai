@@ -175,7 +175,13 @@ func compactShell(in hookport.ToolOutput, o Options) Result {
 		if family == execwrap.FamilyNone {
 			shapes = execwrap.ShapesFor(in.Command, []byte(in.Stdout))
 		}
-		out = execwrap.CompactCapturedShaped(argv, family, []byte(in.Stdout), exit, o.Keep, balanced, threshold, o.Session, shapes)
+		if exit != 0 && o.Balanced {
+			// A failed run gets the fallback cut only, which keeps its
+			// failure lines (execwrap.CompactCapturedFailed).
+			out = execwrap.CompactCapturedFailed(argv, family, []byte(in.Stdout), exit, o.Keep, threshold, o.Session, shapes)
+		} else {
+			out = execwrap.CompactCapturedShaped(argv, family, []byte(in.Stdout), exit, o.Keep, balanced, threshold, o.Session, shapes)
+		}
 	}
 	res.Compacted, res.Folded, res.Passthrough, res.Detail, res.KeptID = out.Compacted, out.Folded, out.Passthrough, out.Detail, out.KeptID
 	if out.Compacted {
