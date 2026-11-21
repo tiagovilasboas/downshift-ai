@@ -37,7 +37,7 @@ func compactHeld(argv []string, data []byte, family Family, exitCode int, wroteS
 		if h.compacted {
 			shown = h.out
 		}
-		if cut, ok := balance(keep, family, data, shown, bal); ok {
+		if cut, ok := balance(keep, family, argv, exitCode, data, shown, bal); ok {
 			h = held{out: cut, compacted: true, folded: true}
 		} else if len(shown) <= bal.limit() {
 			if cut, ok := capSearchFamily(keep, family, exitCode, data, shown); ok {
