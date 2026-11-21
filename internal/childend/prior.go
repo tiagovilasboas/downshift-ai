@@ -35,7 +35,7 @@ func billableUsage(ce hookport.ChildEnd) telemetry.TokenUsage {
 // events. When it cannot, the log is not read at all.
 func needsPrior(ce hookport.ChildEnd, usage telemetry.TokenUsage, sessionHash, callHash, agentHash string) bool {
 	if ce.Source == hookport.SourceTranscript {
-		return usage != (telemetry.TokenUsage{}) && agentHash != ""
+		return (usage != (telemetry.TokenUsage{}) || hasEnd(ce)) && agentHash != ""
 	}
 	if usage != (telemetry.TokenUsage{}) {
 		return true
