@@ -1,0 +1,108 @@
+{
+  "data": [
+    {
+      "id": "item-0000",
+      "status": "active",
+      "description": "synthetic description segment 0 synthetic description segment 0 synthetic description segment 0 synthetic description segment 0 synthetic description segment 0 synthetic description segment 0 synthetic description segment 0 synthetic description segment 0 synthetic description segment 0 synthetic description segment 0 synthetic description segment 0 synthetic description segment 0 synthetic description segment 0 synthetic description segment 0 synthetic description segment 0 synthetic description segment 0 synthetic description segment 0 synthetic description segment 0 synthetic description segment 0 synthetic description segment 0 ",
+      "tags": "alpha,beta,gamma",
+      "links": {
+        "self": "https://api.example.test/v1/items/0",
+        "owner": "https://api.example.test/v1/users/42"
+      }
+    },
+    {
+      "id": "item-0001",
+      "status": "active",
+      "description": "synthetic description segment 1 synthetic description segment 1 synthetic description segment 1 synthetic description segment 1 synthetic description segment 1 synthetic description segment 1 synthetic description segment 1 synthetic description segment 1 synthetic description segment 1 synthetic description segment 1 synthetic description segment 1 synthetic description segment 1 synthetic description segment 1 synthetic description segment 1 synthetic description segment 1 synthetic description segment 1 synthetic description segment 1 synthetic description segment 1 synthetic description segment 1 synthetic description segment 1 ",
+      "tags": "alpha,beta,gamma",
+      "links": {
+        "self": "https://api.example.test/v1/items/1",
+        "owner": "https://api.example.test/v1/users/42"
+      }
+    },
+    {
+      "id": "item-0002",
+      "status": "active",
+      "description": "synthetic description segment 2 synthetic description segment 2 synthetic description segment 2 synthetic description segment 2 synthetic description segment 2 synthetic description segment 2 synthetic description segment 2 synthetic description segment 2 synthetic description segment 2 synthetic description segment 2 synthetic description segment 2 synthetic description segment 2 synthetic description segment 2 synthetic description segment 2 synthetic description segment 2 synthetic description segment 2 synthetic description segment 2 synthetic description segment 2 synthetic description segment 2 synthetic description segment 2 ",
+      "tags": "alpha,beta,gamma",
+      "links": {
+        "self": "https://api.example.test/v1/items/2",
+        "owner": "https://api.example.test/v1/users/42"
+      }
+    },
+    {
+      "id": "item-0003",
+      "status": "active",
+      "description": "synthetic description segment 3 synthetic description segment 3 synthetic description segment 3 synthetic description segment 3 synthetic description segment 3 synthetic description segment 3 synthetic description segment 3 synthetic description segment 3 synthetic description segment 3 synthetic description segment 3 synthetic description segment 3 synthetic description segment 3 synthetic description segment 3 synthetic description segment 3 synthetic description segment 3 synthetic description segment 3 synthetic description segment 3 synthetic description segment 3 synthetic description segment 3 synthetic description segment 3 ",
+      "tags": "alpha,beta,gamma",
+      "links": {
+        "self": "https://api.example.test/v1/items/3",
+        "owner": "https://api.example.test/v1/users/42"
+      }
+    },
+    {
+      "id": "item-0004",
+      "status": "active",
+      "description": "synthetic description segment 4 synthetic description segment 4 synthetic description segment 4 synthetic description segment 4 synthetic description segment 4 synthetic description segment 4 synthetic description segment 4 synthetic description segment 4 synthetic description segment 4 synthetic description segment 4 synthetic description segment 4 synthetic description segment 4 synthetic description segment 4 synthetic description segment 4 synthetic description segment 4 synthetic description segment 4 synthetic description segment 4 synthetic description segment 4 synthetic description segment 4 synthetic description segment 4 ",
+      "tags": "alpha,beta,gamma",
+      "links": {
+        "self": "https://api.example.test/v1/items/4",
+        "owner": "https://api.example.test/v1/users/42"
+      }
+    },
+    {
+      "id": "item-0005",
+      "status": "active",
+      "description": "synthetic description segment 5 synthetic description segment 5 synthetic description segment 5 synthetic description segment 5 synthetic description segment 5 synthetic description segment 5 synthetic description segment 5 synthetic description segment 5 synthetic description segment 5 synthetic description segment 5 synthetic description segment 5 synthetic description segment 5 synthetic description segment 5 synthetic description segment 5 synthetic description segment 5 synthetic description segment 5 synthetic description segment 5 synthetic description segment 5 synthetic description segment 5 synthetic description segment 5 ",
+      "tags": "alpha,beta,gamma",
+      "links": {
+        "self": "https://api.example.test/v1/items/5",
+        "owner": "https://api.example.test/v1/users/42"
+      }
+    },
+    {
+      "id": "item-0006",
+      "status": "active",
+      "description": "synthetic description segment 6 synthetic description segment 6 synthetic description segment 6 synthetic description segment 6 synthetic description segment 6 synthetic description segment 6 synthetic description segment 6 synthetic description segment 6 synthetic description segment 6 synthetic description segment 6 synthetic description segment 6 synthetic description segment 6 synthetic description segment 6 synthetic description segment 6 synthetic description segment 6 synthetic description segment 6 synthetic description segment 6 synthetic description segment 6 synthetic description segment 6 synthetic description segment 6 ",
+      "tags": "alpha,beta,gamma",
+      "links": {
+        "self": "https://api.example.test/v1/items/6",
+        "owner": "https://api.example.test/v1/users/42"
+      }
+    },
+    {
+      "id": "item-0007",
+      "status": "active",
+      "description": "synthetic description segment 7 synthetic description segment 7 synthetic description segment 7 synthetic description segment 7 synthetic description segment 7 synthetic description segment 7 synthetic description segment 7 synthetic description segment 7 synthetic description segment 7 synthetic description segment 7 synthetic description segment 7 synthetic description segment 7 synthetic description segment 7 synthetic description segment 7 synthetic description segment 7 synthetic description segment 7 synthetic description segment 7 synthetic description segment 7 synthetic description segment 7 synthetic description segment 7 ",
+      "tags": "alpha,beta,gamma",
+      "links": {
+        "self": "https://api.example.test/v1/items/7",
+        "owner": "https://api.example.test/v1/users/42"
+      }
+    },
+    {
+      "id": "item-0008",
+      "status": "active",
+      "description": "synthetic description segment 8 synthetic description segment 8 synthetic description segment 8 synthetic description segment 8 synthetic description segment 8 synthetic description segment 8 synthetic description segment 8 synthetic description segment 8 synthetic description segment 8 synthetic description segment 8 synthetic description segment 8 synthetic description segment 8 synthetic description segment 8 synthetic description segment 8 synthetic description segment 8 synthetic description segment 8 synthetic description segment 8 synthetic description segment 8 synthetic description segment 8 synthetic description segment 8 ",
+      "tags": "alpha,beta,gamma",
+      "links": {
+        "self": "https://api.example.test/v1/items/8",
+        "owner": "https://api.example.test/v1/users/42"
+      }
+    },
+    {
+      "id": "item-0009",
+      "status": "active",
+      "description": "synthetic description segment 9 synthetic description segment 9 synthetic description segment 9 synthetic description segment 9 synthetic description segment 9 synthetic description segment 9 synthetic description segment 9 synthetic description segment 9 synthetic description segment 9 synthetic description segment 9 synthetic description segment 9 synthetic description segment 9 synthetic description segment 9 synthetic description segment 9 synthetic description segment 9 synthetic description segment 9 synthetic description segment 9 synthetic description segment 9 synthetic description segment 9 synthetic description segment 9 ",
+      "tags": "alpha,beta,gamma",
+      "links": {
+        "self": "https://api.example.test/v1/items/9",
+        "owner": "https://api.example.test/v1/users/42"
+      }
+    }
+  ],
+  "meta": {
+    "total": 10,
+    "page": 1
+  }
+}
