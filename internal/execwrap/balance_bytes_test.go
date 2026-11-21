@@ -24,6 +24,52 @@ func fewLongLines(n, size int, mid string) []byte {
 	return b.Bytes()
 }
 
+// linesOf is text of n lines of w bytes each, a typical unclassified output.
+func linesOf(n, w int) []byte {
+	var b bytes.Buffer
+	for i := 0; i < n; i++ {
+		fmt.Fprintf(&b, "%04d %s\n", i, strings.Repeat("x", w-6))
+	}
+	return b.Bytes()
+}
+
+func TestScaledCutNearThreshold(t *testing.T) {
+	const threshold = 4 << 10
+	cases := []struct {
+		name    string
+		data    []byte
+		keep    bool
+		wantCut bool
+	}{
+		{"4.3 KB is cut", linesOf(43, 100), true, true},
+		{"5.5 KB is cut", linesOf(55, 100), true, true},
+		{"3.9 KB stays", linesOf(39, 100), true, false},
+		{"nil keep stays", linesOf(43, 100), false, false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var keep func([]byte) (string, bool)
+			if c.keep {
+				keep = func([]byte) (string, bool) { return "0123456789ab", true }
+			}
+			res := CompactCapturedWithThreshold(nil, FamilyNone, c.data, 0, keep, true, threshold, "")
+			t.Logf("%d -> %d bytes", len(c.data), len(res.Output))
+			if cut := len(res.Output) < len(c.data); cut != c.wantCut {
+				t.Fatalf("cut=%v want %v", cut, c.wantCut)
+			}
+			if !c.wantCut {
+				return
+			}
+			if len(res.Output)*4 > len(c.data)*3 {
+				t.Errorf("gain under 25%%: %d of %d", len(res.Output), len(c.data))
+			}
+			if !strings.Contains(string(res.Output), "downshift retrieve 0123456789ab") {
+				t.Error("no retrieve marker")
+			}
+		})
+	}
+}
+
 func TestByteBudgetCut(t *testing.T) {
 	const threshold = 4 << 10
 	danger := "step 7 FAILED: assertion error in worker"
@@ -40,7 +86,7 @@ func TestByteBudgetCut(t *testing.T) {
 		{"danger line in the middle survives", fewLongLines(20, 600, danger), true, 0, true, true, danger},
 		{"nothing is cut without keep", fewLongLines(20, 600, ""), false, 0, true, false, ""},
 		{"below the threshold nothing is cut", fewLongLines(3, 600, ""), true, 0, true, false, ""},
-		{"gain under 25 percent is not applied", fewLongLines(62, 64, ""), true, 0, true, false, ""},
+		{"just over the threshold is cut by scaling", fewLongLines(62, 64, ""), true, 0, true, true, ""},
 		{"balanced off is not cut", fewLongLines(20, 600, ""), true, 0, false, false, ""},
 	}
 	for _, c := range cases {
