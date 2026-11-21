@@ -90,6 +90,7 @@ func printCompactionDetailMarkdown(w io.Writer, d accounting.CompactionDetail) {
 			}
 			fmt.Fprintln(w)
 		}
+		printOtherMarkdown(w, h.Other)
 		reasonTableMarkdown(w, "**Not compacted**", "commands", h.NotCompacted, notCompactedLabel)
 		reasonTableMarkdown(w, "**Left unwrapped by the hook**", "calls", h.Skipped, skippedLabel)
 		reasonTableMarkdown(w, "**Not compacted, detail** (output shape not recognized)", "commands", h.PassthroughDetails, detailLabel)
@@ -127,6 +128,7 @@ func printCompactionDetailText(w io.Writer, d accounting.CompactionDetail) {
 				fmt.Fprintf(w, "      %d more families in --json\n", more)
 			}
 		}
+		printOtherText(w, h.Other)
 		reasonLinesText(w, "not compacted", h.NotCompacted, notCompactedLabel)
 		reasonLinesText(w, "left unwrapped by the hook", h.Skipped, skippedLabel)
 		reasonLinesText(w, "not compacted, detail", h.PassthroughDetails, detailLabel)

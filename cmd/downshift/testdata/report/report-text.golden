@@ -58,6 +58,8 @@ COMPACTION DETAIL PER HARNESS (tokens are bytes / 4, an estimate)
    claude-code: 1 commands, 1 compacted
       family             commands compacted output tokens tokens avoided   cut
       other                     1         1          1.1k           1.0k   91%
+      inside other: program                           runs output tokens net saved  lines per run
+                    unknown (before head telemetry)      1          1.1k       91%  -
 
 EFFICIENCY PER HARNESS (all time)
    More work done, less premium intelligence consumed. Compactor tokens: see the section above.
