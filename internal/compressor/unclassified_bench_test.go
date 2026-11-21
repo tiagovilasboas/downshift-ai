@@ -40,6 +40,7 @@ var unclassifiedWant = map[string]struct{ raw, out int }{
 	"docker_ps_table.txt":        {6103, 3516},
 	"error_traceback_middle.txt": {5244, 3857},
 	"find_xargs_listing.txt":     {6480, 3639},
+	"git_diff_name_only.txt":     {5439, 3683},
 	"python_script_log.txt":      {24498, 5858},
 	"short_output.txt":           {134, 134},
 }
