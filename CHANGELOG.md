@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-11-21
+
+Release notes: [docs/releases/v0.20.0.md](docs/releases/v0.20.0.md).
+
+### Added
+
+- **Lossless pass and shapes for unclassified output (`#184`, `#196`, `#197`, `#202`).** Output with no family loses ANSI codes, progress lines and exact repeats; grep rows group by file, diffs and path lists get compact shapes with repeated directory prefixes factored out. Shapes also run inside an agent's own `head`/`tail` limit, where the byte cut stays off.
+- **Byte-budget cut stored in CCR (`#190`, `#198`, `#203`).** Unclassified output over the threshold keeps its head and tail within a byte budget once CCR stored the raw text; long path listings take the shorter cut, and output just over the 4 KiB post-run threshold is cut proportionally.
+- **rtk-style passes (`#207`).** Lines over 300 bytes are capped, runs of near-identical lines fold to first, count and last, shell JSON is pruned, and diffs over 8 KiB keep one context line per side. Each pass stores the original in CCR first and never touches lines with error words.
+- **Family fallback cut (`#206`).** When a family compressor cannot parse its output (an unrecognized `go test -v`, a failing `make`), the balanced cut runs instead; a failed run keeps every failure line plus three after it.
+- **Piped and chained family commands (`#204`, `#205`).** `go test ./... | tail -20` reaches the Go test compressor after the run, and each allowlisted segment of a `&&`/`;` chain (up to 8) is wrapped before the run.
+- **Session dedup (`#194`, `#201`).** A repeated file read or any repeated unclassified output in the same session becomes a pointer to the first copy.
+- **More families and pipes (`#167`–`#172`).** `swift test`, `ctest`, `mix test`, `git branch`, `git remote`, `git ls-files`, `ls`, safe redirects and text pipes; MCP JSON results (including escaped JSON, `#195`) and Grep/Glob tool results are pruned.
+- **Measurement (`#175`–`#183`, `#186`, `#187`, `#191`, `#199`, `#200`).** `downshift report` breaks the `other` family down by program, line bucket and net saving, explains unknown-harness rows, and shows subagent outcomes by spawn origin, tier and agent type; Claude Code subagent API-error and interrupt ends are recorded; a local opt-in sample of raw output measures the next gains.
+
+### Changed
+
+- **Fetch output stays out of CCR (`#176`).** Commands that may print credentials are never stored, so their output is never cut with loss.
+- **Experimental surfaces (`#189`).** `gateway` and `discover` are marked experimental; frozen packages reject new importers.
+- **Cursor quota bridge extension moved out of `internal/` (`#192`).**
+
 ## [0.19.0] - 2026-11-19
 
 Release notes: [docs/releases/v0.19.0.md](docs/releases/v0.19.0.md).
