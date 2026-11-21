@@ -40,6 +40,7 @@ var unclassifiedWant = map[string]struct{ raw, out int }{
 	"docker_ps_table.txt":        {6103, 3516},
 	"error_traceback_middle.txt": {5244, 3857},
 	"find_xargs_listing.txt":     {6480, 3639},
+	"git_show_piped.txt":         {14932, 8077},
 	"python_script_log.txt":      {24498, 5858},
 	"short_output.txt":           {134, 134},
 }
@@ -93,6 +94,26 @@ func TestUnclassifiedKeepsDangerLines(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestDiffShapedOnFixture reports what DiffShaped alone would read for the
+// piped git show fixture, and checks it keeps every +/- line.
+func TestDiffShapedOnFixture(t *testing.T) {
+	data := readUnclassified(t, "git_show_piped.txt")
+	out, ok := compressor.DiffShaped(data)
+	if !ok {
+		t.Fatal("DiffShaped did not compress the fixture")
+	}
+	t.Logf("git_show_piped.txt raw=%d diffshaped=%d ratio=%.2f", len(data), len(out), float64(len(out))/float64(len(data)))
+	kept := map[string]int{}
+	for _, l := range strings.Split(string(out), "\n") {
+		kept[l]++
+	}
+	for _, l := range strings.Split(string(data), "\n") {
+		if (strings.HasPrefix(l, "+") || strings.HasPrefix(l, "-")) && kept[l] == 0 {
+			t.Fatalf("change line lost: %q", l)
+		}
 	}
 }
 

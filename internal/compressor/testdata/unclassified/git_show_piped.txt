@@ -1,0 +1,264 @@
+commit c9852dce7c4caf925bc98d4bb80763d4b1875749
+Author: Tiago Vilas Boas <tcarvalhovb@gmail.com>
+Date:   Fri Nov 20 22:43:44 2026 -0300
+
+    chore: move the Cursor quota bridge extension out of internal/ (#192)
+    
+    ## What
+    
+    - The Cursor quota bridge moves from `internal/cursorbridge` to
+    `extensions/cursor-quota-bridge`. It is a JS extension plus a Python
+    packaging script, with no Go code.
+    - CI (`node --test`), the extension README, the packaging usage line,
+    `docs/guides/quota.md`, the coverage table, the frozen-packages list and
+    the architecture diagram now use the new path.
+    - The workflow lint in pre-commit fails on any staged `ci.yml`, so this
+    also clears the existing shellcheck findings there:
+      - the `$GITHUB_OUTPUT` writes are grouped into one block;
+    - the intentional `$pkgs` word splitting is marked with `# shellcheck
+    disable=SC2086`.
+    
+    ## Why
+    
+    The owner decided to move it as part of the freeze
+    (`docs/reference/frozen-packages.md`). `internal/` is for Go packages.
+    
+    ## Testing
+    
+    - `node --test
+    extensions/cursor-quota-bridge/extension/decoder.test.cjs` passes 5 of
+    5.
+    - `python3 extensions/cursor-quota-bridge/package.py out.vsix` builds
+    the VSIX. The script finds the root `LICENSE` at the same depth as
+    before.
+    - `make check` runs the full suite, because `ci.yml` changed. The
+    workflow lint passes.
+    
+    ## Impact
+    
+    The path changes for anyone who packages the extension by hand. There is
+    no runtime change.
+    
+    ## Checklist
+    
+    - [x] Docs updated
+    
+    ## Licence notice
+    
+    By contributing, I license this contribution under Apache 2.0.
+
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 8fa3cd6a..47ea1fd5 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -69,16 +69,18 @@ jobs:
+           GITHUB_SHA: ${{ github.sha }}
+           GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+           GITHUB_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+           GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
+         run: |
+           eval "$(bash scripts/ci-classify-changes.sh)"
+-          echo "docs_only=$docs_only" >> "$GITHUB_OUTPUT"
+-          echo "go=$go" >> "$GITHUB_OUTPUT"
+-          echo "python=$python" >> "$GITHUB_OUTPUT"
+-          echo "os_sensitive=$os_sensitive" >> "$GITHUB_OUTPUT"
++          {
++            echo "docs_only=$docs_only"
++            echo "go=$go"
++            echo "python=$python"
++            echo "os_sensitive=$os_sensitive"
++          } >> "$GITHUB_OUTPUT"
+ 
+   # The required `test` check, split into parallel jobs so the go test wall no
+   # longer runs behind vet/staticcheck/format on one runner. Three jobs:
+   #   test-checks  build + vet + staticcheck + format + smoke + node decoder,
+   #                run ONCE (not per shard).
+   #   test-shard   go test, fanned out across a deterministic, complete package
+@@ -150,13 +152,13 @@ jobs:
+         if: needs.changes.outputs.docs_only != '1'
+         with:
+           node-version: "22"
+ 
+       - name: Test Cursor quota decoder
+         if: needs.changes.outputs.docs_only != '1'
+-        run: node --test internal/cursorbridge/extension/decoder.test.cjs
++        run: node --test extensions/cursor-quota-bridge/extension/decoder.test.cjs
+ 
+   test-shard:
+     needs: changes
+     if: needs.changes.outputs.go == '1'
+     runs-on: ubuntu-latest
+     timeout-minutes: 20
+@@ -195,12 +197,14 @@ jobs:
+           if [ -z "$pkgs" ]; then
+             echo "No packages assigned to shard $SHARD_INDEX."
+             exit 0
+           fi
+           echo "Shard $SHARD_INDEX testing $(echo "$pkgs" | wc -l | tr -d ' ') package line(s):"
+           echo "$pkgs"
++          # $pkgs is a newline list of packages; split it on purpose.
++          # shellcheck disable=SC2086
+           go test $pkgs
+ 
+   # Branch-protection required check. Stays named exactly `test` and stays green
+   # only when the checks job, both test shards and the e2e battery succeeded, so
+   # a red e2e run can no longer reach main (#740).
+   test:
+@@ -363,23 +367,27 @@ jobs:
+           pkgs=$(printf '%s\n' "$pkgs" | bash scripts/ci-race-packages.sh)
+           if [ -z "$pkgs" ]; then
+             echo "No Go packages to race-test in shard $RACE_SHARD."
+             exit 0
+           fi
+           echo "Race-testing $(echo "$pkgs" | wc -l | tr -d ' ') package(s) in shard $RACE_SHARD"
++          # $pkgs is a newline list of packages; split it on purpose.
++          # shellcheck disable=SC2086
+           go test -race -timeout 15m $pkgs
+ 
+       - name: Test with the race detector (all but internal/core)
+         if: startsWith(github.ref, 'refs/tags/v')
+         run: |
+           # No changed files, so the filter drops internal/core; the core shard is empty.
+           pkgs=$(go list ./... | CI_CHANGED_FILES="" bash scripts/ci-race-packages.sh)
+           if [ -z "$pkgs" ]; then
+             echo "No Go packages to race-test in shard $RACE_SHARD."
+             exit 0
+           fi
++          # $pkgs is a newline list of packages; split it on purpose.
++          # shellcheck disable=SC2086
+           go test -race -timeout 15m $pkgs
+ 
+   # End-to-end battery (`make e2e`: builds ./downshift, then runs
+   # scripts/e2e/battery.py against a temp state dir). `test` needs it, so a red
+   # battery fails the required check. Runs on pull requests that change Go code
+   # and on push to main (the classifier forces go=1 there). It also runs on
+diff --git a/docs/contrib/coverage.md b/docs/contrib/coverage.md
+index 26ed2c0f..b397845f 100644
+--- a/docs/contrib/coverage.md
++++ b/docs/contrib/coverage.md
+@@ -52,13 +52,13 @@ file or from `AGENTS.md`.
+ | `internal/classify` | Routing | Regex signals, language guard, risk categories (telemetry and declared floors; no built-in floor since O8) |
+ | `internal/compressor` | Shell | Output compressor (families, corpus, mutation-closure tests) |
+ | `internal/console` | UI | Full-screen terminal console: home, command list, output pane; runs every command as a child of the binary |
+ | `internal/console/surface` | UI | Pure decision: console or plain text for an invocation; doubt is plain |
+ | `internal/contextopt` | Shell | Config for compaction and headroom |
+ | `internal/core` | Routing | `Route`, `Check` (R1-R9), `PlanSession`, `HarnessCapabilities` |
+-| `internal/cursorbridge` | Adapters | Cursor native session bridge |
++| `extensions/cursor-quota-bridge` | Adapters | Cursor native session bridge (JS extension, not Go) |
+ | `internal/discovery` | Routing | `models discover/list/check/pull` |
+ | `internal/docscheck` | Quality | CI gates for markdown layout and package inventory |
+ | `internal/execwrap` | Shell | Allowlist policy, family classification, compactor runner |
+ | `internal/desktopview` | Shell | agent-desktop repeat reads: keeps the last compact view per window and session (0600, 10-minute TTL) and sends the line delta |
+ | `internal/fuse` | Routing | Raise-only semantic boost |
+ | `internal/gateway` | Routing | Gateway companion abstractions and adapter for 9router |
+diff --git a/docs/design/architecture.md b/docs/design/architecture.md
+index 18119183..6e94bf6b 100644
+--- a/docs/design/architecture.md
++++ b/docs/design/architecture.md
+@@ -231,13 +231,13 @@ points down or sideways to an inner package, and `core` never points back out.
+  ┌──┴────────────────────────┐   ┌──┴────────────────────────────────────┐
+  │ hook providers            │   │ services over core                    │
+  │ quota → LoadQuota*        │   │ catalog (Resolver) · discovery · models│
+  │                           │   │ telemetry · hookport · childend       │
+  │                           │   │ contextopt · sensor · mcp/*           │
+  │                           │   │ outcome · accounting · postrun        │
+- │                           │   │ cursorbridge · workers · plan         │
++ │                           │   │ workers · plan                        │
+  │                           │   │ shellwrap · execwrap (compressor)     │
+  └───────────────────────────┘   └───────────────────────────────────────┘
+  leaf packages used by the layers above: classify semantic quotamodel paths
+    fuse (classify, semantic) · session (paths, quotamodel) · hookctx
+ ```
+ 
+diff --git a/docs/guides/quota.md b/docs/guides/quota.md
+index 40b0c77f..961aa771 100644
+--- a/docs/guides/quota.md
++++ b/docs/guides/quota.md
+@@ -180,13 +180,13 @@ invalid native list does not fall back to discovery or a handwritten list.
+ Native provider order is not a capability signal. Eligible targets need resolver
+ tier metadata, the task's capability floor and valid quota; unknown capabilities
+ hold. Equal-tier ties use the catalog output-token price; this does not promise
+ lower total cost for every input/output mix. A classified downshift cannot become
+ a higher-tier selection, or a higher output-token price within the same tier,
+ because another pool exhausted.
+-See the [bridge instructions](../../internal/cursorbridge/extension/README.md).
++See the [bridge instructions](../../extensions/cursor-quota-bridge/extension/README.md).
+ 
+ Runtime validation on Cursor **3.24.9** found that the proposed `cursor` API is
+ restricted to built-in extensions. The external experimental bridge failed at
+ transport access even with the explicit per-extension API flag, before any RPC;
+ no native file was produced. The file consumer is implemented and tested, but
+ this bridge is not an operational collector on that build. A supported source
+diff --git a/docs/reference/frozen-packages.md b/docs/reference/frozen-packages.md
+index 73ecd8aa..a98429b1 100644
+--- a/docs/reference/frozen-packages.md
++++ b/docs/reference/frozen-packages.md
+@@ -22,12 +22,12 @@ packages and commands stay in the binary and keep working.
+ | `internal/loop` | Batch runner and acceptance report for `downshift loop` | `cmd/downshift/loop*.go` | The report's acceptance text needs a fix (roadmap F4). |
+ | `internal/cascade` | Sensor-guided upgrade and the dead-end record | `cmd/downshift/exec.go`, `internal/loop` | Dead-end fingerprints use a per-install salted HMAC since #176. |
+ | `internal/contextopt`, `context` command surface | `downshift context`, `context enable`, `context compress` | `cmd/downshift/context*.go` | Freeze covers only the command surface. Balanced config, the CCR keep path and the post-run sensor still use the package and are not frozen. |
+ | `internal/gateway` | Router-agnostic multi-provider gateway | `cmd/downshift/cmd_gateway*.go`, `cmd_plan.go`, `doctor*.go` | Roadmap F2 marks `gateway` as `Experimental` in clispec. |
+ | `internal/missedsavings` | Scans harness transcripts for commands that could have been compacted | `cmd/downshift/cmd_discover.go` | Roadmap F2 marks `discover` as `Experimental`. |
+ | `internal/operatorexport` | Builds the artefact an outside operator shares | `cmd/downshift/export.go` | |
+-| `internal/cursorbridge` | Cursor extension and its packaging script; it contains no Go code | none in Go | Moves out of `internal/` in its own PR. |
++| `extensions/cursor-quota-bridge` | Cursor extension and its packaging script; it contains no Go code | none in Go | Moved out of `internal/` on 2026-11-20. |
+ 
+ ## Enforcement
+ 
+ Today this list is a review rule. Roadmap F3 adds an archtest check that fails
+ when new code imports a frozen package from a new caller without an exception.
+diff --git a/internal/cursorbridge/extension/README.md b/extensions/cursor-quota-bridge/extension/README.md
+similarity index 97%
+rename from internal/cursorbridge/extension/README.md
+rename to extensions/cursor-quota-bridge/extension/README.md
+index 72cddca2..58760834 100644
+--- a/internal/cursorbridge/extension/README.md
++++ b/extensions/cursor-quota-bridge/extension/README.md
+@@ -19,13 +19,13 @@ on that version; the proposal flag does not override the built-in restriction.
+ Do not modify the vendor application or impersonate a built-in extension.
+ 
+ For a future compatible host or reproduction of this limitation, package and
+ install explicitly from the Downshift repository root:
+ 
+ ```bash
+-python3 internal/cursorbridge/package.py /tmp/downshift-cursor-quota-bridge.vsix
++python3 extensions/cursor-quota-bridge/package.py /tmp/downshift-cursor-quota-bridge.vsix
+ cursor --install-extension /tmp/downshift-cursor-quota-bridge.vsix
+ cursor --new-window --enable-proposed-api tiagovilasboas.downshift-cursor-quota-bridge /path/to/trusted/workspace
+ ```
+ 
+ The manifest declares the internal `cursor` API proposal. A compatible host may
+ also require the exact-ID opt-in flag; Cursor 3.24.9 additionally enforces the
+diff --git a/internal/cursorbridge/extension/decoder.cjs b/extensions/cursor-quota-bridge/extension/decoder.cjs
+similarity index 100%
+rename from internal/cursorbridge/extension/decoder.cjs
+rename to extensions/cursor-quota-bridge/extension/decoder.cjs
+diff --git a/internal/cursorbridge/extension/decoder.test.cjs b/extensions/cursor-quota-bridge/extension/decoder.test.cjs
+similarity index 100%
+rename from internal/cursorbridge/extension/decoder.test.cjs
+rename to extensions/cursor-quota-bridge/extension/decoder.test.cjs
+diff --git a/internal/cursorbridge/extension/extension.cjs b/extensions/cursor-quota-bridge/extension/extension.cjs
+similarity index 100%
+rename from internal/cursorbridge/extension/extension.cjs
+rename to extensions/cursor-quota-bridge/extension/extension.cjs
+diff --git a/internal/cursorbridge/extension/package.json b/extensions/cursor-quota-bridge/extension/package.json
+similarity index 100%
+rename from internal/cursorbridge/extension/package.json
+rename to extensions/cursor-quota-bridge/extension/package.json
+diff --git a/internal/cursorbridge/package.py b/extensions/cursor-quota-bridge/package.py
+similarity index 96%
+rename from internal/cursorbridge/package.py
+rename to extensions/cursor-quota-bridge/package.py
+index 8504ed67..96938f36 100644
+--- a/internal/cursorbridge/package.py
++++ b/extensions/cursor-quota-bridge/package.py
+@@ -57,8 +57,8 @@ def package(target: Path) -> None:
+             archive.write(source, destination)
+     print(target)
+ 
+ 
+ if __name__ == "__main__":
+     if len(sys.argv) != 2:
+-        raise SystemExit("usage: python3 internal/cursorbridge/package.py OUTPUT.vsix")
++        raise SystemExit("usage: python3 extensions/cursor-quota-bridge/package.py OUTPUT.vsix")
+     package(Path(sys.argv[1]).expanduser().resolve())
