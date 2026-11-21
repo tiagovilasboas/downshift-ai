@@ -165,7 +165,11 @@ func compactShell(in hookport.ToolOutput, o Options) Result {
 	balanced := o.Balanced && exit == 0
 	threshold := balanceThreshold(o)
 	if !cut {
-		out = execwrap.CompactCapturedWithThreshold(argv, family, []byte(in.Stdout), exit, o.Keep, balanced, threshold, o.Session)
+		shapes := execwrap.Shapes{}
+		if family == execwrap.FamilyNone {
+			shapes = execwrap.ShapesFor(in.Command, []byte(in.Stdout))
+		}
+		out = execwrap.CompactCapturedShaped(argv, family, []byte(in.Stdout), exit, o.Keep, balanced, threshold, o.Session, shapes)
 	}
 	res.Compacted, res.Folded, res.Passthrough, res.Detail, res.KeptID = out.Compacted, out.Folded, out.Passthrough, out.Detail, out.KeptID
 	if out.Compacted {
