@@ -41,6 +41,7 @@ func styledReportData(d reportOut, events []telemetry.Event, days int, scope acc
 			}),
 			tabOf("Routing", func(w io.Writer) {
 				telemetry.PrintSegmentedReport(w, events, days)
+				printOutcomeOriginText(w, d.Report.OutcomeMatrix)
 				printRoutingWhy(w, d.WhySpawnsChanged)
 				printMainWork(w, d.MainSessionWork, scope.Label())
 			}),

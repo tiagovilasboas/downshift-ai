@@ -22,6 +22,12 @@ um PR, no máximo 5 pontos, mesclável sozinho.
 | Harnesses não-Claude com evento via hook | 0 | ≥ 1 |
 | Linhas `unknown` (harness) | 1835 | atribuídas ou com motivo |
 
+As três linhas de "checagem falhou" vêm de um cruzamento feito à mão (jq) com
+outra definição de origem. A definição única do O2 (`telemetry.OriginOf`),
+usada pelo report desde o O3, conta 175 / 283 / 174 tasks, com 3 / 1 / 2
+falhas. Mais 109 tasks ficam `unattributed`. Compare o fechamento com os
+números do report, não com os desta tabela.
+
 ## Achados que mudam a ordem
 
 - `other` é quase todo saída de post-run (10.982 de 11.400 linhas). FamilyNone
@@ -77,9 +83,9 @@ quando uma anterior fechar.
 ## Decisões do mantenedor (fora da execução automática)
 
 1. **Holdout (O7 → O8, O9):** deixar uma fração das decisões DOWNSHIFT sem
-   reescrita para medir causa. Gasta cota premium de propósito; desligado por
+   reescrita para medir causa ([holdout-decision.md](holdout-decision.md)). Gasta cota premium de propósito; desligado por
    padrão. Com ~200 rewrites/mês, distinguir 3% de 6% exige ~750 por grupo.
-2. **Congelar** `loop`, `cascade`, a superfície `context` do `contextopt`,
+2. **Congelar** ([frozen-packages.md](../reference/frozen-packages.md)) `loop`, `cascade`, a superfície `context` do `contextopt`,
    `gateway`, `missedsavings`, `operatorexport`; mover `cursorbridge` para fora
    de `internal/`.
 3. **F4:** corrigir o texto de ajuda ou ligar o aceite do `loop` ao `report`.
