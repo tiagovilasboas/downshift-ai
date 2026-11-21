@@ -42,6 +42,24 @@ reads and agent-desktop reads are never cut this way. The cut is made only when 
 never without stored raw output: with CCR off, this log, diff and search cut does not run.
 Family summaries (`git log`, `docker ps`, lint and build reports, a long file read) still cut with CCR
 off; their marker then ends `original not kept`.
+### Output no family recognises
+
+A command that no family covers (a pipe, a script, an unknown program) gets two more
+steps, after the run on a harness that replaces tool output:
+
+1. **Lossless pass, always.** ANSI colour and cursor codes are removed. A line that `\r`
+   overwrote (a progress bar) keeps only its final state, plus any earlier state with a
+   failure word. A run of identical lines becomes one line and `(repeated N times)`.
+   Failure lines are never folded. Nothing needs to be stored for this step. CCR still
+   keeps the original bytes when it stores the run.
+2. **Byte budget, when the line cut cannot help.** Output of a few long lines (minified
+   JSON, base64, a wide table) has too few lines for the 60 + 80 cut. When CCR stored the
+   raw output, the run exited 0 and the cut saves at least a quarter, the agent reads a
+   1.5 KB head and a 2 KB tail cut at line boundaries. It also reads every failure line in
+   between, with the 3 lines after it, within 2 KB. Any line over 400 bytes keeps its first
+   250 and last 100 bytes. A command whose output may carry credentials (`curl`, `wget` or
+   `glab` anywhere in it) is never stored, so this step never runs for it.
+
 `DOWNSHIFT_BALANCED=0` or `"balanced": false` in `context-optimization.json` turns it
 off; `downshift doctor` shows the mode, the threshold and the line caps in effect as
 `compactor mode`.
