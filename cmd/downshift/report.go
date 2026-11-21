@@ -118,6 +118,7 @@ func runReport(args []string, stdout, stderr io.Writer) int {
 	fmt.Fprintf(stdout, "   %s\n", nums.Display.Compactor)
 	printCompactionDetailText(stdout, data.CompactionDetail)
 	printEfficiencyText(stdout, data.Efficiency)
+	printOutcomeOriginText(stdout, data.Report.OutcomeMatrix)
 
 	// The routing note and the quota per harness: added sections, built from
 	// the same events and window, with no money in either.
