@@ -26,17 +26,42 @@ const (
 // would not save at least a quarter of the text; the caller keeps what it had
 // and must only use the result when the raw text is stored (retrievable).
 func BalanceBytes(text []byte) ([]byte, bool) {
+	return balanceBytes(text, byteBudgetHead, byteBudgetTail, byteBudgetKeep)
+}
+
+// Share of the input the proportional cut keeps, in percent: head, tail and
+// failure lines together stay near 60%, so output just over the threshold
+// still gains the quarter the cut needs.
+const (
+	scaledHeadPct = 22
+	scaledTailPct = 33
+	scaledKeepPct = 5
+)
+
+// BalanceBytesScaled is BalanceBytes with the budgets scaled down to a share
+// of the text when that is smaller than the fixed ones (output only a little
+// over the threshold). Larger text gets the fixed budgets.
+func BalanceBytesScaled(text []byte) ([]byte, bool) {
+	n := len(text)
+	head, tail := n*scaledHeadPct/100, n*scaledTailPct/100
+	if head >= byteBudgetHead && tail >= byteBudgetTail {
+		return BalanceBytes(text) // large enough: the fixed budgets already cut deeper
+	}
+	return balanceBytes(text, min(byteBudgetHead, head), min(byteBudgetTail, tail), min(byteBudgetKeep, n*scaledKeepPct/100))
+}
+
+func balanceBytes(text []byte, budgetHead, budgetTail, budgetKeep int) ([]byte, bool) {
 	lines := strings.Split(strings.TrimSuffix(string(text), "\n"), "\n")
 	for i, l := range lines {
 		lines[i] = midCut(l)
 	}
 	head, used := 0, 0
-	for head < len(lines) && used+len(lines[head])+1 <= byteBudgetHead {
+	for head < len(lines) && used+len(lines[head])+1 <= budgetHead {
 		used += len(lines[head]) + 1
 		head++
 	}
 	tail, used := len(lines), 0
-	for tail > head && used+len(lines[tail-1])+1 <= byteBudgetTail {
+	for tail > head && used+len(lines[tail-1])+1 <= budgetTail {
 		used += len(lines[tail-1]) + 1
 		tail--
 	}
@@ -50,7 +75,7 @@ func BalanceBytes(text []byte) ([]byte, bool) {
 			after-- // its assertion, its location
 			failure = true
 		}
-		if failure && keep+len(l)+1 <= byteBudgetKeep {
+		if failure && keep+len(l)+1 <= budgetKeep {
 			if gap > 0 {
 				out = append(out, fmt.Sprintf("… %d lines cut (downshift retrieve)", gap))
 				gap = 0

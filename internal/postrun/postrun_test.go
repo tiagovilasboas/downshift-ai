@@ -209,8 +209,10 @@ func TestCompact_SearchLedCut(t *testing.T) {
 		fmt.Fprintf(&rows, "plain file text line %d\n", i) // distinct: identical rows would be folded losslessly
 	}
 	in.Stdout = stdout + rows.String()
-	if res := Compact(allCaps, in, Options{Keep: keepOK, Balanced: true}); res.Replaced {
-		t.Errorf("chained file text cut:\n%s", res.Output.Stdout)
+	// A chained output is unclassified: just over the threshold it takes the
+	// proportional cut (CCR keeps the original), like any other unclassified text.
+	if res := Compact(allCaps, in, Options{Keep: keepOK, Balanced: true}); !res.Replaced || res.KeptID != "0123456789ab" {
+		t.Errorf("chained unclassified output not cut:\n%s", res.Output.Stdout)
 	}
 	in.Stdout = stdout
 	in.Command = "cat rows.txt | head -80"
@@ -254,7 +256,7 @@ func TestCompact_PostRun4KBBand(t *testing.T) {
 		t.Errorf("5 KB nonzero exit was cut: replaced=%v", failRes.Replaced)
 	}
 
-	// < 25% gain stays whole (80 lines * ~55 bytes = ~4.4 KB; the line cut keeps all, the byte cut saves ~20%).
+	// Just over the threshold (80 lines * ~55 bytes = ~4.4 KB) the proportional byte cut keeps ~60% and still gains 25%.
 	var smallGain strings.Builder
 	for i := 0; i < 80; i++ {
 		fmt.Fprintf(&smallGain, "row %03d: %s\n", i, strings.Repeat("x", 45))
@@ -264,8 +266,9 @@ func TestCompact_PostRun4KBBand(t *testing.T) {
 		t.Fatalf("smallGain len = %d, want > 4 KiB", len(sg))
 	}
 	sgIn := hookport.ToolOutput{Category: core.CategoryShell, Command: "custom-tool --run", Stdout: sg, HasStdout: true, ExitCode: 0}
-	if sgRes := Compact(allCaps, sgIn, opts); sgRes.Replaced || sgRes.Output.Stdout != sg {
-		t.Errorf("<25%% gain was cut: replaced=%v", sgRes.Replaced)
+	sgRes := Compact(allCaps, sgIn, opts)
+	if !sgRes.Replaced || sgRes.EmittedBytes*4 > sgRes.RawBytes*3 || sgRes.KeptID != "0123456789ab" {
+		t.Errorf("4.4 KB near-threshold output not cut by 25%%: %+v", sgRes)
 	}
 
 	// Explicit Options.BalanceThreshold overrides PostRunBalanceThreshold.
@@ -301,7 +304,7 @@ func TestCompact_InnerAndLeadingFamily(t *testing.T) {
 		{"cd compound go test exit 1 stays unextracted", "cd repo && go test ./...", goTestOut.String(), 1, execwrap.FamilyNone, false},
 		{"abs_path git status", "/opt/homebrew/bin/git status", gitStatusOut.String(), 0, execwrap.FamilyGitStatus, true},
 		{"quoted go test", `CGO_ENABLED=0 go test -run "TestCase" ./...`, goTestOut.String(), 0, execwrap.FamilyGoTest, true},
-		{"pipe stays unextracted", "go test ./... | tail -5", goTestOut.String(), 0, execwrap.FamilyNone, false},
+		{"tee pipe stays unextracted", "go test ./... | tee out.log", goTestOut.String(), 0, execwrap.FamilyNone, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			in := hookport.ToolOutput{Category: core.CategoryShell, Command: tc.cmd, Stdout: tc.stdout, HasStdout: true, ExitCode: tc.exit}
