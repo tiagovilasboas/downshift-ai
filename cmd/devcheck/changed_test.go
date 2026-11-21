@@ -4,7 +4,9 @@
 package main
 
 import (
+	"bytes"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -81,5 +83,39 @@ func TestGreenStamp(t *testing.T) {
 	}
 	if isGreen(path, "k2") {
 		t.Fatal("a different key must not be green")
+	}
+}
+
+func stageNames(stages []gateStage) []string {
+	names := make([]string, 0, len(stages))
+	for _, s := range stages {
+		names = append(names, s.name)
+	}
+	return names
+}
+
+func TestChangedStagesSkipVetAndTestWithoutGoPackages(t *testing.T) {
+	for _, pkgs := range [][]string{nil, {}} {
+		if got, want := stageNames(changedStages(pkgs)), []string{"gofmt"}; !reflect.DeepEqual(got, want) {
+			t.Errorf("pkgs=%v: stages = %v, want %v", pkgs, got, want)
+		}
+	}
+}
+
+func TestChangedStagesKeepVetAndTestForGoPackages(t *testing.T) {
+	want := []string{"gofmt", "vet host", "vet windows", "vet linux", "test"}
+	if got := stageNames(changedStages([]string{"x/internal/a"})); !reflect.DeepEqual(got, want) {
+		t.Errorf("stages = %v, want %v", got, want)
+	}
+}
+
+func TestRunStagesWithoutGoPackagesRunsOnlyGofmt(t *testing.T) {
+	var out bytes.Buffer
+	results := runStages(&out, nil)
+	if len(results) != 1 || results[0].name != "gofmt" {
+		t.Fatalf("results = %+v, want only gofmt", results)
+	}
+	if !strings.Contains(out.String(), "vet/test skipped") {
+		t.Errorf("output %q does not name the skipped stages", out.String())
 	}
 }

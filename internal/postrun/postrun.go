@@ -86,6 +86,9 @@ type Result struct {
 	// Inner and Kind describe a shell command with no family that the
 	// policy refuses for a metacharacter: execwrap.CompoundShape. Empty otherwise.
 	Inner, Kind string
+	// Head and LineBucket describe a command with no family: codes from
+	// execwrap.CommandHead and execwrap.LineBucket, never text.
+	Head, LineBucket string
 }
 
 // Compact returns the compaction of in, a finished tool call on a harness
@@ -136,6 +139,15 @@ func compactShell(in hookport.ToolOutput, o Options) Result {
 		}
 	}
 	res.RawBytes = int64(len(in.Stdout) + len(in.Stderr))
+	if res.Family == execwrap.FamilyNone {
+		res.Head = execwrap.CommandHead(in.Command)
+		res.LineBucket = execwrap.LineBucket(execwrap.CountLines(in.Stdout) + execwrap.CountLines(in.Stderr))
+	}
+	// A compound command that runs curl, wget or glab may carry credentials in
+	// its output: offer no store, so the output stays raw (never cut unstored).
+	if family == execwrap.FamilyNone && execwrap.CompoundRefusesRawStore(in.Command) {
+		o.Keep = nil
+	}
 	out, cut := execwrap.Captured{}, false
 	if family == execwrap.FamilyNone && o.Balanced {
 		out, cut = execwrap.CutSearch(in.Command, []byte(in.Stdout), exit, o.Keep, o.Session)
