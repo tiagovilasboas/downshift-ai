@@ -30,6 +30,10 @@ import "strings"
 // ReasonAllowlistedChain is the reason for a wrapped chain.
 const ReasonAllowlistedChain = "allowlisted_chain"
 
+// maxChainSegments bounds how many commands one chain may hold; a longer
+// chain passes raw.
+const maxChainSegments = 8
+
 // ReasonGuardedSegment is the reason for a chain refused because a segment
 // kept as written names a guarded program.
 const ReasonGuardedSegment = "guarded_segment"
@@ -48,6 +52,9 @@ func decideChain(trimmed, exe string) Decision {
 	segs, seps, ok := splitChain(trimmed)
 	if !ok {
 		return Decision{Reason: ReasonUnsafeChar}
+	}
+	if len(segs) > maxChainSegments {
+		return Decision{Reason: ReasonTooLong}
 	}
 	var out strings.Builder
 	var first *Decision

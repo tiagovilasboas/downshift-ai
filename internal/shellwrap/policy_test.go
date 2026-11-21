@@ -72,6 +72,28 @@ func TestDecide(t *testing.T) {
 	}
 }
 
+// A mixed chain is wrapped per segment on a harness that can rewrite; a rule on
+// a kept segment, the kill switch or a harness that cannot rewrite stops it.
+func TestDecideMixedChain(t *testing.T) {
+	cmd := "cd dir && go build ./... && go test ./pkg/..."
+	withEnv(t, true, nil, true)
+	d := decide(core.ShellPOSIX, cmd, never, true)
+	w := "'" + testExe + "' compact -- "
+	if want := "cd dir && " + w + "go build ./... && " + w + "go test ./pkg/..."; !d.Rewrite || d.Command != want {
+		t.Fatalf("decide = %+v, want command %q", d, want)
+	}
+	if got := decide(core.ShellPOSIX, cmd, func(s string) bool { return s == "cd dir" }, true); got.Rewrite || got.Reason != "blocked_by_user_rules" {
+		t.Fatalf("rule on a kept segment must block, got %+v", got)
+	}
+	if got := decide(core.ShellPOSIX, cmd, never, false); got.Rewrite {
+		t.Fatalf("harness that cannot rewrite got %+v", got)
+	}
+	withEnv(t, true, map[string]string{execwrap.KillSwitchEnv: "0"}, true)
+	if got := decide(core.ShellPOSIX, cmd, never, true); got.Rewrite || got.Reason != "disabled" {
+		t.Fatalf("kill switch got %+v", got)
+	}
+}
+
 func TestDecideRefusesWhenOneChainSegmentIsBlocked(t *testing.T) {
 	withEnv(t, true, nil, true)
 	cmd := "go test ./... && go vet ./..."
