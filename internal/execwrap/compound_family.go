@@ -19,22 +19,39 @@ import "strings"
 // it names is not proven safe to wrap.
 func InnerFamily(command string) Family {
 	for _, seg := range compoundSegments(command) {
-		if i := strings.IndexAny(seg, "<>"); i >= 0 {
-			seg = seg[:i]
-		}
-		words := strings.Fields(seg)
-		for i, w := range words {
-			words[i] = strings.Trim(w, `'"`)
-		}
-		_, argv := splitEnvAssignments(words)
-		if len(argv) == 0 || argv[0] == "downshift" {
-			continue
-		}
-		if f := FamilyOf(argv); f != FamilyNone {
+		if f := segmentFamily(seg); f != FamilyNone {
 			return f
 		}
 	}
 	return FamilyNone
+}
+
+// CompoundRefusesRawStore reports whether any segment of command runs a family
+// whose raw output must never reach the raw-output store (curl, wget, glab).
+// Unlike InnerFamily it looks at every segment, so `git log | curl ...` is seen.
+func CompoundRefusesRawStore(command string) bool {
+	for _, seg := range compoundSegments(command) {
+		if RawStoreRefused(segmentFamily(seg)) {
+			return true
+		}
+	}
+	return false
+}
+
+// segmentFamily is the family of the program one segment names.
+func segmentFamily(seg string) Family {
+	if i := strings.IndexAny(seg, "<>"); i >= 0 {
+		seg = seg[:i]
+	}
+	words := strings.Fields(seg)
+	for i, w := range words {
+		words[i] = strings.Trim(w, `'"`)
+	}
+	_, argv := splitEnvAssignments(words)
+	if len(argv) == 0 || argv[0] == "downshift" {
+		return FamilyNone
+	}
+	return FamilyOf(argv)
 }
 
 // compoundSegments splits command at the separators InnerFamily names, outside
