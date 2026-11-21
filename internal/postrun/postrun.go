@@ -132,9 +132,12 @@ func compactShell(in hookport.ToolOutput, o Options) Result {
 		exit = 0 // a post-run event for a successful call carries no code
 	}
 	if exit == 0 {
-		if ptr, id, ok := dedupShellRead(in.Command, in.Stdout, o, in.Session); ok {
+		if ptr, id, ok := dedupShellRead(in.Command, in.Stdout, in.Stderr, o, in.Session); ok {
 			res := Result{Considered: true, Family: execwrap.FamilyNone, Output: in, Compacted: true, Folded: true, KeptID: id}
 			res.Head = execwrap.CommandHead(in.Command)
+			res.Inner, res.Kind = execwrap.CompoundShape(in.Command)
+			res.Prog = execwrap.ProducerProgram(in.Command)
+			res.LineBucket = execwrap.LineBucket(execwrap.CountLines(in.Stdout) + execwrap.CountLines(in.Stderr))
 			res.RawBytes = int64(len(in.Stdout) + len(in.Stderr))
 			res.Output.Stdout = ptr
 			res.EmittedBytes = int64(len(ptr) + len(in.Stderr))
