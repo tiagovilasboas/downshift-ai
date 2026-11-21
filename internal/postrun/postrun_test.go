@@ -232,7 +232,8 @@ func TestCompact_PostRun4KBBand(t *testing.T) {
 	// ~5.5 KB log with >200 lines so balanced cut saves >25%.
 	var b strings.Builder
 	for i := 0; i < 220; i++ {
-		fmt.Fprintf(&b, "step %03d ok: build check\n", i)
+		// Distinct letters, not a counter: the near-repeat fold would fold a counter.
+		fmt.Fprintf(&b, "step %c%c%c ok: build check\n", 'a'+i/676%26, 'a'+i/26%26, 'a'+i%26)
 	}
 	fiveKB := b.String()
 	if len(fiveKB) <= 4<<10 || len(fiveKB) >= 16<<10 {

@@ -36,15 +36,15 @@ func unclassifiedBaseline(data []byte, exit int) []byte {
 var unclassifiedWant = map[string]struct{ raw, out int }{
 	"ansi_build_progress.txt":    {4319, 123},
 	"base64_blob.txt":            {5674, 3167},
-	"curl_jq_json.txt":           {9057, 5700},
+	"curl_jq_json.txt":           {9057, 2581},
 	"docker_ps_table.txt":        {6103, 3370},
-	"error_traceback_middle.txt": {5244, 3191},
-	"find_xargs_listing.txt":     {6480, 3531},
+	"error_traceback_middle.txt": {5244, 498},
+	"find_xargs_listing.txt":     {6480, 163},
 	"grep_pipe_matches.txt":      {11376, 3637},
 	"grep_pipe_small.txt":        {3803, 2864},
-	"git_show_piped.txt":         {14932, 3618},
+	"git_show_piped.txt":         {14932, 3582},
 	"git_diff_name_only.txt":     {5439, 3574},
-	"python_script_log.txt":      {24498, 5858},
+	"python_script_log.txt":      {24498, 5762},
 	"short_output.txt":           {134, 134},
 }
 

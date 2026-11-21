@@ -11,6 +11,7 @@ type Shapes struct {
 	On        bool // the lossless shape rewrites may run (the zero value runs none)
 	Limited   bool // the agent piped through a head or tail these lines already fit: no byte cut
 	SearchLed bool // the command is led by a search, so rows are grep rows
+	FileRead  bool // the command prints a file (cat, sed, head, tail, bat): long lines are content
 }
 
 // ShapesFor reads the shapes a command's output allows. The shapes keep every
@@ -20,7 +21,7 @@ func ShapesFor(command string, data []byte) Shapes {
 	if len(data) == 0 {
 		return Shapes{}
 	}
-	return Shapes{On: true, Limited: withinRequestedLimit(command, data), SearchLed: LedBySearch(command)}
+	return Shapes{On: true, Limited: withinRequestedLimit(command, data), SearchLed: LedBySearch(command), FileRead: readsFile(command)}
 }
 
 // rewrite tries, in order, grep grouping (search-led only), the diff rules and
