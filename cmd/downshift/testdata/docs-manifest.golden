@@ -167,6 +167,7 @@
     {
       "name": "discover",
       "summary": "Find commands the compactor would have changed but that ran bare",
+      "experimental": true,
       "flags": [
         {
           "name": "--since"
@@ -280,6 +281,7 @@
     {
       "name": "gateway",
       "summary": "Check local companion routers (9router)",
+      "experimental": true,
       "flags": [
         {
           "name": "--json"

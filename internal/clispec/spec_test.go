@@ -78,12 +78,12 @@ func TestEnvVarsMatchSource(t *testing.T) {
 // feature in development and maintainer tools. A daily command must never be
 // marked, or the default help would drop it.
 func TestExperimentalSetIsDeliberate(t *testing.T) {
-	want := []string{"context", "context compress", "context enable", "eval-outcome", "learning", "loop", "probe"}
+	want := []string{"context", "context compress", "context enable", "discover", "eval-outcome", "gateway", "learning", "loop", "probe"}
 	if got := ExperimentalNames(); !slices.Equal(got, want) {
 		t.Errorf("ExperimentalNames() = %v, want %v; change this list only with the owner's decision", got, want)
 	}
 	daily := []string{"setup", "doctor", "report", "stats", "session", "compact", "retrieve", "policy", "quota",
-		"models", "uninstall", "mcp", "version", "help", "config", "plan", "discover", "export"}
+		"models", "uninstall", "mcp", "version", "help", "config", "plan", "export"}
 	for _, name := range daily {
 		if c, ok := Lookup(name); !ok || c.Experimental || c.Hidden {
 			t.Errorf("daily command %q must exist and be neither experimental nor hidden", name)
