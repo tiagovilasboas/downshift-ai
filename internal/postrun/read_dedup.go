@@ -33,9 +33,10 @@ type readToolInput struct {
 }
 
 type readSnapshot struct {
-	MTime int64 `json:"mtime"`
-	Size  int64 `json:"size"`
-	At    int64 `json:"at"`
+	MTime int64  `json:"mtime"`
+	Size  int64  `json:"size"`
+	At    int64  `json:"at"`
+	ID    string `json:"id,omitempty"` // CCR handle (read-seen only)
 }
 
 // DedupRead suppresses redundant repeat file-read outputs within the same
