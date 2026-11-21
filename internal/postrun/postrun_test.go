@@ -191,8 +191,17 @@ func TestCompact_SearchLedCut(t *testing.T) {
 		t.Errorf("cut with the balanced cut off:\n%s", res.Output.Stdout)
 	}
 	in.Command = "grep -rn keep internal | head -80"
-	if res := Compact(allCaps, in, Options{Keep: keepOK, Balanced: true}); res.Replaced {
-		t.Errorf("cut within the head count the agent asked for:\n%s", res.Output.Stdout)
+	// Inside the agent's head the lossless grouping may run, but no row goes.
+	res = Compact(allCaps, in, Options{Keep: keepOK, Balanced: true})
+	if res.Replaced {
+		if strings.Contains(res.Output.Stdout, " more in ") {
+			t.Errorf("cut within the head count the agent asked for:\n%s", res.Output.Stdout)
+		}
+		for i := 1; i <= 60; i++ {
+			if !strings.Contains(res.Output.Stdout, fmt.Sprintf("%d:\tif keep == nil {", i)) {
+				t.Fatalf("row %d lost inside the head limit:\n%s", i, res.Output.Stdout)
+			}
+		}
 	}
 	in.Command = "grep -rn keep internal && sed -n 1,60p rows.txt"
 	var rows strings.Builder
@@ -200,8 +209,10 @@ func TestCompact_SearchLedCut(t *testing.T) {
 		fmt.Fprintf(&rows, "plain file text line %d\n", i) // distinct: identical rows would be folded losslessly
 	}
 	in.Stdout = stdout + rows.String()
-	if res := Compact(allCaps, in, Options{Keep: keepOK, Balanced: true}); res.Replaced {
-		t.Errorf("chained file text cut:\n%s", res.Output.Stdout)
+	// A chained output is unclassified: just over the threshold it takes the
+	// proportional cut (CCR keeps the original), like any other unclassified text.
+	if res := Compact(allCaps, in, Options{Keep: keepOK, Balanced: true}); !res.Replaced || res.KeptID != "0123456789ab" {
+		t.Errorf("chained unclassified output not cut:\n%s", res.Output.Stdout)
 	}
 	in.Stdout = stdout
 	in.Command = "cat rows.txt | head -80"
@@ -245,7 +256,7 @@ func TestCompact_PostRun4KBBand(t *testing.T) {
 		t.Errorf("5 KB nonzero exit was cut: replaced=%v", failRes.Replaced)
 	}
 
-	// < 25% gain stays whole (80 lines * ~55 bytes = ~4.4 KB; the line cut keeps all, the byte cut saves ~20%).
+	// Just over the threshold (80 lines * ~55 bytes = ~4.4 KB) the proportional byte cut keeps ~60% and still gains 25%.
 	var smallGain strings.Builder
 	for i := 0; i < 80; i++ {
 		fmt.Fprintf(&smallGain, "row %03d: %s\n", i, strings.Repeat("x", 45))
@@ -255,8 +266,9 @@ func TestCompact_PostRun4KBBand(t *testing.T) {
 		t.Fatalf("smallGain len = %d, want > 4 KiB", len(sg))
 	}
 	sgIn := hookport.ToolOutput{Category: core.CategoryShell, Command: "custom-tool --run", Stdout: sg, HasStdout: true, ExitCode: 0}
-	if sgRes := Compact(allCaps, sgIn, opts); sgRes.Replaced || sgRes.Output.Stdout != sg {
-		t.Errorf("<25%% gain was cut: replaced=%v", sgRes.Replaced)
+	sgRes := Compact(allCaps, sgIn, opts)
+	if !sgRes.Replaced || sgRes.EmittedBytes*4 > sgRes.RawBytes*3 || sgRes.KeptID != "0123456789ab" {
+		t.Errorf("4.4 KB near-threshold output not cut by 25%%: %+v", sgRes)
 	}
 
 	// Explicit Options.BalanceThreshold overrides PostRunBalanceThreshold.
