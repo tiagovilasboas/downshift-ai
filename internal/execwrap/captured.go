@@ -97,7 +97,11 @@ func CompactCapturedWithThreshold(argv []string, family Family, data []byte, exi
 	// original bytes.
 	work, lossless := data, false
 	if family == FamilyNone {
-		if work, lossless = compressor.LosslessText(data); lossless && keep != nil {
+		work, lossless = compressor.LosslessText(data)
+		if grouped, ok := compressor.GroupGrepLines(work); ok {
+			work, lossless = grouped, true
+		}
+		if lossless && keep != nil {
 			stored := keep
 			keep = func([]byte) (string, bool) { return stored(data) }
 		}
