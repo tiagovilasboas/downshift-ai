@@ -245,7 +245,7 @@ How each finding maps to a design principle, and what it does not show: [True no
 
 ## Documentation and community
 
-[Quickstart](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/guides/quickstart.md) · [CLI reference](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/reference/cli.md) · [Architecture](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/design/architecture.md) · [Português (Brasil)](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/pt-br/README.md)
+[Quickstart](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/guides/quickstart.md) · [CLI reference](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/reference/cli.md) · [Architecture](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/design/architecture.md) · [Português (Brasil)](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/pt-br/README.md) · [Article (pt-BR): how to save tokens in Claude Code](https://dev.to/tiagovilasboas/como-economizar-tokens-no-claude-code-conheca-o-downshift-4f0m)
 
 Found a bug or want to contribute? Read the [contributing guide](https://github.com/tiagovilasboas/downshift-ai/blob/main/CONTRIBUTING.md) or [open an issue](https://github.com/tiagovilasboas/downshift-ai/issues).
 
