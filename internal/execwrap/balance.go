@@ -75,6 +75,10 @@ func balance(keep func(raw []byte) (string, bool), family Family, raw, shown []b
 		body = body[:i]
 	}
 	cut, applied := compressor.BalanceWith(balanceKindOf(family), body, cfg.limits)
+	if !applied && family == FamilyNone {
+		// Too few lines for the line cut to help: cut by bytes.
+		cut, applied = compressor.BalanceBytes(body)
+	}
 	if !applied {
 		return nil, false
 	}

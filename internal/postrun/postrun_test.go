@@ -245,9 +245,9 @@ func TestCompact_PostRun4KBBand(t *testing.T) {
 		t.Errorf("5 KB nonzero exit was cut: replaced=%v", failRes.Replaced)
 	}
 
-	// < 25% gain stays whole (100 lines * ~55 bytes = ~5.5 KB; balanceLog keeps 60+80 >= 100 lines).
+	// < 25% gain stays whole (80 lines * ~55 bytes = ~4.4 KB; the line cut keeps all, the byte cut saves ~20%).
 	var smallGain strings.Builder
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 80; i++ {
 		fmt.Fprintf(&smallGain, "row %03d: %s\n", i, strings.Repeat("x", 45))
 	}
 	sg := smallGain.String()
