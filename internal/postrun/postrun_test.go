@@ -191,8 +191,17 @@ func TestCompact_SearchLedCut(t *testing.T) {
 		t.Errorf("cut with the balanced cut off:\n%s", res.Output.Stdout)
 	}
 	in.Command = "grep -rn keep internal | head -80"
-	if res := Compact(allCaps, in, Options{Keep: keepOK, Balanced: true}); res.Replaced {
-		t.Errorf("cut within the head count the agent asked for:\n%s", res.Output.Stdout)
+	// Inside the agent's head the lossless grouping may run, but no row goes.
+	res = Compact(allCaps, in, Options{Keep: keepOK, Balanced: true})
+	if res.Replaced {
+		if strings.Contains(res.Output.Stdout, " more in ") {
+			t.Errorf("cut within the head count the agent asked for:\n%s", res.Output.Stdout)
+		}
+		for i := 1; i <= 60; i++ {
+			if !strings.Contains(res.Output.Stdout, fmt.Sprintf("%d:\tif keep == nil {", i)) {
+				t.Fatalf("row %d lost inside the head limit:\n%s", i, res.Output.Stdout)
+			}
+		}
 	}
 	in.Command = "grep -rn keep internal && sed -n 1,60p rows.txt"
 	var rows strings.Builder

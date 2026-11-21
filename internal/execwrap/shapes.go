@@ -8,17 +8,19 @@ import "github.com/tiagovilasboas/downshift-ai/internal/compressor"
 // Shapes says which lossless shape rewrites may run on unclassified output.
 // The zero value applies none.
 type Shapes struct {
-	On        bool // the agent chose no head or tail limit that these lines already fit
+	On        bool // the lossless shape rewrites may run (the zero value runs none)
+	Limited   bool // the agent piped through a head or tail these lines already fit: no byte cut
 	SearchLed bool // the command is led by a search, so rows are grep rows
 }
 
-// ShapesFor reads the shapes a command's output allows. An output within a
-// head or tail the agent asked for is left as printed.
+// ShapesFor reads the shapes a command's output allows. The shapes keep every
+// row, so they run inside a head or tail the agent asked for too; Limited then
+// keeps the byte cut off, so every row the agent asked for still appears.
 func ShapesFor(command string, data []byte) Shapes {
 	if len(data) == 0 {
 		return Shapes{}
 	}
-	return Shapes{On: !withinRequestedLimit(command, data), SearchLed: LedBySearch(command)}
+	return Shapes{On: true, Limited: withinRequestedLimit(command, data), SearchLed: LedBySearch(command)}
 }
 
 // rewrite tries, in order, grep grouping (search-led only), the diff rules and

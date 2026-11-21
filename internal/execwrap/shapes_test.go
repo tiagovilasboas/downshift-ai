@@ -45,16 +45,19 @@ func TestShapesKeepDangerChangedLine(t *testing.T) {
 	}
 }
 
-func TestShapesLeaveHeadLimitedOutputAlone(t *testing.T) {
+func TestShapesRunInsideHeadLimit(t *testing.T) {
 	in := pipedDiff()
-	res := shapedRun("git diff | head -200", in, true)
-	keep := func([]byte) (string, bool) { return "abcdef012345", true }
-	plain := CompactCapturedWithThreshold(nil, FamilyNone, []byte(in), 0, keep, true, 1024, "")
-	if string(res.Output) != string(plain.Output) {
-		t.Errorf("a head-limited diff took the shape rewrite:\n%s", res.Output)
+	if s := ShapesFor("git diff | head -200", []byte(in)); !s.On || !s.Limited {
+		t.Errorf("shapes %+v, want On and Limited under a head limit the output fits", s)
 	}
-	if s := ShapesFor("git diff | head -200", []byte(in)); s.On {
-		t.Error("shapes on under a head limit the output fits")
+	if s := ShapesFor("git diff | cat", []byte(in)); s.Limited {
+		t.Error("Limited without a head or tail")
+	}
+	res := shapedRun("git diff | head -200", in, true)
+	for _, l := range []string{"+\tt.Errorf(\"step failed: %v\", err)", "-\tt.Log(\"ok\")"} {
+		if !strings.Contains(string(res.Output), l) {
+			t.Errorf("changed line lost inside a head limit: %q", l)
+		}
 	}
 	if res := shapedRun("git diff | cat", in, false); strings.Contains(string(res.Output), "@@ -1,90 +1,90 @@") == false {
 		t.Error("balanced off must leave the diff as printed")
