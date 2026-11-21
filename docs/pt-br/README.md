@@ -52,13 +52,14 @@ downshift update
 
 [![O assistente interativo detecta harnesses, permite escolher componentes e revisar alterações, grava após a confirmação e depois o usuário verifica a configuração](../brand/readme-media/setup-flow.svg)](../brand/readme-media/setup-flow.png)
 
-## Novo na v0.19.0
+## Novo na v0.20.0
 
-- **Estimativa de cota e paridade de skills entre harnesses**: `downshift stats`, `downshift report` (`--text`, `--json`, markdown), `downshift session --panel` e o painel `downshift-agents` mostram estimativas de cota sem unidade por harness (`QuotaUnits`) junto com a adoção de `ponytail` em 30 dias.
-- **Autocompletar e instaladores**: `downshift completion bash|zsh|fish|powershell`, instalador PowerShell para Windows com verificação SHA-256 (`install.ps1`) e suporte via Homebrew (`brew install tiagovilasboas/tap/downshift`).
-- **Postura open-source e segurança**: CodeQL, OpenSSF Scorecard, Dependabot, Dev Container e `SUPPORT.md`.
+- **Mais saída compactada, sem perder nada**: passes sem perda para saída sem família (ANSI, progresso, repetições, linhas de grep, diffs, listas de caminhos), corte por orçamento de bytes guardado no CCR, passes no estilo rtk (linhas longas, quase-repetições, JSON de shell, contexto de diff), comandos de família em pipes e cadeias, e um corte de reserva quando o compressor da família não reconhece a saída. Num replay de 30 dias de sessões reais (26.452 saídas acima de 1 KB) o corte subiu de 27,4% para 32,2%; todo corte com perda pode ser recuperado com `downshift retrieve`.
+- **Dedup na sessão**: uma leitura de arquivo ou saída de comando repetida na mesma sessão vira um ponteiro curto para a primeira cópia.
+- **Famílias novas**: `swift test`, `ctest`, `mix test`, além de `git branch`, `git remote`, `git ls-files` e `ls`.
+- **Medição melhor**: `downshift report` separa a saída sem família por programa, faixa de linhas e economia líquida, e mostra o resultado dos subagentes por origem do spawn.
 
-[Notas da v0.19.0](../releases/v0.19.0.md)
+[Notas da v0.20.0](../releases/v0.20.0.md)
 
 ## Novo na v0.18 (v0.18.1): a compactação alcança muito mais do que os agentes rodam
 

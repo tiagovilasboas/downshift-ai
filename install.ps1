@@ -5,7 +5,7 @@
 # Usage:
 #   irm https://raw.githubusercontent.com/tiagovilasboas/downshift-ai/main/install.ps1 | iex
 # Or with parameters after downloading:
-#   .\install.ps1 -Version v0.19.0
+#   .\install.ps1 -Version v0.20.0
 
 [CmdletBinding()]
 param(
@@ -58,7 +58,7 @@ if ([string]::IsNullOrWhiteSpace($Version)) {
     $Version = Resolve-LatestTag
 }
 if ([string]::IsNullOrWhiteSpace($Version)) {
-    Write-Error "Could not determine latest version. Pass -Version (e.g. v0.19.0) or install with: go install github.com/$Repo/cmd/downshift@latest"
+    Write-Error "Could not determine latest version. Pass -Version (e.g. v0.20.0) or install with: go install github.com/$Repo/cmd/downshift@latest"
 }
 if ($Version -notmatch '^v\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$') {
     Write-Error "Invalid version '$Version' (expected vMAJOR.MINOR.PATCH[-prerelease])."

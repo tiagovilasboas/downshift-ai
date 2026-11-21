@@ -52,13 +52,14 @@ downshift update
 
 [![Interactive setup detects harnesses, lets you choose components and review changes, writes after confirmation, then the user verifies the setup](docs/brand/readme-media/setup-flow.svg)](docs/brand/readme-media/setup-flow.png)
 
-## New in v0.19.0
+## New in v0.20.0
 
-- **Quota estimate & skill parity across harnesses**: `downshift stats`, `downshift report` (`--text`, `--json`, markdown), `downshift session --panel`, and the `downshift-agents` pane report per-harness unitless quota estimates (`QuotaUnits`) alongside 30-day `ponytail` adoption parity.
-- **Shell completions & installers**: `downshift completion bash|zsh|fish|powershell`, a verified Windows PowerShell installer (`install.ps1`), and Homebrew tap support (`brew install tiagovilasboas/tap/downshift`).
-- **Open-source & security posture**: CodeQL, OpenSSF Scorecard, Dependabot, Dev Container, and `SUPPORT.md`.
+- **More output compacted, nothing lost**: lossless passes for output with no family (ANSI, progress, repeats, grep rows, diffs, path lists), a byte-budget cut stored in CCR, rtk-style passes (long lines, near-repeats, shell JSON, diff context), piped and chained family commands, and a fallback cut when a family compressor cannot parse the output. On a 30-day replay of real sessions (26,452 outputs over 1 KB) the cut rose from 27.4% to 32.2%; every lossy cut stays retrievable with `downshift retrieve`.
+- **Session dedup**: a file read or a command output repeated in the same session becomes a short pointer to the first copy.
+- **New families**: `swift test`, `ctest`, `mix test`, plus `git branch`, `git remote`, `git ls-files` and `ls`.
+- **Better measurement**: `downshift report` breaks unclassified output down by program, line bucket and net saving, and shows subagent outcomes by spawn origin.
 
-[v0.19.0 release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.19.0.md)
+[v0.20.0 release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.20.0.md)
 
 ## New in v0.18 (v0.18.1): compaction reaches far more of what agents run
 
