@@ -41,7 +41,10 @@ var balanceRefused = map[Family]bool{
 }
 
 // balanceKindOf is the shape a family's output is cut as.
-func balanceKindOf(family Family) compressor.BalanceKind {
+func balanceKindOf(family Family, argv []string) compressor.BalanceKind {
+	if isNameListDiff(family, argv) {
+		return compressor.BalanceLog
+	}
 	switch family {
 	case FamilyGitDiff, FamilyGitShow:
 		return compressor.BalanceDiff
@@ -57,7 +60,7 @@ func balanceKindOf(family Family) compressor.BalanceKind {
 // false, and the caller prints shown, when balancing is off for the family,
 // the output is small, the cut saves too little or the raw output could not
 // be stored. A panic counts as false.
-func balance(keep func(raw []byte) (string, bool), family Family, raw, shown []byte, cfg balanceConfig) (res []byte, ok bool) {
+func balance(keep func(raw []byte) (string, bool), family Family, argv []string, exitCode int, raw, shown []byte, cfg balanceConfig) (res []byte, ok bool) {
 	defer func() {
 		if recover() != nil {
 			res, ok = nil, false
@@ -74,11 +77,7 @@ func balance(keep func(raw []byte) (string, bool), family Family, raw, shown []b
 	if i := bytes.LastIndex(body, []byte(markerPrefix)); i >= 0 && bytes.IndexByte(body[i:], '\n') == len(body)-i-1 {
 		body = body[:i]
 	}
-	cut, applied := compressor.BalanceWith(balanceKindOf(family), body, cfg.limits)
-	if !applied && family == FamilyNone {
-		// Too few lines for the line cut to help: cut by bytes.
-		cut, applied = compressor.BalanceBytes(body)
-	}
+	cut, applied := cutBody(family, argv, exitCode, raw, body, cfg.limits)
 	if !applied {
 		return nil, false
 	}
