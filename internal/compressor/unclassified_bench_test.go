@@ -34,7 +34,7 @@ func unclassifiedBaseline(data []byte, exit int) []byte {
 // its PR shows the delta; a worse result must not pass. Update with
 // DOWNSHIFT_UPDATE_BASELINE=1 and read the logged table.
 var unclassifiedWant = map[string]struct{ raw, out int }{
-	"ansi_build_progress.txt":    {4319, 2031},
+	"ansi_build_progress.txt":    {4319, 123},
 	"base64_blob.txt":            {5674, 5674},
 	"curl_jq_json.txt":           {9057, 5700},
 	"docker_ps_table.txt":        {6103, 6103},

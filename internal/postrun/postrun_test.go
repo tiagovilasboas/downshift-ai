@@ -195,7 +195,11 @@ func TestCompact_SearchLedCut(t *testing.T) {
 		t.Errorf("cut within the head count the agent asked for:\n%s", res.Output.Stdout)
 	}
 	in.Command = "grep -rn keep internal && sed -n 1,60p rows.txt"
-	in.Stdout = stdout + strings.Repeat("plain file text line\n", 40)
+	var rows strings.Builder
+	for i := 1; i <= 40; i++ {
+		fmt.Fprintf(&rows, "plain file text line %d\n", i) // distinct: identical rows would be folded losslessly
+	}
+	in.Stdout = stdout + rows.String()
 	if res := Compact(allCaps, in, Options{Keep: keepOK, Balanced: true}); res.Replaced {
 		t.Errorf("chained file text cut:\n%s", res.Output.Stdout)
 	}
