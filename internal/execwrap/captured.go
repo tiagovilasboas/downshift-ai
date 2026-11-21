@@ -106,6 +106,9 @@ func CompactCapturedShaped(argv []string, family Family, data []byte, exitCode i
 		work, lossless = compressor.LosslessText(data)
 		if grouped, ok := shapes.rewrite(work, balanced); ok {
 			work, lossless = grouped, true
+			if shapes.Limited {
+				balanced = false // inside the agent's own limit: group, never cut
+			}
 		}
 		if lossless && keep != nil {
 			stored := keep

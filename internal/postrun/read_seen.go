@@ -6,7 +6,6 @@ package postrun
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"path/filepath"
 	"time"
 
@@ -30,6 +29,10 @@ var fileReadHeads = map[string]bool{"cat": true, "sed": true, "head": true, "tai
 // pointer to the first handle; anything else, and any error, returns raw
 // unchanged (changed false). o.Keep stores the first copy.
 func seenRead(raw string, o Options, session string) (out, id string, changed bool) {
+	return seenReadWith(raw, o, session, filePointer)
+}
+
+func seenReadWith(raw string, o Options, session string, pointer pointerFunc) (out, id string, changed bool) {
 	defer func() {
 		if recover() != nil {
 			out, id, changed = raw, "", false
@@ -42,17 +45,16 @@ func seenRead(raw string, o Options, session string) (out, id string, changed bo
 	if err != nil {
 		return raw, "", false
 	}
-	return seenReadAt(raw, o, session, dir, time.Now())
+	return seenReadAt(raw, o, session, dir, time.Now(), pointer)
 }
 
-func seenReadAt(raw string, o Options, session, dir string, now time.Time) (string, string, bool) {
+func seenReadAt(raw string, o Options, session, dir string, now time.Time, pointer pointerFunc) (string, string, bool) {
 	sess := sha256.Sum256([]byte("downshift-read-seen-session-v1:" + session))
 	sum := sha256.Sum256([]byte(raw))
 	key := filepath.Join(dir, hex.EncodeToString(sess[:8])+"-"+hex.EncodeToString(sum[:16])+".json")
 
 	if prev, hit := readDedupSnapshot(key, readDedupTTL, now); hit && prev.ID != "" && prev.Size == int64(len(raw)) {
-		ptr := fmt.Sprintf("[downshift: unchanged, same %d lines (%d B) already read in this session; downshift retrieve %s]\n",
-			countLines(raw), len(raw), readRetrieveArg(session, prev.ID))
+		ptr := pointer(raw, readRetrieveArg(session, prev.ID))
 		if len(ptr) < len(raw) {
 			return ptr, prev.ID, true
 		}
@@ -75,10 +77,11 @@ func seenSession(o Options, payload string) string {
 	return payload
 }
 
-// dedupShellRead applies seenRead to the stdout of a file-reading shell command.
-func dedupShellRead(command, stdout string, o Options, payloadSession string) (string, string, bool) {
+// dedupShellRead applies seenRead to the stdout of a file-reading shell
+// command; any other unclassified output goes through dedupShellAny.
+func dedupShellRead(command, stdout, stderr string, o Options, payloadSession string) (string, string, bool) {
 	if !fileReadHeads[execwrap.CommandHead(command)] {
-		return stdout, "", false
+		return dedupShellAny(command, stdout, stderr, o, payloadSession)
 	}
 	return seenRead(stdout, o, seenSession(o, payloadSession))
 }
