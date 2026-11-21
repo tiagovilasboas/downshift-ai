@@ -79,6 +79,8 @@ func Record(ce hookport.ChildEnd, binaryVersion string, r core.Resolver) Result 
 	if ce.Source != hookport.SourceTranscript {
 		recordResolved(ce, sessionHash, callHash, agentHash, binaryVersion, prior, r, now)
 		recordChildEnd(ce, sessionHash, callHash, agentHash, binaryVersion, prior, now)
+	} else {
+		recordStopEnd(ce, agentHash, binaryVersion, prior, now)
 	}
 
 	priced := false // a later stop of an agent already priced (Cumulative)

@@ -46,6 +46,21 @@ func ClassifyChildEnd(event, toolStatus string, isInterrupt bool) ChildStatus {
 	return ChildUnknown
 }
 
+// ClassifyTranscriptEnd maps what a harness transcript shows about its last
+// row to a ChildStatus: an API error end (rate limit, server or auth error)
+// is ChildError, an end the user cut short is ChildInterrupted. Both are
+// facts the adapter reads as booleans; no error text crosses over. A normal
+// end is ChildUnknown: a transcript tail alone does not prove completion.
+func ClassifyTranscriptEnd(apiError, interrupted bool) ChildStatus {
+	switch {
+	case apiError:
+		return ChildError
+	case interrupted:
+		return ChildInterrupted
+	}
+	return ChildUnknown
+}
+
 // childStatusSynonyms is the vocabulary harnesses use for a child's status in
 // a payload field (Cursor subagentStop.status, Codex tool_response.status).
 // Both payload shapes are unverified, so the table is the union of the names

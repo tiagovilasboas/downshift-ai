@@ -32,6 +32,8 @@ func TestNeedsPrior(t *testing.T) {
 		{"transcript usage without agent id", hookport.ChildEnd{Source: hookport.SourceTranscript}, telemetry.TokenUsage{InputTokens: 5}, "s", "", "", false},
 		{"transcript usage with agent id", hookport.ChildEnd{Source: hookport.SourceTranscript}, telemetry.TokenUsage{InputTokens: 5}, "s", "", "a", true},
 		{"transcript status is not observed", hookport.ChildEnd{Source: hookport.SourceTranscript, Status: telemetry.ChildCompleted}, telemetry.TokenUsage{}, "s", "", "a", false},
+		{"transcript failed end without usage", hookport.ChildEnd{Source: hookport.SourceTranscript, Status: telemetry.ChildError}, telemetry.TokenUsage{}, "s", "", "a", true},
+		{"transcript failed end without agent id", hookport.ChildEnd{Source: hookport.SourceTranscript, Status: telemetry.ChildError}, telemetry.TokenUsage{}, "s", "", "", false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

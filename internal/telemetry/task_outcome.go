@@ -43,6 +43,16 @@ func (t TaskRecord) Outcome() TaskOutcome {
 	return FoldTaskOutcome(t.Status, t.Reworked, t.Verification)
 }
 
+// VerificationReported says whether a harness can report a child's own check
+// result at all. cmd installs it from the harness capabilities; nil means every
+// harness can, so nothing is reclassified.
+var VerificationReported func(harness string) bool
+
+// verificationMeasurable is false for a harness that cannot report a check.
+func verificationMeasurable(harness string) bool {
+	return VerificationReported == nil || VerificationReported(harness)
+}
+
 // OutcomeCounts holds task counts per outcome. A pass is only
 // AcceptedChecked; AcceptedUnchecked is never added to it.
 type OutcomeCounts struct {
@@ -51,7 +61,21 @@ type OutcomeCounts struct {
 	CheckFailed       int `json:"check_failed"`
 	AcceptedChecked   int `json:"accepted_checked"`
 	AcceptedUnchecked int `json:"accepted_unchecked"`
-	Unknown           int `json:"unknown"`
+	// AcceptedNotMeasurable counts normal ends on a harness that cannot report
+	// a child's check, so no check could have been seen. Never a pass.
+	AcceptedNotMeasurable int `json:"accepted_not_measurable,omitempty"`
+	Unknown               int `json:"unknown"`
+}
+
+// addTask counts a task. An accepted_unchecked end on a harness that cannot
+// report verification goes to AcceptedNotMeasurable instead.
+func (c *OutcomeCounts) addTask(t TaskRecord) {
+	o := t.Outcome()
+	if o == TaskAcceptedUnchecked && !verificationMeasurable(t.Harness) {
+		c.AcceptedNotMeasurable++
+		return
+	}
+	c.add(o)
 }
 
 func (c *OutcomeCounts) add(o TaskOutcome) {

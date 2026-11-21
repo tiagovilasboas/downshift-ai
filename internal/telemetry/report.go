@@ -95,7 +95,7 @@ func BuildReport(events []Event, days int) Report {
 		}
 		g.Spawns++
 		verdicts.add(t)
-		rep.Outcomes.add(t.Outcome())
+		rep.Outcomes.addTask(t)
 		if t.Completed() || t.Failed() {
 			g.Ended++
 		}

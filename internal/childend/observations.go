@@ -113,7 +113,13 @@ func recordChildEnd(ce hookport.ChildEnd, sessionHash, callHash, agentHash, bina
 	if !linkable(target, callHash) {
 		return
 	}
-	telemetry.Record(telemetry.Event{
+	telemetry.Record(childEndEvent(ce, target, agentHash, binaryVersion, now))
+}
+
+// childEndEvent is the child_ended observation for a child that ended with
+// ce.Status, linked to the decision target.
+func childEndEvent(ce hookport.ChildEnd, target *telemetry.Event, agentHash, binaryVersion string, now time.Time) telemetry.Event {
+	return telemetry.Event{
 		CorrelationID:  telemetry.NewCorrelationID(),
 		Timestamp:      now.UTC().Format(time.RFC3339Nano),
 		Source:         "hook",
@@ -129,5 +135,5 @@ func recordChildEnd(ce hookport.ChildEnd, sessionHash, callHash, agentHash, bina
 		LinkedDecision: decisionKey(*target),
 		AgentHash:      agentHash,
 		ChildStatus:    ce.Status,
-	})
+	}
 }
