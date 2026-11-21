@@ -27,6 +27,7 @@ func printReportMarkdown(w io.Writer, out reportOut, scope string) {
 	printEfficiencyMarkdown(w, out.Efficiency)
 
 	telemetry.PrintSegmentedReportMarkdown(w, out.Report, out.ByHarness)
+	printOutcomeOriginMarkdown(w, out.Report.OutcomeMatrix)
 
 	fmt.Fprint(w, "## Why spawns changed\n\n")
 	if out.WhySpawnsChanged.Decisions == 0 {
