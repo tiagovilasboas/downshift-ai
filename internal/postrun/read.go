@@ -47,6 +47,11 @@ func compactRead(in hookport.ToolOutput, o Options) Result {
 		EmittedBytes: int64(raw),
 		Passthrough:  execwrap.PassthroughSmallOutput,
 	}
+	if ptr, id, ok := seenRead(in.Content, o, seenSession(o, in.Session)); ok {
+		res.Output.Content, res.EmittedBytes, res.KeptID = ptr, int64(len(ptr)), id
+		res.Compacted, res.Folded, res.Passthrough = true, true, ""
+		return settle(res, in)
+	}
 	if raw >= readDedupMinBytes && len(in.ToolInput) > 0 && o.Balanced && o.Keep != nil {
 		if compacted, id, changed := tryDedupRead(in, o); changed {
 			res.Output.Content = compacted
