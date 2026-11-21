@@ -38,10 +38,13 @@ type OtherRow struct {
 	savedBytes  int64
 }
 
-// otherLabel names the program behind an `other` row, honestly "unknown" when
-// the row predates head telemetry.
+// otherLabel names the program behind an `other` row: the producer program
+// (execwrap.ProducerProgram) when known, else the older inner family, else the
+// head code; honestly "unknown" when the row predates head telemetry.
 func otherLabel(ev execwrap.Event) string {
 	switch {
+	case ev.Prog != "" && ev.Prog != execwrap.HeadUnknown:
+		return ev.Prog // the producing program; older rows have none
 	case ev.Inner != "":
 		return ev.Inner
 	case ev.Head != "":
