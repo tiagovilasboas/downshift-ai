@@ -58,6 +58,9 @@ func isGitBranchList(lines []string) bool {
 func compressGitList(input []byte) ([]byte, bool, string) {
 	lines := commandLines(input)
 	if len(lines) <= gitListThreshold {
+		if f, ok := FactorPathPrefixes(input); ok {
+			return f, true, "git list path prefixes factored"
+		}
 		return input, false, "no_compression_gain"
 	}
 	for _, l := range lines[gitListHead:] {

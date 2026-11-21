@@ -132,8 +132,12 @@ func compressPlainLs(input []byte, lines []string) ([]byte, bool, string) {
 		return input, false, "ls_empty_listing_preserved"
 	}
 	out := []byte(strings.Join(names, "\n") + "\n")
+	desc := "ls names only"
+	if f, ok := FactorPathPrefixes(out); ok {
+		out, desc = f, "ls names, path prefixes factored"
+	}
 	if len(out) >= len(input) {
 		return input, false, "no_compression_gain"
 	}
-	return out, true, "ls names only"
+	return out, true, desc
 }
