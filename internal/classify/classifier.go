@@ -108,7 +108,7 @@ type Classification struct {
 //   - Only the first 32 KB is scored (see maxClassifyBytes); word-count rules
 //     use the full prompt.
 func Classify(prompt string) Classification {
-	wordCount := len(strings.Fields(prompt)) // full text, before the cap
+	wordCount := countWords(prompt) // full text, before the cap
 	full := prompt
 	// Like the risk floor, language coverage must include text past the scoring
 	// cap. A foreign-language tail may contain risk the rule table cannot read.
