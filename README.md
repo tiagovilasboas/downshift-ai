@@ -52,14 +52,15 @@ downshift update
 
 [![Interactive setup detects harnesses, lets you choose components and review changes, writes after confirmation, then the user verifies the setup](docs/brand/readme-media/setup-flow.svg)](docs/brand/readme-media/setup-flow.png)
 
-## New in v0.20.0
+## New in v0.20 (v0.20.1)
 
 - **More output compacted, nothing lost**: lossless passes for output with no family (ANSI, progress, repeats, grep rows, diffs, path lists), a byte-budget cut stored in CCR, rtk-style passes (long lines, near-repeats, shell JSON, diff context), piped and chained family commands, and a fallback cut when a family compressor cannot parse the output. On a 30-day replay of real sessions (26,452 outputs over 1 KB) the cut rose from 27.4% to 32.2%; every lossy cut stays retrievable with `downshift retrieve`.
 - **Session dedup**: a file read or a command output repeated in the same session becomes a short pointer to the first copy.
 - **New families**: `swift test`, `ctest`, `mix test`, plus `git branch`, `git remote`, `git ls-files` and `ls`.
 - **Better measurement**: `downshift report` breaks unclassified output down by program, line bucket and net saving, and shows subagent outcomes by spawn origin.
+- **Zero-allocation prompt word count (`v0.20.1`)**: prompt classification avoids `strings.Fields` slice allocations on large prompts.
 
-[v0.20.0 release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.20.0.md)
+[v0.20.0 release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.20.0.md) · [v0.20.1 release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.20.1.md)
 
 ## New in v0.18 (v0.18.1): compaction reaches far more of what agents run
 
