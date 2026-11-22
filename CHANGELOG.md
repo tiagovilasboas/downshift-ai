@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.20.1] - 2026-11-22
+
+Release notes: [docs/releases/v0.20.1.md](docs/releases/v0.20.1.md).
+
+### Fixed
+
+- **Zero-allocation prompt word count (`#209`).** `internal/classify` counts prompt words without allocating a `[]string` via `strings.Fields`, eliminating ~130k-element allocations on 900 KB prompts and stabilizing `TestClassify900KBUnder500ms` under CI load.
+
 ## [0.20.0] - 2026-11-21
 
 Release notes: [docs/releases/v0.20.0.md](docs/releases/v0.20.0.md).
