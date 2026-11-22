@@ -84,3 +84,19 @@ func TestClassify900KBUnder500ms(t *testing.T) {
 	// fuse is in TestClassifyLatencyLargePrompts (900 KB, 10 s).
 	testenv.CheckBudget(t, "Classify of 900 KB", elapsed, time.Second)
 }
+
+func TestCountWordsMatchesStringsFields(t *testing.T) {
+	cases := []string{
+		"",
+		"   \t\n\r\v\f  ",
+		"hello",
+		"  hello   world\tfoo\nbar  ",
+		"olá\u00a0mundo\u2003teste  fim",
+		strings.Repeat("word ", 5000),
+	}
+	for _, tc := range cases {
+		if got, want := countWords(tc), len(strings.Fields(tc)); got != want {
+			t.Errorf("countWords(%q) = %d, want %d", tc, got, want)
+		}
+	}
+}

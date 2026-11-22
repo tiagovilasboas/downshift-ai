@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/lazyre"
 )
@@ -129,12 +131,37 @@ func applyRiskAbstention(prompt string, c Classification) Classification {
 	if len(c.Risk) == 0 || !c.Confident || (c.Complexity != Medium && c.Complexity != Simple) {
 		return c
 	}
-	wc := len(strings.Fields(prompt))
+	wc := countWords(prompt)
 	if boundedBrief(prompt, wc) || (c.Complexity == Medium && riskHighStakesWorkRE.MatchString(prompt)) {
 		c.Confident = false
 		c.RiskAbstain = true
 	}
 	return c
+}
+
+// countWords returns len(strings.Fields(s)) without allocating a slice.
+func countWords(s string) int {
+	count := 0
+	inWord := false
+	for i := 0; i < len(s); {
+		b := s[i]
+		var space bool
+		if b < utf8.RuneSelf {
+			space = b == ' ' || b == '\t' || b == '\n' || b == '\v' || b == '\f' || b == '\r'
+			i++
+		} else {
+			r, w := utf8.DecodeRuneInString(s[i:])
+			space = unicode.IsSpace(r)
+			i += w
+		}
+		if space {
+			inWord = false
+		} else if !inWord {
+			count++
+			inWord = true
+		}
+	}
+	return count
 }
 
 // ApplyRiskFloor lifts a Trivial/Simple classification that touches a risk
