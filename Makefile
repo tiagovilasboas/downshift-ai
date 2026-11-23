@@ -1,4 +1,4 @@
-.PHONY: build test lint vet check check-full check-fast check-changed test-changed test-staged vet-staged staticcheck-staged test-mods hooks hooks-uninstall install build-all clean report e2e bench bench-baseline
+.PHONY: build test lint vet check check-full check-fast check-changed test-changed test-staged vet-staged staticcheck-staged test-mods hooks hooks-uninstall install build-all clean report e2e bench bench-baseline bench-proof
 
 BINARY=downshift
 # DEVCHECK is the gate binary behind check-full and check-fast. Built, not go run, so a
@@ -143,3 +143,7 @@ help:
 ## e2e: build, then run the end-to-end battery against ./downshift in a temp state dir
 e2e: build
 	DOWNSHIFT_BIN=./$(BINARY) python3 -I scripts/e2e/battery.py
+
+## bench-proof: run the 1-command offline proof benchmark (compaction, signal retention, anti-loop, cache-safety)
+bench-proof: build
+	DOWNSHIFT_BIN=./$(BINARY) python3 -I scripts/bench-proof/run.py
