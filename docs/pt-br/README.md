@@ -52,6 +52,15 @@ downshift update
 
 [![O assistente interativo detecta harnesses, permite escolher componentes e revisar alterações, grava após a confirmação e depois o usuário verifica a configuração](../brand/readme-media/setup-flow.svg)](../brand/readme-media/setup-flow.png)
 
+## Novo na v0.21.0
+
+- **Bypass ativo anti-loop (`#211`)**: após duas falhas idênticas consecutivas de mesmo digest no CCR na mesma sessão dentro de 30 minutos, a compactação com perda sai do caminho (`anti_loop_bypass`) e entrega a saída bruta de falha literalmente até o comando passar.
+- **Saúde do cache de prompt e taxa de recuperação no CCR (`#212`)**: `downshift report` e `downshift stats` exibem `cache hit %` por harness (`cache_read`, `cache_write`, `input`) junto com o percentual recuperado via CCR (`% of cut`).
+- **Benchmark offline em 1 comando e kit A/B público (`#213`)**: `make bench-proof` verifica 89,2% de corte de bytes (`324,913 -> 35,113` bytes), recuperação exata 4/4 com `downshift retrieve`, `anti_loop_bypass`, invariância de cache de prompt e pisos de risco em `.downshift/policy.json`; `scripts/bench-ab/` adiciona o kit pareado A/B ao vivo.
+- **Documentação de segurança de cache e posicionamento neutro (`#214`)**: adicionados [Segurança de cache de prompt](../features/prompt-cache-safety.md), [Reproduzindo benchmarks](../guides/reproduce-benchmark.md) e notas de coexistência com `/compact`.
+
+[Notas da v0.21.0](../releases/v0.21.0.md)
+
 ## Novo na v0.20 (v0.20.1)
 
 - **Mais saída compactada, sem perder nada**: passes sem perda para saída sem família (ANSI, progresso, repetições, linhas de grep, diffs, listas de caminhos), corte por orçamento de bytes guardado no CCR, passes no estilo rtk (linhas longas, quase-repetições, JSON de shell, contexto de diff), comandos de família em pipes e cadeias, e um corte de reserva quando o compressor da família não reconhece a saída. Num replay de 30 dias de sessões reais (26.452 saídas acima de 1 KB) o corte subiu de 27,4% para 32,2%; todo corte com perda pode ser recuperado com `downshift retrieve`.
@@ -61,18 +70,6 @@ downshift update
 - **Contagem de palavras sem alocação (`v0.20.1`)**: a classificação de prompts evita alocações de slice via `strings.Fields` em prompts grandes.
 
 [Notas da v0.20.0](../releases/v0.20.0.md) · [Notas da v0.20.1](../releases/v0.20.1.md)
-
-## Novo na v0.18 (v0.18.1): a compactação alcança muito mais do que os agentes rodam
-
-**Projeção de 3,5 a 4,5 vezes mais tokens cortados por mês com a mesma carga de trabalho**, de cerca de 1,0M para algo entre 3,5M e 4,5M (bytes economizados / 4). É uma projeção calculada sobre os transcripts dos últimos 30 dias de um operador no Claude Code (69.341 resultados de ferramentas), ainda não medida depois da release: [método e limites](../evidence/compaction-projection-2026-11-17.md).
-
-- **Corte depois da execução a partir de 4 KB** (antes 16 KB) no Claude Code, inclusive em modos de permissão suprimidos e execuções em background (`v0.18.1`), com a saída bruta guardada para `downshift retrieve` e retenção de 6 gerações rotacionadas do log do compactor.
-- **Resultados de WebFetch, MCP e Read grandes compactados** depois da execução: `WebFetch` e `mcp__*` acima de 4 KB passam pelo corte balanceado; o `Read` continua intacto até 64 KB (acima de 64 KB mantém início e fim literais).
-- **Mais comandos envolvidos antes da execução**: cadeias com `;` / `&&`, globs entre aspas, caminhos como `/opt/homebrew/bin/gh`, `| head` / `| tail` sem número e `agent-desktop` (`snapshot`/`find`) classificado como somente leitura (`v0.18.1`).
-- **Novos compressores**: JSON de `gh api` / `curl`, `gh pr checks`, `gh pr diff`, listas do git, `git diff` / `show` / `status` grandes e mais nove famílias (terraform plan, cargo clippy e tree, docker e kubectl logs, composer, artisan, az pipelines).
-- **Paridade de skills entre harnesses e telemetria (`v0.18.1`)**: `downshift setup --yes` instala `ponytail` e as skills do Downshift em Claude Code, Codex, Cursor, OpenCode, Antigravity e Kiro/KiroCrew (`SkillsDir`), liga a identificação de sessão no `antigravity` e `kiro.HandlePostToolUse`, registra a adoção de `ponytail` no `downshift stats` e entrega a skill `web-motion` (focada em compositor) no plugin do Claude Code.
-
-[Notas da v0.18.0](../releases/v0.18.0.md) · [Notas da v0.18.1](../releases/v0.18.1.md) · Depois de atualizar, rode `downshift setup --yes` (e `claude plugin update downshift@downshift` se usar o plugin) para receber o novo matcher e as skills atualizadas.
 
 ## Otimização de tokens para agentes de programação
 

@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-11-23
+
+Release notes: [docs/releases/v0.21.0.md](docs/releases/v0.21.0.md).
+
+### Added
+
+- **Prompt-cache health & CCR retrieval share telemetry (`#212`).** `downshift report` and `downshift stats` track `cache_write` and uncached `input` alongside `cache_read` to surface per-harness `cache hit %`, and expose CCR retrieval share (`% of cut`) as a loss-of-signal sensor.
+- **1-command offline proof benchmark & public live A/B kit (`#213`).** Added `make bench-proof` (`scripts/bench-proof/`) to verify compaction + lossless CCR recovery (89.2% byte cut across 4 fixtures), debug signal + active `anti_loop_bypass`, prompt-cache prefix invariance, and `.downshift/policy.json` risk floors offline, alongside `scripts/bench-ab/` and [docs/guides/reproduce-benchmark.md](docs/guides/reproduce-benchmark.md).
+- **Prompt-cache safety & vendor-neutral documentation (`#214`).** Added [docs/features/prompt-cache-safety.md](docs/features/prompt-cache-safety.md) and documented active anti-loop safeguards, native `/compact` coexistence, and local proof verification across [docs/features/compaction.md](docs/features/compaction.md), `README.md`, and `docs/pt-br/README.md`.
+
+### Fixed
+
+- **Active anti-loop bypass on repeated failures (`#211`).** After 2 consecutive identical failing CCR digests in the same session within 30 minutes, lossy compaction steps aside (`anti_loop_bypass`) and delivers verbatim raw output until a passing run clears the streak.
+
 ## [0.20.1] - 2026-11-22
 
 Release notes: [docs/releases/v0.20.1.md](docs/releases/v0.20.1.md).
