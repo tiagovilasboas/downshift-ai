@@ -16,14 +16,14 @@ import (
 func TestCompactionDetailShowsCodes(t *testing.T) {
 	d := accounting.CompactionDetail{Harnesses: []accounting.HarnessCompaction{{
 		Harness: "claude-code", Commands: 3,
-		PassthroughDetails: []accounting.ReasonCount{{Reason: "cr", Count: 2}},
+		PassthroughDetails: []accounting.ReasonCount{{Reason: "cr", Count: 2}, {Reason: "anti_loop_bypass", Count: 1}},
 		SkipMetachars:      []accounting.ReasonCount{{Reason: "pipe", Count: 5}},
 	}, {Harness: "kirocrew"}}}
 	var md, txt bytes.Buffer
 	printCompactionDetailMarkdown(&md, d)
 	printCompactionDetailText(&txt, d)
 	for name, out := range map[string]string{"markdown": md.String(), "text": txt.String()} {
-		for _, want := range []string{"carriage return", "| pipe"} {
+		for _, want := range []string{"carriage return", "repeated failure in session; raw output kept to break loop", "| pipe"} {
 			if !strings.Contains(out, want) {
 				t.Errorf("%s output lacks %q:\n%s", name, want, out)
 			}

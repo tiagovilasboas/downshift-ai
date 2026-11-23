@@ -17,7 +17,11 @@ import (
 
 const (
 	antiLoopThreshold = 3
-	antiLoopPrefix    = "ccr-loop-"
+	// antiLoopBypassThreshold switches failing runs from lossy cuts to raw
+	// output once the same failing CCR digest repeats twice in the window, so
+	// the agent gets full diagnostics before hitting a retry loop.
+	antiLoopBypassThreshold = 2
+	antiLoopPrefix          = "ccr-loop-"
 	// antiLoopWindow is how long a streak stays alive: an older state counts
 	// as fresh, so a failure hours later starts again at 1.
 	antiLoopWindow = 30 * time.Minute
@@ -43,6 +47,32 @@ type antiLoopState struct {
 // undercount (a missed warning), never warn falsely, so no lock is taken.
 func checkAntiLoop(stderr io.Writer, session string, exitCode int, keptID string) {
 	checkAntiLoopAt(stderr, session, exitCode, keptID, time.Now())
+}
+
+// RecordAntiLoop updates or clears the per-session repeated-failure streak for
+// callers outside Run (such as post-run compaction). Passing runs (exitCode == 0)
+// clear the streak; non-zero runs increment it when keptID matches.
+func RecordAntiLoop(session string, exitCode int, keptID string) {
+	checkAntiLoop(nil, session, exitCode, keptID)
+}
+
+// AntiLoopActive reports whether session has accumulated at least
+// antiLoopBypassThreshold identical consecutive failures within antiLoopWindow.
+func AntiLoopActive(session string) bool {
+	return antiLoopActiveAt(session, time.Now())
+}
+
+func antiLoopActiveAt(session string, now time.Time) bool {
+	ref := SessionRef(session)
+	if ref == "" {
+		return false
+	}
+	path, err := paths.Join(antiLoopPrefix + ref + ".json")
+	if err != nil {
+		return false
+	}
+	st := readAntiLoopState(path)
+	return st.Count >= antiLoopBypassThreshold && st.At > 0 && now.Sub(time.Unix(st.At, 0)) <= antiLoopWindow
 }
 
 // checkAntiLoopAt is checkAntiLoop with the clock passed in.
