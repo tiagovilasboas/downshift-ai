@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/compressor"
 )
@@ -86,6 +87,9 @@ type Options struct {
 	// 2>/dev/null); ExitZero makes ShellExit return 0 (a trailing || true).
 	// Each adds a note at the end of a compacted output (run_tail.go).
 	DiscardStderr, ExitZero bool
+	// Timeout, when > 0, caps how long the child may run before it is
+	// terminated with exit code 124. Zero falls back to TimeoutEnv.
+	Timeout time.Duration
 }
 
 // Result is what one Run did. It holds no command text and no output.
@@ -175,7 +179,7 @@ func Run(argv []string, o Options) (res Result) {
 	g.keep, g.keepFailed = captureKept(o.Keep, &keptID, o.Session), captureKept(o.KeepFailed, &keptID, o.Session)
 	cmd := exec.Command(path, argv[1:]...)
 	cmd.Args[0] = argv[0]
-	cmd.Env = append(os.Environ(), DepthEnv+"=1")
+	cmd.Env = nonTTYEnv(os.Environ(), interactiveStdin(o.Stdin))
 	ownProcessGroup(cmd)
 	cmd.Stdin = o.Stdin
 	cmd.Stdout = stdoutWriter{g}
@@ -208,11 +212,23 @@ func Run(argv []string, o Options) (res Result) {
 		}
 	}()
 
-	res.ExitCode, res.ExitClass = exitStatus(cmd.Wait())
+	timeout := resolveTimeout(o.Timeout)
+	waitErr, timedOut := waitWithTimeout(cmd, timeout)
 	release()
+	if timedOut {
+		res.ExitCode, res.ExitClass = ExitTimeout, ExitClassNonZero
+	} else {
+		res.ExitCode, res.ExitClass = exitStatus(waitErr)
+	}
 	g.noteBytes = len(tailNotes(o, res.ExitCode))
 	res.RawBytes, res.EmittedBytes, res.Compacted, res.Folded, res.Passthrough = g.finish(res.ExitCode, res.Family)
 	res.PassthroughDetail = g.detail
+	if timedOut {
+		res.Passthrough = PassthroughNonZeroExit
+		if o.Stderr != nil {
+			fmt.Fprintf(o.Stderr, "downshift compact: %s: timed out after %s\n", argv[0], timeout)
+		}
+	}
 	if res.Compacted {
 		res.EmittedBytes += int64(g.noteBytes)
 		res.KeptID = keptID

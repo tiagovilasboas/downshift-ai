@@ -11,6 +11,7 @@ Location: `~/.downshift/config.json`
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `DOWNSHIFT_EXEC` | `1` | Enable/disable compaction (`0` to disable) |
+| `DOWNSHIFT_EXEC_TIMEOUT` | unset | Optional Go duration (such as `30s` or `2m`) to bound `downshift compact` child execution and exit `124` on timeout (unset or invalid = no timeout) |
 | `DOWNSHIFT_LEARNING` | `1` | Enable/disable compressor learning |
 | `DOWNSHIFT_STATE_DIR` | `~/.downshift` | State directory |
 | `DOWNSHIFT_QUIET` | `0` | Suppress non-error output |

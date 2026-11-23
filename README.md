@@ -118,6 +118,8 @@ Downshift recognizes selected test, build, lint, Git and infrastructure command 
 downshift compact -- go test ./...
 ```
 
+Non-interactive runs inject `GIT_TERMINAL_PROMPT=0` and `GH_PROMPT_DISABLED=1` when `stdin` is not a TTY so background `git`/`gh` commands fail fast instead of hanging, and `DOWNSHIFT_EXEC_TIMEOUT` (e.g. `30s`, `2m`) bounds child execution with exit code `124` on timeout.
+
 Clean output is compacted to save context tokens, while non-zero exit codes and failure logs are preserved in full.
 
 [Compaction](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/features/compaction.md) · [Supported tools](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/reference/supported-tools.md) · [CCR](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/guides/ccr.md)
