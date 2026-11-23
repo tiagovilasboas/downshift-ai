@@ -435,6 +435,11 @@ downshift compactor -- go test ./...
 go test ./...
 ```
 
+### Execution Timeout & Non-TTY Guard
+
+- **Execution timeout (`DOWNSHIFT_EXEC_TIMEOUT`):** set an optional Go duration (such as `30s` or `2m`) to bound `downshift compact` child execution. When the timeout expires, Downshift terminates the child and exits `124`; unset or invalid values mean no timeout.
+- **Non-TTY prompt guard:** when `stdin` is not a terminal, `downshift compact` injects `GIT_TERMINAL_PROMPT=0` and `GH_PROMPT_DISABLED=1` into the child environment so background `git` and `gh` commands fail fast instead of hanging on interactive credential prompts.
+
 ## Claude Code Integration
 
 On Claude Code, `downshift setup` installs a plugin that automatically rewrites

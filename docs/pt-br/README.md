@@ -113,7 +113,7 @@ Um comando suportado é executado normalmente. O Downshift mostra uma versão ma
 downshift compact -- go test ./...
 ```
 
-A saída limpa é compactada enquanto falhas e códigos de saída são preservados.
+A saída limpa é compactada enquanto falhas e códigos de saída são preservados. Em execuções sem TTY na entrada padrão (`stdin`), o encapsulador injeta `GIT_TERMINAL_PROMPT=0` e `GH_PROMPT_DISABLED=1` para que comandos `git`/`gh` em segundo plano falhem rápido em vez de travar esperando senha, e `DOWNSHIFT_EXEC_TIMEOUT` (ex.: `30s`, `2m`) limita a execução do processo filho com código de saída `124` ao expirar.
 
 [![As famílias reconhecidas incluem testes, builds e verificações, Git e infraestrutura; o comportamento depende do comando e do formato de saída](../brand/readme-media/command-families.svg)](../brand/readme-media/command-families.png)
 
