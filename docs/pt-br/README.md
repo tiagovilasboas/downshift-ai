@@ -52,6 +52,13 @@ downshift update
 
 [![O assistente interativo detecta harnesses, permite escolher componentes e revisar alterações, grava após a confirmação e depois o usuário verifica a configuração](../brand/readme-media/setup-flow.svg)](../brand/readme-media/setup-flow.png)
 
+## Novo na v0.22.0
+
+- **Guardas contra travamento e prompt interativo (`#219`)**: `DOWNSHIFT_EXEC_TIMEOUT` limita a execução no `downshift compact` (saindo com `124` no timeout) e chamadas sem TTY injetam `GIT_TERMINAL_PROMPT=0` e `GH_PROMPT_DISABLED=1` para `git`/`gh` em background falharem rápido em vez de pendurarem.
+- **Separação de telemetria e wiring explícito (`#218`)**: os read-outs de `internal/telemetry` passaram para `internal/telemetry/readout` e o registro implícito por `init()` foi substituído por `wireRuntime()` explícito em `cmd/downshift`.
+
+[Notas da v0.22.0](../releases/v0.22.0.md)
+
 ## Novo na v0.21.0
 
 - **Bypass ativo anti-loop (`#211`)**: após duas falhas idênticas consecutivas de mesmo digest no CCR na mesma sessão dentro de 30 minutos, a compactação com perda sai do caminho (`anti_loop_bypass`) e entrega a saída bruta de falha literalmente até o comando passar.
@@ -60,16 +67,6 @@ downshift update
 - **Documentação de segurança de cache e posicionamento neutro (`#214`)**: adicionados [Segurança de cache de prompt](../features/prompt-cache-safety.md), [Reproduzindo benchmarks](../guides/reproduce-benchmark.md) e notas de coexistência com `/compact`.
 
 [Notas da v0.21.0](../releases/v0.21.0.md)
-
-## Novo na v0.20 (v0.20.1)
-
-- **Mais saída compactada, sem perder nada**: passes sem perda para saída sem família (ANSI, progresso, repetições, linhas de grep, diffs, listas de caminhos), corte por orçamento de bytes guardado no CCR, passes no estilo rtk (linhas longas, quase-repetições, JSON de shell, contexto de diff), comandos de família em pipes e cadeias, e um corte de reserva quando o compressor da família não reconhece a saída. Num replay de 30 dias de sessões reais (26.452 saídas acima de 1 KB) o corte subiu de 27,4% para 32,2%; todo corte com perda pode ser recuperado com `downshift retrieve`.
-- **Dedup na sessão**: uma leitura de arquivo ou saída de comando repetida na mesma sessão vira um ponteiro curto para a primeira cópia.
-- **Famílias novas**: `swift test`, `ctest`, `mix test`, além de `git branch`, `git remote`, `git ls-files` e `ls`.
-- **Medição melhor**: `downshift report` separa a saída sem família por programa, faixa de linhas e economia líquida, e mostra o resultado dos subagentes por origem do spawn.
-- **Contagem de palavras sem alocação (`v0.20.1`)**: a classificação de prompts evita alocações de slice via `strings.Fields` em prompts grandes.
-
-[Notas da v0.20.0](../releases/v0.20.0.md) · [Notas da v0.20.1](../releases/v0.20.1.md)
 
 ## Otimização de tokens para agentes de programação
 
