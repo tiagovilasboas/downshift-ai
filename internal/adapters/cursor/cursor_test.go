@@ -304,6 +304,8 @@ func TestHandle_UnlabeledSessionIDIsEligible(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
+	core.WireSession()
+	quota.Register()
 	os.Setenv("DOWNSHIFT_STATE_DIR", filepath.Join(os.TempDir(), "downshift-test-state-cursor"))
 	os.Setenv("DOWNSHIFT_SESSION_MODELS", filepath.Join(os.TempDir(), "downshift-session-models-absent.json"))
 	os.Setenv("DOWNSHIFT_DISCOVERY", "off")

@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -73,7 +74,7 @@ func TestPanel_CompactorIsTheReportWindowOfAllRuns(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	raw, err := json.Marshal(panelWithReport(telemetry.PanelView{Session: mine}, mine, nil, execEvents))
+	raw, err := json.Marshal(panelWithReport(readout.PanelView{Session: mine}, mine, nil, execEvents))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +161,7 @@ func TestPanel_ReportEqualsReportJSON(t *testing.T) {
 // The session fields of the panel are the PanelView unchanged: every key the
 // view marshals keeps its value in the panel JSON.
 func TestPanel_SessionFieldsUnchanged(t *testing.T) {
-	view := telemetry.PanelView{Session: "h", Switched: 2, ModelSwitched: 2, Held: 1, Tokens: telemetry.RoutingRow{BelowBillable: 300, CacheRead: 200}}
+	view := readout.PanelView{Session: "h", Switched: 2, ModelSwitched: 2, Held: 1, Tokens: readout.RoutingRow{BelowBillable: 300, CacheRead: 200}}
 	viewRaw, err := json.Marshal(view)
 	if err != nil {
 		t.Fatal(err)
@@ -194,7 +195,7 @@ func TestPanel_NoExecEventsNoCompactorBlock(t *testing.T) {
 		Agent: "worker", Complexity: "SIMPLE", FromModel: "claude-opus-4-7", ToModel: "claude-haiku-4-5",
 		Verdict: "DOWNSHIFT", Outcome: "rewrite_emitted", Tier: "SMALL",
 	}}
-	out := panelWithReport(telemetry.PanelView{Session: "h"}, "h", events, nil)
+	out := panelWithReport(readout.PanelView{Session: "h"}, "h", events, nil)
 	raw, err := json.Marshal(out)
 	if err != nil {
 		t.Fatal(err)
@@ -250,7 +251,7 @@ func TestPanel_SkillsAndAdoptionLine(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			out := panelWithReport(telemetry.PanelView{Session: "h"}, "h", tc.events, nil)
+			out := panelWithReport(readout.PanelView{Session: "h"}, "h", tc.events, nil)
 			if !reflect.DeepEqual(out.Skills, tc.wantSkills) {
 				t.Errorf("Skills = %+v, want %+v", out.Skills, tc.wantSkills)
 			}

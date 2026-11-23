@@ -51,10 +51,10 @@ var execExecutable = func() (string, error) {
 	return exe, nil
 }
 
-func init() {
-	// Wire the three env accessors the shellwrap domain reads. Tests swap the
-	// package-level vars above before calling shellwrap functions; SetEnvFuncs
-	// is re-called in withExec so the domain sees the swapped values.
+// wireShellRewrite installs the three env accessors the shellwrap domain reads.
+// Tests swap the package-level vars above before calling shellwrap functions;
+// SetEnvFuncs is re-called in withExec so the domain sees the swapped values.
+func wireShellRewrite() {
 	shellwrap.SetEnvFuncs(
 		func() bool { return execConfigEnabled() },
 		func() (string, error) { return execExecutable() },

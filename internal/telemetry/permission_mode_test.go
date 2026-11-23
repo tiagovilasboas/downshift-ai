@@ -6,6 +6,7 @@ package telemetry_test
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"strings"
 	"testing"
 
@@ -79,19 +80,19 @@ func TestCountPermissionModesAndReport(t *testing.T) {
 		{Harness: "claude-code", Outcome: telemetry.OutcomeAllow},                                      // old log: no mode
 		{Harness: "claude-code", Outcome: telemetry.OutcomeUsage, PermissionMode: "bypassPermissions"}, // not a decision
 	}
-	counts := telemetry.CountPermissionModes(events)
+	counts := readout.CountPermissionModes(events)
 	if counts["plan"] != 2 || counts["auto"] != 1 || len(counts) != 2 {
 		t.Fatalf("CountPermissionModes = %v", counts)
 	}
-	rep := telemetry.BuildReport(events, 0)
+	rep := readout.BuildReport(events, 0)
 	var out bytes.Buffer
-	telemetry.PrintReport(&out, rep)
+	readout.PrintReport(&out, rep)
 	if !strings.Contains(out.String(), "Decisions by permission mode\n  plan") {
 		t.Fatalf("report lacks the mode split:\n%s", out.String())
 	}
-	none := telemetry.BuildReport([]telemetry.Event{{Harness: "claude-code", Outcome: telemetry.OutcomeAllow}}, 0)
+	none := readout.BuildReport([]telemetry.Event{{Harness: "claude-code", Outcome: telemetry.OutcomeAllow}}, 0)
 	out.Reset()
-	telemetry.PrintReport(&out, none)
+	readout.PrintReport(&out, none)
 	if strings.Contains(out.String(), "permission mode") {
 		t.Fatalf("a log without modes must not print the section:\n%s", out.String())
 	}
@@ -118,7 +119,7 @@ func TestWhyShowsModeAndQuota(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			out := telemetry.Why([]telemetry.Event{c.ev}, sess)
+			out := readout.Why([]telemetry.Event{c.ev}, sess)
 			for _, w := range c.want {
 				if !strings.Contains(out, w) {
 					t.Errorf("missing %q in:\n%s", w, out)

@@ -23,6 +23,11 @@ const (
 	OutcomeFailOpen = "fail_open"
 )
 
+// VerificationReported says whether a harness can report a child's own check
+// outcome. Wired by the composition root from core.CapsFor; nil treats every
+// harness as measurable.
+var VerificationReported func(harness string) bool
+
 // IsFailureOutcome reports whether an outcome is a hook failure rather than a
 // routing decision: an error record or a fail-open answer. Failure records
 // count in no routed/decision aggregate, exactly like errors.
@@ -116,4 +121,19 @@ func FailOpen(correlationID, binaryVersion, harness, cause string) Event {
 func (e Event) WithInvalidField(field string) Event {
 	e.InvalidField = field
 	return e
+}
+
+// IsDecisionRow reports whether an event is a routing decision of a subagent:
+// not a usage, resolved, child-ended or failure record. A paused
+// (baseline) decision is one: it is a spawn, only left unchanged.
+func IsDecisionRow(ev Event) bool {
+	if ev.Harness == "" {
+		return false
+	}
+	switch ev.Outcome {
+	case OutcomeUsage, OutcomeResolved, OutcomeChildEnded, "error", OutcomeFailOpen, OutcomeDCI,
+		OutcomeWorkerEnded, OutcomeMCPTool, OutcomeSkillUsed:
+		return false
+	}
+	return true
 }

@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"io"
 	"os"
 	"path/filepath"
@@ -83,7 +84,7 @@ func runDefaultEntry(in io.Reader, out, errw io.Writer, cat *catalog.Catalog) in
 		// Fallback to stats if session panel is quiet.
 		events, err := telemetry.ReadEvents()
 		if err == nil && len(events) > 0 {
-			telemetry.PrintStats(events, telemetry.StatsOptions{Days: 30}, out)
+			readout.PrintStats(events, readout.StatsOptions{Days: 30}, out)
 		} else {
 			fmt.Fprintln(out, "No subagent spawns recorded yet in this session.")
 			fmt.Fprintln(out, "Start a coding task in Claude Code, Cursor, or Codex to begin saving tokens.")

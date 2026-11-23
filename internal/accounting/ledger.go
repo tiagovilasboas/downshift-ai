@@ -5,9 +5,9 @@ package accounting
 
 import (
 	"fmt"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/execwrap"
-	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
 )
 
 // Ledger is the token ledger every surface shows over one Scope, tokens only,
@@ -42,10 +42,10 @@ func ledgerOf(n Numbers) Ledger {
 
 // LedgerLine is the printed ledger for scope, e.g.
 // "Token ledger (last 7 days): 45k cut by the compactor (estimate: saved bytes / 4)".
-// Routing tokens are per harness and printed apart (telemetry.PrintRouting).
+// Routing tokens are per harness and printed apart (readout.PrintRouting).
 func LedgerLine(l Ledger, scope Scope) string {
 	return fmt.Sprintf("Token ledger (%s): %s cut by the compactor (%s)",
 		scope.Label(),
-		telemetry.ShortTokens(l.CompactorSaved),
+		readout.ShortTokens(l.CompactorSaved),
 		l.CompactorEstimate)
 }

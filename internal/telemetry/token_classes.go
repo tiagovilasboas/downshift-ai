@@ -15,8 +15,8 @@ type TokenClasses struct {
 	Total int64 `json:"total"`
 }
 
-// classesOf splits a usage into the token classes the reports count.
-func classesOf(u TokenUsage) TokenClasses {
+// ClassesOf splits a usage into the token classes the reports count.
+func ClassesOf(u TokenUsage) TokenClasses {
 	cached := max(u.CachedTokens, 0)
 	write := min(max(u.CacheWriteTokens, 0), cached)
 	c := TokenClasses{
@@ -38,7 +38,8 @@ func (c TokenClasses) Cache() int64 { return c.CacheRead + c.CacheWrite }
 // not the tier it ran on, so counting them buries the difference a tier makes.
 func (c TokenClasses) Billable() int64 { return c.Input + c.Output + c.CacheWrite }
 
-func (c *TokenClasses) add(o TokenClasses) {
+// Add accumulates o into c.
+func (c *TokenClasses) Add(o TokenClasses) {
 	c.Records += o.Records
 	c.Input += o.Input
 	c.Output += o.Output

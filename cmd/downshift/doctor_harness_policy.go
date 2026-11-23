@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"os"
 	"path/filepath"
 	"strings"
@@ -98,7 +99,7 @@ func humanAge(d time.Duration) string {
 }
 
 func checkHonored(add func(id, status, detail, fix string), mine []telemetry.Event) {
-	t := telemetry.TallyHonored(mine)
+	t := readout.TallyHonored(mine)
 	shifted, honored := t.Shifted, t.Honored
 	switch {
 	case honored > 0:
@@ -114,7 +115,7 @@ func checkHonored(add func(id, status, detail, fix string), mine []telemetry.Eve
 
 // honorMissDetail says why rewrites not seen honored are missing: refuted by
 // the child's resolved model, or simply never observed.
-func honorMissDetail(t telemetry.HonorTally) string {
+func honorMissDetail(t readout.HonorTally) string {
 	var parts []string
 	if t.Refuted > 0 {
 		parts = append(parts, fmt.Sprintf("%d refuted: the child ran another model", t.Refuted))

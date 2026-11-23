@@ -17,7 +17,10 @@ type SessionList = session.SessionList
 // SessionModel is exact-id capability evidence carried on a SessionList.
 type SessionModel = session.SessionModel
 
-func init() {
+// WireSession installs core's env lookup, native session reader, and
+// forwarding quota hooks onto internal/session so session loaders see the
+// same snapshot and native evidence registered on core.
+func WireSession() {
 	// The session package must not import core. Wire the env seam and the
 	// quota hooks so loaders see the same snapshot and the same evidence
 	// quota registers on this package.

@@ -5,6 +5,7 @@ package main
 
 import (
 	"bytes"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"io"
 	"strings"
 
@@ -40,7 +41,7 @@ func styledReportData(d reportOut, events []telemetry.Event, days int, scope acc
 				printCompactionDetailText(w, d.CompactionDetail)
 			}),
 			tabOf("Routing", func(w io.Writer) {
-				telemetry.PrintSegmentedReport(w, events, days)
+				readout.PrintSegmentedReport(w, events, days)
 				printOutcomeOriginText(w, d.Report.OutcomeMatrix)
 				printRoutingWhy(w, d.WhySpawnsChanged)
 				printMainWork(w, d.MainSessionWork, scope.Label())

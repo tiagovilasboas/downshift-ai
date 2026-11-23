@@ -3,7 +3,7 @@
 Downshift by Tiago Vilas Boas
 https://github.com/tiagovilasboas/downshift-ai
 
-Execution snapshot: **2026-10-09** (synced **2026-11-18** against `v0.18.1`, `1df38a25`; open items from the 2026-10-11 review and 2026-11-11 compactor review are tracked below). These are the remaining tasks from the runtime
+Execution snapshot: **2026-10-09** (synced **2026-11-23** against `v0.21.0`, `c8bb61a8`; open items from the 2026-10-11 review and 2026-11-11 compactor review are tracked below). These are the remaining tasks from the runtime
 and evidence review, linked to [beta exit](../reference/beta-exit.md). Code shipped, native
 data collected, rewrite emitted, and executor model observed are separate states.
 Close a task only with its acceptance evidence and a date.
@@ -166,4 +166,14 @@ Runtime and parity changes landed through `v0.18.1` (`1df38a25`, `2026-11-18`):
 - **`agent-desktop` CLI verified locally at `1.3.1`:** live Finder delta compaction verified via CLI, and `agent-desktop` (`snapshot`/`find`) added to `readOnlyFamilies` (`v0.18.1`). `agent-desktop` MCP remains outside the `agent-desktop` view/delta compressor.
 - **`ponytail` / skills parity (`v0.18.1`):** `OutcomeSkillUsed` (`Skill` PostToolUse matcher, strict allowlist, `Adoption.Skills` count display) verified via live smoke on Claude Code; `SkillsDir` installs the five embedded skills (`downshift-audit`, `downshift-orchestrator`, `downshift-effort`, `downshift-squad`, `ponytail`) across all 7 code harnesses (`claude-code`, `cursor`, `opencode`, `codex`, `kiro`, `antigravity`, `kirocrew`), with `Skill` telemetry wired on Claude Code only.
 - **Cross-harness adapter parity (`v0.18.1`):** `kiro.HandlePostToolUse` (`MainToolEvent`, context sensor, child-end parsing; live PostToolUse capture still open under `GAP-PAYLOADS`) and `antigravity.SessionIdentifier` wired (`conversationId`/`sessionId`/`session_id`).
+- **Open beta gates unchanged:** `GAP-CURSOR-HONOR` (`P1.6`), `GAP-EXTERNAL` (`P2.3`), `GAP-README-DATA` (`P2.4`), `GAP-GENERALIZATION` (`P4`), `GAP-CURSOR-REVALIDATE` (`P5.3`), and `GAP-CODEX-REVALIDATE` (`P5.4`) remain strictly open.
+
+## Sync update (2026-11-23, v0.21.0)
+
+Runtime, observability, and verification changes landed through `v0.21.0` (`c8bb61a8`, `2026-11-23`):
+
+- **Active anti-loop bypass (`#211`):** `execwrap.AntiLoopActive` / `RecordAntiLoop` turn passive anti-loop warnings into an active raw bypass at 2 or more consecutive identical failing CCR digests in the same session within 30 minutes across both pre-run `execwrap.Run` and `postrun.compactShell`, returning verbatim raw output (`detail: anti_loop_bypass`) and clearing the streak on pass.
+- **Prompt-cache health & CCR retrieval share (`#212`):** `telemetry.RoutingRow` and `internal/telemetry/cache_health.go` track `cache_write` and uncached `input` alongside `cache_read` to render per-harness `cache hit %` in `downshift report` / `downshift stats`, while `execwrap.SummarizeEvents` and `accounting.Compactor` surface `RetrievedPct` (`% of cut` bytes pulled back via `downshift retrieve`).
+- **Offline proof benchmark & public A/B kit (`#213`):** `make bench-proof` (`scripts/bench-proof/run.py`) verifies compaction + CCR lossless recovery, `anti_loop_bypass`, prompt-cache invariance, and `.downshift/policy.json` risk floors offline at zero API cost; `scripts/bench-ab/` and [reproduce-benchmark.md](../guides/reproduce-benchmark.md) add a paired live A/B runner and scorer.
+- **Prompt-cache safety & positioning docs (`#214`):** added [prompt-cache-safety.md](../features/prompt-cache-safety.md) and updated [compaction.md](../features/compaction.md), `README.md`, and `docs/pt-br/README.md`.
 - **Open beta gates unchanged:** `GAP-CURSOR-HONOR` (`P1.6`), `GAP-EXTERNAL` (`P2.3`), `GAP-README-DATA` (`P2.4`), `GAP-GENERALIZATION` (`P4`), `GAP-CURSOR-REVALIDATE` (`P5.3`), and `GAP-CODEX-REVALIDATE` (`P5.4`) remain strictly open.

@@ -5,8 +5,7 @@ package accounting
 
 import (
 	"fmt"
-
-	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 )
 
 // WorkingMemory summarizes how much noisy scrollback the Compactor kept out
@@ -37,7 +36,7 @@ func BuildWorkingMemory(n Numbers) WorkingMemory {
 // session in front of them.
 func WorkingMemoryLine(tokens, savedBytes int64, scope string) string {
 	if tokens > 0 {
-		return fmt.Sprintf("Context preserved (%s): ~%s tokens of noisy scrollback kept out of working memory", scope, telemetry.ShortTokens(tokens))
+		return fmt.Sprintf("Context preserved (%s): ~%s tokens of noisy scrollback kept out of working memory", scope, readout.ShortTokens(tokens))
 	}
 	if savedBytes > 0 {
 		return fmt.Sprintf("Context preserved (%s): %d bytes of noisy scrollback kept out of working memory", scope, savedBytes)

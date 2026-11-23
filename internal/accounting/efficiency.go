@@ -4,6 +4,7 @@
 package accounting
 
 import (
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"sort"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
@@ -40,7 +41,7 @@ type HarnessEfficiency struct {
 	Spawns       int          `json:"spawns"`
 	SpawnsByTier SpawnsByTier `json:"spawns_by_tier"`
 	// Ended, Completed, Reworked and ReworkRatio are the routed table's own
-	// figures (telemetry.GroupSummary): Completed is completed tasks with
+	// figures (readout.GroupSummary): Completed is completed tasks with
 	// usage observed, the population of the premium figure below.
 	Ended       int     `json:"ended"`
 	Completed   int     `json:"completed_tasks"`
@@ -59,7 +60,7 @@ type HarnessEfficiency struct {
 
 // BuildEfficiency folds the routed spawns of scope per harness, in name order.
 // Pure: the caller reads the event log. The window and the spawn join are the
-// report's own (scopeTelemetry, telemetry.BuildReport / BuildTasks), so the
+// report's own (scopeTelemetry, readout.BuildReport / BuildTasks), so the
 // completed, ended and rework figures are the routed table's.
 func BuildEfficiency(events []telemetry.Event, scope Scope) Efficiency {
 	scoped := scopeTelemetry(events, scope)
@@ -70,7 +71,7 @@ func BuildEfficiency(events []telemetry.Event, scope Scope) Efficiency {
 			byHarness[ev.Harness] = append(byHarness[ev.Harness], ev)
 		}
 	}
-	tiers := telemetry.RanTiers(scoped)
+	tiers := readout.RanTiers(scoped)
 	for h, evs := range byHarness {
 		if row, ok := efficiencyOf(h, evs, tiers); ok {
 			out.Harnesses = append(out.Harnesses, row)
@@ -81,30 +82,30 @@ func BuildEfficiency(events []telemetry.Event, scope Scope) Efficiency {
 }
 
 // efficiencyOf is one harness; false when it has no routed spawn.
-func efficiencyOf(harness string, evs []telemetry.Event, tiers map[telemetry.SpawnRef]telemetry.RanTier) (HarnessEfficiency, bool) {
-	rep := telemetry.BuildReport(evs, 0)
+func efficiencyOf(harness string, evs []telemetry.Event, tiers map[readout.SpawnRef]readout.RanTier) (HarnessEfficiency, bool) {
+	rep := readout.BuildReport(evs, 0)
 	g := rep.Routed
 	row := HarnessEfficiency{Harness: harness, Spawns: g.Spawns, Ended: g.Ended, Completed: g.Completed,
 		Reworked: g.Reworked, ReworkRatio: g.ReworkRate}
 	if g.Spawns == 0 {
 		return row, false
 	}
-	for _, t := range telemetry.BuildTasks(evs) {
-		if t.Group != telemetry.GroupRouted {
+	for _, t := range readout.BuildTasks(evs) {
+		if t.Group != readout.GroupRouted {
 			continue
 		}
-		tier := tiers[telemetry.SpawnRef{Harness: harness, Key: t.Key}]
+		tier := tiers[readout.SpawnRef{Harness: harness, Key: t.Key}]
 		if tier == "" {
-			tier = telemetry.RanUnknown
+			tier = readout.RanUnknown
 		}
 		row.SpawnsByTier.add(tier)
 		if !t.Completed() || !t.Observed {
 			continue
 		}
 		switch tier {
-		case telemetry.RanUnknown:
+		case readout.RanUnknown:
 			row.TierUnknown++
-		case telemetry.RanFrontier:
+		case readout.RanFrontier:
 			row.TierKnown++
 		default:
 			row.TierKnown++
@@ -119,13 +120,13 @@ func efficiencyOf(harness string, evs []telemetry.Event, tiers map[telemetry.Spa
 	return row, true
 }
 
-func (s *SpawnsByTier) add(t telemetry.RanTier) {
+func (s *SpawnsByTier) add(t readout.RanTier) {
 	switch t {
-	case telemetry.RanSmall:
+	case readout.RanSmall:
 		s.Small.Count++
-	case telemetry.RanMid:
+	case readout.RanMid:
 		s.Mid.Count++
-	case telemetry.RanFrontier:
+	case readout.RanFrontier:
 		s.Frontier.Count++
 	default:
 		s.Unknown.Count++

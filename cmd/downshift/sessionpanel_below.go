@@ -7,6 +7,7 @@ import (
 	"github.com/tiagovilasboas/downshift-ai/internal/accounting"
 	"github.com/tiagovilasboas/downshift-ai/internal/execwrap"
 	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 )
 
 // belowSessionRow is one harness's routing tokens (below the session model,
@@ -17,10 +18,10 @@ import (
 type belowSessionRow struct {
 	Harness  string `json:"harness"`
 	Observed bool   `json:"observed"`
-	telemetry.RoutingRow
-	QuotaEstimate *telemetry.QuotaUnits `json:"quota_estimate,omitempty"`
-	QuotaShort    string                `json:"quota_short,omitempty"`
-	QuotaLine     string                `json:"quota_line,omitempty"`
+	readout.RoutingRow
+	QuotaEstimate *readout.QuotaUnits `json:"quota_estimate,omitempty"`
+	QuotaShort    string              `json:"quota_short,omitempty"`
+	QuotaLine     string              `json:"quota_line,omitempty"`
 }
 
 // belowSessionRows reads the report's per-harness rows over scope.

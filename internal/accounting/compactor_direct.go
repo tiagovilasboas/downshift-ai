@@ -5,10 +5,10 @@ package accounting
 
 import (
 	"fmt"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"time"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/execwrap"
-	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
 )
 
 // DirectLabel names the runs that carry no session tag: a direct
@@ -43,5 +43,5 @@ func isDirectExec(ev execwrap.Event) bool {
 // DirectLine is "direct calls, no session: 3, ~1.2k tokens saved"; the tokens
 // are the saved_bytes / 4 estimate.
 func DirectLine(c Compactor) string {
-	return fmt.Sprintf("%s: %d, %s saved", DirectLabel, c.Commands, "~"+telemetry.TokensShort(c.Tokens)+" tokens")
+	return fmt.Sprintf("%s: %d, %s saved", DirectLabel, c.Commands, "~"+readout.TokensShort(c.Tokens)+" tokens")
 }

@@ -5,6 +5,7 @@ package telemetry
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 )
@@ -44,7 +45,7 @@ func SpawnStateOf(ev Event) string {
 	switch {
 	case ev.Outcome == OutcomeBlocked:
 		return StateBlocked
-	case hasCode(ev.ReasonCodes, ReasonPaused):
+	case slices.Contains(ev.ReasonCodes, ReasonPaused):
 		return StatePaused
 	case ev.Outcome == OutcomeBaseline:
 		return StateUnrouted
@@ -143,7 +144,7 @@ func NewSpawnRecord(ev Event) SpawnRecord {
 
 // Line is the one human line for the record, used on stderr and in watch.
 func (r SpawnRecord) Line() string {
-	from, to := shortOrQ(r.FromModel), shortOrQ(r.ToModel)
+	from, to := ShortOrQ(r.FromModel), ShortOrQ(r.ToModel)
 	var s string
 	switch r.State {
 	case StateSwitched:
@@ -179,14 +180,15 @@ func (r SpawnRecord) Line() string {
 	return s
 }
 
-// switchesModel reports whether a switched spawn ran on another model than the
+// SwitchesModel reports whether a switched spawn ran on another model than the
 // requested one. A switch that keeps the model can only have changed the
 // effort, so it is an effort change.
-func switchesModel(from, to string) bool {
-	return !sameModel(from, to)
+func SwitchesModel(from, to string) bool {
+	return !SameModel(from, to)
 }
 
-func shortOrQ(id string) string {
+// ShortOrQ returns ShortModel(id), or "?" when id is empty or "unknown".
+func ShortOrQ(id string) string {
 	if id == "" || id == "unknown" {
 		return "?"
 	}

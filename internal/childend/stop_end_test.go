@@ -4,6 +4,7 @@
 package childend_test
 
 import (
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"path/filepath"
 	"testing"
 	"time"
@@ -21,10 +22,10 @@ func TestRecord_StopWithoutUsageRecordsTheEnd(t *testing.T) {
 	cases := []struct {
 		name   string
 		status telemetry.ChildStatus
-		want   telemetry.TaskOutcome
+		want   readout.TaskOutcome
 	}{
-		{"api error", telemetry.ChildError, telemetry.TaskErrored},
-		{"cancelled", telemetry.ChildInterrupted, telemetry.TaskErrored},
+		{"api error", telemetry.ChildError, readout.TaskErrored},
+		{"cancelled", telemetry.ChildInterrupted, readout.TaskErrored},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -62,7 +63,7 @@ func TestRecord_StopWithoutUsageRecordsTheEnd(t *testing.T) {
 			if ends != 1 {
 				t.Fatalf("recorded %d %s ends, want 1", ends, tc.status)
 			}
-			tasks := telemetry.BuildTasks(events)
+			tasks := readout.BuildTasks(events)
 			if len(tasks) != 1 || tasks[0].Outcome() != tc.want {
 				t.Fatalf("tasks = %+v, want one %s", tasks, tc.want)
 			}

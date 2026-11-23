@@ -4,6 +4,7 @@
 package accounting
 
 import (
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"strings"
 	"testing"
 
@@ -87,7 +88,7 @@ func TestTokensByHarness_UnobservedIsNotZero(t *testing.T) {
 	if !cc.RoutingObserved || cc.Routing.FallbackBelowBillable != 1000 || cc.CompactorAvoided != 400 || cc.Quota.Status != QuotaNative {
 		t.Errorf("claude-code = %+v", cc)
 	}
-	if cx.RoutingObserved || cx.Routing != (telemetry.RoutingRow{}) || cx.CompactorAvoided != 0 || cx.Quota.Status != QuotaUnknown {
+	if cx.RoutingObserved || cx.Routing != (readout.RoutingRow{}) || cx.CompactorAvoided != 0 || cx.Quota.Status != QuotaUnknown {
 		t.Errorf("codex = %+v: no usage must be unobserved, quota unknown", cx)
 	}
 	if un.CompactorAvoided != 200 || un.RoutingObserved {
@@ -117,7 +118,7 @@ func TestTokensByHarness_QuotaEstimate(t *testing.T) {
 		t.Fatalf("rows = %+v, want 2", rows)
 	}
 	cc, cx := rows[0], rows[1]
-	want := telemetry.QuotaUnits{Session: 3000, Ran: 1500}
+	want := readout.QuotaUnits{Session: 3000, Ran: 1500}
 	if cc.QuotaEstimate == nil || *cc.QuotaEstimate != want {
 		t.Fatalf("claude-code QuotaEstimate = %+v, want %+v", cc.QuotaEstimate, want)
 	}

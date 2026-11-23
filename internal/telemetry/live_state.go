@@ -6,7 +6,6 @@ package telemetry
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -82,28 +81,4 @@ func ReadLive() (LiveState, error) {
 	}
 	err = json.Unmarshal(data, &l)
 	return l, err
-}
-
-// ActivityLine says whether Downshift is working for the session, from its
-// event log: the last spawn's state and age, or that nothing was routed yet.
-func ActivityLine(events []Event, sessionHash string, now time.Time) string {
-	var last *Event
-	for _, ev := range sessionEvents(events, sessionHash) {
-		if IsDecisionRow(ev) {
-			e := ev
-			last = &e
-		}
-	}
-	if last == nil {
-		return "○ downshift on · no subagent routed yet"
-	}
-	age := now.Sub(evTime(*last)).Round(time.Second)
-	if age < 0 {
-		age = 0
-	}
-	rec := NewSpawnRecord(*last)
-	if age < ActiveWindow {
-		return fmt.Sprintf("● downshift active · last spawn %s ago: %s", age, rec.Line())
-	}
-	return fmt.Sprintf("○ downshift idle · last spawn %s ago: %s", age, rec.Line())
 }

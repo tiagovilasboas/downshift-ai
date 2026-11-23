@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"io"
 	"os"
 	"strings"
@@ -64,14 +65,14 @@ func runSession(args []string, stdout, stderr io.Writer, catalog core.Resolver) 
 	case *pause, *resume:
 		return sessionPauseResume(hash, *pause, stdout, stderr)
 	case *why:
-		fmt.Fprint(stdout, telemetry.Why(events, hash))
+		fmt.Fprint(stdout, readout.Why(events, hash))
 		return 0
 	case *panel:
 		return writePanel(events, hash, panelOptions{NoReport: *noReport, Brief: *brief}, stdout, stderr)
 	}
 
-	opt := telemetry.TreeOptions{Paused: telemetry.SessionPaused(hash)}
-	treeView := telemetry.BuildSessionTree(events, hash, opt)
+	opt := readout.TreeOptions{Paused: telemetry.SessionPaused(hash)}
+	treeView := readout.BuildSessionTree(events, hash, opt)
 	wm := sessionWorkingMemory(events, hash)
 	if *asJSON {
 		out, err := json.MarshalIndent(sessionTreeJSON{SessionTreeView: treeView, WorkingMemory: &wm}, "", "  ")
@@ -90,7 +91,7 @@ func runSession(args []string, stdout, stderr io.Writer, catalog core.Resolver) 
 }
 
 type sessionTreeJSON struct {
-	telemetry.SessionTreeView
+	readout.SessionTreeView
 	WorkingMemory *accounting.WorkingMemory `json:"working_memory,omitempty"`
 }
 
@@ -135,7 +136,7 @@ func selectSession(flagVal string, events []telemetry.Event) (string, error) {
 	if h := envSessionHash(); h != "" {
 		return h, nil
 	}
-	return telemetry.LatestSessionHash(events), nil
+	return readout.LatestSessionHash(events), nil
 }
 
 // envSessionHash is the hashed session id from the environment variable some

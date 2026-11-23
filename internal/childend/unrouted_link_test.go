@@ -4,6 +4,7 @@
 package childend_test
 
 import (
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"path/filepath"
 	"testing"
 	"time"
@@ -26,10 +27,10 @@ func TestRecord_UnroutedSpawnLinksLikeRoutedSpawn(t *testing.T) {
 		reasons []string
 		group   string
 	}{
-		{"old control-group baseline line", telemetry.OutcomeBaseline, []string{"CONTROL"}, telemetry.GroupUnrouted},
-		{"routed allow", telemetry.OutcomeAllow, nil, telemetry.GroupRouted},
-		{"routed rewrite", telemetry.OutcomeRewriteEmitted, nil, telemetry.GroupRouted},
-		{"paused baseline", telemetry.OutcomeBaseline, []string{telemetry.ReasonPaused}, telemetry.GroupUnrouted},
+		{"old control-group baseline line", telemetry.OutcomeBaseline, []string{"CONTROL"}, readout.GroupUnrouted},
+		{"routed allow", telemetry.OutcomeAllow, nil, readout.GroupRouted},
+		{"routed rewrite", telemetry.OutcomeRewriteEmitted, nil, readout.GroupRouted},
+		{"paused baseline", telemetry.OutcomeBaseline, []string{telemetry.ReasonPaused}, readout.GroupUnrouted},
 	}
 	r := catalog.Load()
 	for _, tc := range cases {
@@ -79,7 +80,7 @@ func TestRecord_UnroutedSpawnLinksLikeRoutedSpawn(t *testing.T) {
 				}
 			}
 
-			tasks := telemetry.BuildTasks(events)
+			tasks := readout.BuildTasks(events)
 			if len(tasks) != 1 {
 				t.Fatalf("tasks = %d, want 1", len(tasks))
 			}
@@ -87,13 +88,13 @@ func TestRecord_UnroutedSpawnLinksLikeRoutedSpawn(t *testing.T) {
 			if got.Group != tc.group || !got.Completed() || !got.Observed {
 				t.Fatalf("task = %+v, want group %s, completed and priced", got, tc.group)
 			}
-			rep := telemetry.BuildReport(events, 1)
+			rep := readout.BuildReport(events, 1)
 			switch tc.group {
-			case telemetry.GroupUnrouted:
+			case readout.GroupUnrouted:
 				if rep.Excluded != 1 || rep.Routed.Spawns != 0 {
 					t.Fatalf("report = excluded %d, routed %+v; want the unrouted spawn excluded", rep.Excluded, rep.Routed)
 				}
-			case telemetry.GroupRouted:
+			case readout.GroupRouted:
 				if rep.Routed.Completed != 1 {
 					t.Fatalf("report routed = %+v, want 1 completed task", rep.Routed)
 				}

@@ -5,6 +5,7 @@ package accounting
 
 import (
 	"encoding/json"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"strings"
 	"testing"
 	"time"
@@ -255,7 +256,7 @@ func TestCompute_DaysWindowKeepsCrossBoundaryDecision(t *testing.T) {
 	scope := Scope{Kind: ScopeDays, Days: 30}
 	win := Compute(events, nil, scope)
 	got := win.Routing.ByHarness["claude-code"]
-	want := telemetry.RoutingRow{
+	want := readout.RoutingRow{
 		Spawns: 2, BelowSpawns: 1, Billable: 350, BelowBillable: 250,
 		RewrittenSpawns: 1, RewrittenBillable: 250, Input: 350,
 	}

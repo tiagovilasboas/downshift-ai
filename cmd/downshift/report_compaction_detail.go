@@ -5,10 +5,10 @@ package main
 
 import (
 	"fmt"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"io"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/accounting"
-	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
 )
 
 // detailFamilies is how many families a harness shows; --json carries all.
@@ -84,7 +84,7 @@ func printCompactionDetailMarkdown(w io.Writer, d accounting.CompactionDetail) {
 			fmt.Fprintln(w, "|---|--:|--:|--:|--:|--:|")
 			for _, f := range firstFamilies(h.Families) {
 				fmt.Fprintf(w, "| %s | %d | %d | %s | %s | %s |\n", f.Family, f.Commands, f.Compacted,
-					telemetry.ShortTokens(f.RawTokens), telemetry.ShortTokens(f.AvoidedTokens), cutPct(f))
+					readout.ShortTokens(f.RawTokens), readout.ShortTokens(f.AvoidedTokens), cutPct(f))
 			}
 			if more := len(h.Families) - detailFamilies; more > 0 {
 				fmt.Fprintf(w, "\n_%d more families in `--json`._\n", more)
@@ -123,7 +123,7 @@ func printCompactionDetailText(w io.Writer, d accounting.CompactionDetail) {
 			fmt.Fprintf(w, "      %-18s %8s %9s %13s %14s %5s\n", "family", "commands", "compacted", "output tokens", "tokens avoided", "cut")
 			for _, f := range firstFamilies(h.Families) {
 				fmt.Fprintf(w, "      %-18s %8d %9d %13s %14s %5s\n", f.Family, f.Commands, f.Compacted,
-					telemetry.ShortTokens(f.RawTokens), telemetry.ShortTokens(f.AvoidedTokens), cutPct(f))
+					readout.ShortTokens(f.RawTokens), readout.ShortTokens(f.AvoidedTokens), cutPct(f))
 			}
 			if more := len(h.Families) - detailFamilies; more > 0 {
 				fmt.Fprintf(w, "      %d more families in --json\n", more)

@@ -5,6 +5,7 @@ package main
 
 import (
 	"bytes"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"strings"
 	"testing"
 
@@ -12,9 +13,9 @@ import (
 )
 
 func TestOutcomeOriginMarkdown(t *testing.T) {
-	m := []telemetry.OutcomeMatrixRow{
-		{Origin: telemetry.OriginDownshiftRewrite, N: 40, Outcomes: telemetry.OutcomeCounts{AcceptedChecked: 20, AcceptedUnchecked: 10, Reworked: 5, Errored: 1, CheckFailed: 2, Unknown: 2}},
-		{Origin: telemetry.OriginOrchestratorSession, N: 3, Outcomes: telemetry.OutcomeCounts{AcceptedUnchecked: 3}},
+	m := []readout.OutcomeMatrixRow{
+		{Origin: telemetry.OriginDownshiftRewrite, N: 40, Outcomes: readout.OutcomeCounts{AcceptedChecked: 20, AcceptedUnchecked: 10, Reworked: 5, Errored: 1, CheckFailed: 2, Unknown: 2}},
+		{Origin: telemetry.OriginOrchestratorSession, N: 3, Outcomes: readout.OutcomeCounts{AcceptedUnchecked: 3}},
 	}
 	var b bytes.Buffer
 	printOutcomeOriginMarkdown(&b, m)

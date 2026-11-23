@@ -5,12 +5,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"io"
 	"strings"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/accounting"
 	"github.com/tiagovilasboas/downshift-ai/internal/execwrap"
-	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
 )
 
 // lineBucketOrder lists the execwrap.LineBucket codes, smallest first.
@@ -49,7 +49,7 @@ func printOtherMarkdown(w io.Writer, o *accounting.OtherBreakdown) {
 	fmt.Fprintln(w, "|---|--:|--:|--:|---|")
 	for _, r := range otherRows(o) {
 		fmt.Fprintf(w, "| %s | %d | %s | %.0f%% | %s |\n", r.Label, r.Runs,
-			telemetry.ShortTokens(r.RawBytes/execwrap.BytesPerToken), r.NetSavedPct, lineBucketsText(r.LineBuckets))
+			readout.ShortTokens(r.RawBytes/execwrap.BytesPerToken), r.NetSavedPct, lineBucketsText(r.LineBuckets))
 	}
 	fmt.Fprintln(w)
 }
@@ -62,6 +62,6 @@ func printOtherText(w io.Writer, o *accounting.OtherBreakdown) {
 	fmt.Fprintf(w, "      inside other: %-32s %5s %13s %9s  %s\n", "program", "runs", "output tokens", "net saved", "lines per run")
 	for _, r := range otherRows(o) {
 		fmt.Fprintf(w, "                    %-32s %5d %13s %8.0f%%  %s\n", r.Label, r.Runs,
-			telemetry.ShortTokens(r.RawBytes/execwrap.BytesPerToken), r.NetSavedPct, lineBucketsText(r.LineBuckets))
+			readout.ShortTokens(r.RawBytes/execwrap.BytesPerToken), r.NetSavedPct, lineBucketsText(r.LineBuckets))
 	}
 }

@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"io"
 	"os"
 	"strconv"
@@ -110,10 +111,10 @@ func runReport(args []string, stdout, stderr io.Writer) int {
 	// The routed row, the rework per verdict, the plan lens and the per-harness
 	// completion lines are the canonical report; telemetry owns their wording
 	// (the tests read those strings), so delegate instead of reprinting them.
-	telemetry.PrintSegmentedReport(stdout, events, days)
+	readout.PrintSegmentedReport(stdout, events, days)
 
 	// Compactor savings are produced outside the event log, so they are
-	// appended here rather than inside telemetry.PrintReport.
+	// appended here rather than inside readout.PrintReport.
 	fmt.Fprintf(stdout, "\n📦 COMPACTOR (%s)\n", nums.Scope.Label())
 	fmt.Fprintf(stdout, "   %s\n", nums.Display.Compactor)
 	printCompactionDetailText(stdout, data.CompactionDetail)
@@ -133,12 +134,12 @@ func runReport(args []string, stdout, stderr io.Writer) int {
 // reportOut is the `--json` report: the comparison and its keys as before,
 // plus the Numbers every surface shares.
 type reportOut struct {
-	telemetry.Report
+	readout.Report
 	// Summary is the head of the report: what the agents pane shows, for the window.
-	Summary        []paneRow                 `json:"summary_by_harness"`
-	Numbers        accounting.Numbers        `json:"numbers"`
-	CurrentHarness string                    `json:"current_harness,omitempty"`
-	ByHarness      []telemetry.HarnessReport `json:"by_harness,omitempty"`
+	Summary        []paneRow               `json:"summary_by_harness"`
+	Numbers        accounting.Numbers      `json:"numbers"`
+	CurrentHarness string                  `json:"current_harness,omitempty"`
+	ByHarness      []readout.HarnessReport `json:"by_harness,omitempty"`
 	// WhySpawnsChanged is the routing note per harness; TokensByHarness is, per
 	// harness, the routing tokens and the quota used (never summed).
 	WhySpawnsChanged accounting.RoutingWhy      `json:"why_spawns_changed"`
@@ -162,9 +163,9 @@ type reportOut struct {
 // buildReportOut assembles every section of the report from the logs, for
 // days and scope. Pure apart from reading the quota and main-work files.
 func buildReportOut(events []telemetry.Event, execEvents []execwrap.Event, nums accounting.Numbers, days int, scope accounting.Scope) reportOut {
-	rep := telemetry.BuildReport(events, days)
+	rep := readout.BuildReport(events, days)
 	rep.SetCompactor(nums.Compactor.SavedBytes, nums.Compactor.Tokens)
-	currentHarness, segments := telemetry.SegmentReports(events, days)
+	currentHarness, segments := readout.SegmentReports(events, days)
 	why := accounting.BuildRoutingWhy(events, scope)
 	mainWork := mainWorkRows(days, time.Now())
 	skips, _ := accounting.ReadSkipEvents()

@@ -55,7 +55,7 @@ func outsideAllowlist(imports, allowed []string) []string {
 // directly.
 func TestLayerDirectImports(t *testing.T) {
 	allowed := map[string][]string{
-		"accounting": {"telemetry", "execwrap", "catalog"},
+		"accounting": {"telemetry", "telemetry/readout", "execwrap", "catalog"},
 	}
 	for pkg, ok := range allowed {
 		t.Run(pkg, func(t *testing.T) {

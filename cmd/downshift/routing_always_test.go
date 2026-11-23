@@ -9,6 +9,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -95,7 +96,7 @@ func TestRunReport_JSONAndFlags(t *testing.T) {
 	if rc := runReport([]string{"--days=7", "--json"}, &out, &errOut); rc != 0 {
 		t.Fatalf("rc = %d, stderr %s", rc, errOut.String())
 	}
-	var rep telemetry.Report
+	var rep readout.Report
 	if err := json.Unmarshal(out.Bytes(), &rep); err != nil {
 		t.Fatalf("report --json is not JSON: %v\n%s", err, out.String())
 	}
@@ -149,11 +150,11 @@ func TestRoutedSpawn_EndRecordLinksThroughSharedRunners(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tasks := telemetry.BuildTasks(events)
-	if len(tasks) != 1 || tasks[0].Group != telemetry.GroupRouted || !tasks[0].Completed() || !tasks[0].Observed {
+	tasks := readout.BuildTasks(events)
+	if len(tasks) != 1 || tasks[0].Group != readout.GroupRouted || !tasks[0].Completed() || !tasks[0].Observed {
 		t.Fatalf("tasks = %+v, want one completed, priced routed task", tasks)
 	}
-	rep := telemetry.BuildReport(events, 1)
+	rep := readout.BuildReport(events, 1)
 	if rep.Routed.Spawns != 1 || rep.Routed.Completed != 1 {
 		t.Fatalf("report routed = %+v, want 1 spawn and 1 completed task", rep.Routed)
 	}

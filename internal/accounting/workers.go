@@ -5,6 +5,7 @@ package accounting
 
 import (
 	"fmt"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"sort"
 	"strings"
 
@@ -16,7 +17,7 @@ import (
 //
 // These tokens are ADDITIONAL to the routing tokens, not part of them: those
 // count the usage events of routed subagent spawns, and the worker_ended events
-// are a separate record that telemetry.RoutingTokens and Aggregate both skip, so
+// are a separate record that readout.RoutingTokens and Aggregate both skip, so
 // a worker is never counted in both. They are shown on their own line.
 type WorkerTokens struct {
 	// Agent is the worker CLI: "claude" or "codex".
@@ -81,7 +82,7 @@ func WorkersLine(ws []WorkerTokens) string {
 	}
 	parts := make([]string, 0, len(ws))
 	for _, w := range ws {
-		parts = append(parts, fmt.Sprintf("%s %s", w.Agent, telemetry.ShortTokens(w.Total)))
+		parts = append(parts, fmt.Sprintf("%s %s", w.Agent, readout.ShortTokens(w.Total)))
 	}
 	return "Workers (additional to routed spawns): " + strings.Join(parts, " · ")
 }

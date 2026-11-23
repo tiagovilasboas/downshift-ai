@@ -6,6 +6,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,7 +17,6 @@ import (
 	"github.com/tiagovilasboas/downshift-ai/internal/execwrap"
 	"github.com/tiagovilasboas/downshift-ai/internal/paths"
 	"github.com/tiagovilasboas/downshift-ai/internal/quota"
-	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
 )
 
 // whyFixtureEnv isolates HOME, the state dir, the exec log and the quota file,
@@ -127,7 +127,7 @@ func TestReport_TokensPerHarnessKeepsColumnsApart(t *testing.T) {
 	if !strings.Contains(codex, "unknown") {
 		t.Errorf("codex row must read unknown quota, got %q", codex)
 	}
-	if strings.Contains(tab, telemetry.ShortTokens(1000)) || strings.Contains(tab, telemetry.ShortTokens(1500)) {
+	if strings.Contains(tab, readout.ShortTokens(1000)) || strings.Contains(tab, readout.ShortTokens(1500)) {
 		t.Errorf("the quota section repeats a token figure printed elsewhere:\n%s", tab)
 	}
 	if strings.Contains(text, "Tokens saved (estimate)") {
@@ -139,8 +139,8 @@ func TestReport_TokensPerHarnessKeepsColumnsApart(t *testing.T) {
 	if i, j := strings.Index(text, "COMPACTION DETAIL PER HARNESS"), strings.Index(text, "WHY SPAWNS CHANGED"); i >= 0 && j > i {
 		outside = text[:i] + text[j:]
 	}
-	if n := strings.Count(outside, telemetry.ShortTokens(1000)); n != 1 {
-		t.Errorf("the Compactor tokens of claude-code (%s) must be printed once, found %d:\n%s", telemetry.ShortTokens(1000), n, text)
+	if n := strings.Count(outside, readout.ShortTokens(1000)); n != 1 {
+		t.Errorf("the Compactor tokens of claude-code (%s) must be printed once, found %d:\n%s", readout.ShortTokens(1000), n, text)
 	}
 	if !strings.Contains(tab, "no events: antigravity, cursor, kiro, kirocrew, opencode") {
 		t.Errorf("harnesses without events are not listed:\n%s", tab)

@@ -36,3 +36,24 @@ func canonicalModel(harness, id, raw string) (string, string) {
 	}
 	return ModelOrUnknown(catalogID), raw
 }
+
+// SameModel compares two model ids, ignoring a trailing 8-digit date stamp.
+func SameModel(a, b string) bool {
+	return undatedModel(a) == undatedModel(b)
+}
+
+func undatedModel(id string) string {
+	if i := strings.LastIndexByte(id, '-'); i >= 0 && len(id)-i-1 == 8 && isDigits(id[i+1:]) {
+		return id[:i]
+	}
+	return id
+}
+
+func isDigits(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] < '0' || s[i] > '9' {
+			return false
+		}
+	}
+	return true
+}

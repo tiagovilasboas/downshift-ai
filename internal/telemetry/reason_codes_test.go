@@ -6,6 +6,7 @@ package telemetry_test
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -100,15 +101,15 @@ func TestUnsupportedLanguage_VisibleInStatsAndWhy(t *testing.T) {
 	ev.Outcome = telemetry.OutcomeAllow
 	ev.SessionID = "language-session"
 	var stats bytes.Buffer
-	telemetry.PrintStats([]telemetry.Event{ev}, telemetry.StatsOptions{Detail: true}, &stats)
+	readout.PrintStats([]telemetry.Event{ev}, readout.StatsOptions{Detail: true}, &stats)
 	if !strings.Contains(stats.String(), "Language guard        1 of 1") || !strings.Contains(stats.String(), telemetry.ReasonUnsupportedLanguage) {
 		t.Fatalf("language reason missing from stats: %s", stats.String())
 	}
-	why := telemetry.Why([]telemetry.Event{ev}, ev.SessionID)
+	why := readout.Why([]telemetry.Event{ev}, ev.SessionID)
 	if !strings.Contains(why, telemetry.ReasonUnsupportedLanguage) || !strings.Contains(why, "English and Portuguese rule coverage") {
 		t.Fatalf("language reason missing from why: %s", why)
 	}
-	if got := telemetry.Aggregate([]telemetry.Event{ev}).ReasonCodes[telemetry.ReasonUnsupportedLanguage]; got != 1 {
+	if got := readout.Aggregate([]telemetry.Event{ev}).ReasonCodes[telemetry.ReasonUnsupportedLanguage]; got != 1 {
 		t.Fatalf("language count = %d, want 1", got)
 	}
 }
@@ -229,11 +230,11 @@ func TestReasonCodes_OldEventsParseUnchanged(t *testing.T) {
 			t.Errorf("re-encoded old event gained %s: %s", key, again)
 		}
 	}
-	s := telemetry.Aggregate(events)
+	s := readout.Aggregate(events)
 	if s.Total != 1 || s.Corrected != 1 || len(s.ReasonCodes) != 0 {
 		t.Fatalf("old event stats changed: total=%d corrected=%d codes=%v", s.Total, s.Corrected, s.ReasonCodes)
 	}
-	out, _ := telemetry.ExportJSON(telemetry.ExportSummary(events, 0, time.Now()))
+	out, _ := readout.ExportJSON(readout.ExportSummary(events, 0, time.Now()))
 	if strings.Contains(out, "reason_codes") {
 		t.Errorf("export of old events must not carry reason_codes:\n%s", out)
 	}
@@ -242,7 +243,7 @@ func TestReasonCodes_OldEventsParseUnchanged(t *testing.T) {
 func TestReasonCodes_CountedInExport(t *testing.T) {
 	a := trace(confidentDownshift)
 	b := trace(heldUnknownMid)
-	exp := telemetry.ExportSummary([]telemetry.Event{a, b}, 0, time.Now())
+	exp := readout.ExportSummary([]telemetry.Event{a, b}, 0, time.Now())
 	if exp.ReasonCodes["CLASSIFIER_CONFIDENT"] != 1 || exp.ReasonCodes["HELD_UNCONFIDENT_UNKNOWN_MID"] != 1 || exp.ReasonCodes["NO_SIGNAL"] != 1 {
 		t.Fatalf("export reason_codes = %v", exp.ReasonCodes)
 	}

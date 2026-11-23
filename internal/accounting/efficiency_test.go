@@ -4,6 +4,7 @@
 package accounting
 
 import (
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"testing"
 	"time"
 
@@ -97,7 +98,7 @@ func TestBuildEfficiency_ReusesRoutedTableFigures(t *testing.T) {
 	var events []telemetry.Event
 	events = append(events, effSpawn("codex", "", "a", "claude-opus-5-5", "claude-haiku-4-5", telemetry.OutcomeRewriteEmitted, true)...)
 	events = append(events, effSpawn("codex", "", "b", "claude-opus-5-5", "claude-opus-5-5", telemetry.OutcomeAllow, false)...)
-	want := telemetry.BuildReport(events, 0).Routed
+	want := readout.BuildReport(events, 0).Routed
 	got := effRow(t, BuildEfficiency(events, Scope{Kind: ScopeAll}), "codex")
 	if got.Ended != want.Ended || got.Completed != want.Completed || got.Reworked != want.Reworked || got.ReworkRatio != want.ReworkRate {
 		t.Errorf("got %+v, routed %+v", got, want)

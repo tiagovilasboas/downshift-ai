@@ -5,6 +5,7 @@ package telemetry_test
 
 import (
 	"bytes"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"strings"
 	"testing"
 
@@ -69,12 +70,12 @@ func TestAggregate_FrontierOnDoubt(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			s := telemetry.Aggregate(tc.events)
+			s := readout.Aggregate(tc.events)
 			if s.FrontierDecisions != tc.frontier || s.FrontierOnDoubt != tc.onDoubt {
 				t.Fatalf("frontier=%d onDoubt=%d, want %d/%d", s.FrontierDecisions, s.FrontierOnDoubt, tc.frontier, tc.onDoubt)
 			}
 			var out bytes.Buffer
-			telemetry.PrintStats(tc.events, telemetry.StatsOptions{Detail: true}, &out)
+			readout.PrintStats(tc.events, readout.StatsOptions{Detail: true}, &out)
 			if got := strings.Contains(out.String(), "WARNING"); got != tc.wantWarn {
 				t.Fatalf("warning=%v want %v\n%s", got, tc.wantWarn, out.String())
 			}

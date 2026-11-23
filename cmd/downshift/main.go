@@ -16,9 +16,7 @@ import (
 	"os"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/catalog"
-	_ "github.com/tiagovilasboas/downshift-ai/internal/compressor/learning"
 	"github.com/tiagovilasboas/downshift-ai/internal/hookport"
-	_ "github.com/tiagovilasboas/downshift-ai/internal/quota"
 	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/fromcore"
 )
 
@@ -34,6 +32,7 @@ var (
 func main() {
 	args := os.Args[1:]
 	if len(args) == 0 {
+		wireRuntime()
 		cat := catalog.Load()
 		fromcore.Install(cat)
 		if home, _ := os.UserHomeDir(); isConfigured(home) && wantsConsole(os.Stdin, os.Stdout) {
@@ -45,6 +44,7 @@ func main() {
 	if code, handled := commandHelpRequest(args, os.Stdout, os.Stderr); handled {
 		os.Exit(code)
 	}
+	wireRuntime()
 	// A hook must never block a spawn (a Go panic exits 2, which every harness
 	// reads as "deny"), so its catalog load runs under a recover and a failure
 	// allows the spawn unchanged.

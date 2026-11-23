@@ -37,9 +37,9 @@ import (
 	"github.com/tiagovilasboas/downshift-ai/internal/execwrap"
 )
 
-func init() {
-	// Register the learning hook only when enabled. Errors are ignored and
-	// the hook never fails the command. DOWNSHIFT_LEARNING=0 disables it.
+// Register installs the learning hook when enabled. Errors are ignored and
+// the hook never fails the command. DOWNSHIFT_LEARNING=0 disables it.
+func Register() {
 	if os.Getenv("DOWNSHIFT_LEARNING") == "0" {
 		return
 	}

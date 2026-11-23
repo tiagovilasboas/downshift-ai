@@ -72,6 +72,9 @@ func IsObservationOutcome(outcome string) bool {
 		outcome == OutcomeWorkerEnded || outcome == OutcomeMCPTool || outcome == OutcomeSkillUsed
 }
 
+// LinkKey identifies a decision (or a record linked to one) within a harness.
+type LinkKey struct{ Harness, Key string }
+
 // DecisionKey identifies a decision event for post-hoc linkage: its
 // correlation id, or timestamp+session for lines written without one.
 func DecisionKey(ev Event) string {
@@ -83,7 +86,21 @@ func DecisionKey(ev Event) string {
 
 // IsAppliedShift reports a decision event whose rewrite was written and
 // changed the model. These are the only decisions a harness can honor or not.
-func IsAppliedShift(ev Event) bool { return isShift(ev) }
+func IsAppliedShift(ev Event) bool {
+	if ev.Outcome != OutcomeRewriteEmitted || !AppliedRewrite(ev.Outcome, ev.Corrections) {
+		return false
+	}
+	if ev.FromModel == "" || ev.ToModel == "" || ev.ToModel == "unknown" {
+		return false
+	}
+	return ev.FromModel != ev.ToModel
+}
+
+// HasChildTokens reports whether a usage record carries any provider-reported
+// token count (input, output, or cached).
+func HasChildTokens(ev Event) bool {
+	return ev.InputTokens != nil || ev.OutputTokens != nil || ev.CachedTokens != nil
+}
 
 // TokenUsageFromPayload extracts provider-reported token counts from a
 // decoded PostToolUse stdin payload. It never fails: missing or malformed

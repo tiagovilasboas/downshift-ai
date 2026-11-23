@@ -5,6 +5,7 @@ package telemetry_test
 
 import (
 	"encoding/json"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"strings"
 	"testing"
 	"time"
@@ -41,7 +42,7 @@ func decision(agentType, from string) telemetry.Event {
 // The point of the field: say how many decisions of each type had no known
 // baseline, so a gap like "Explore and Plan were never routed" is a number.
 func TestAggregateCountsUnknownBaselineByAgentType(t *testing.T) {
-	s := telemetry.Aggregate([]telemetry.Event{
+	s := readout.Aggregate([]telemetry.Event{
 		decision("general-purpose", "claude-sonnet-5-5"),
 		decision("Explore", "unknown"),
 		decision("Explore", "unknown"),
@@ -67,14 +68,14 @@ func TestExportCarriesAgentTypesWithoutRawNames(t *testing.T) {
 	now := time.Date(2026, 10, 15, 12, 0, 0, 0, time.UTC)
 	ev := decision("Explore", "unknown")
 	ev.Timestamp = now.Add(-time.Hour).Format(time.RFC3339Nano)
-	sum := telemetry.ExportSummary([]telemetry.Event{ev}, 7, now)
+	sum := readout.ExportSummary([]telemetry.Event{ev}, 7, now)
 	raw, _ := json.Marshal(sum)
 	if !strings.Contains(string(raw), `"agent_types":{"Explore":{"decisions":1,"unknown_baseline":1}}`) {
 		t.Errorf("export lacks the per-type counts: %s", raw)
 	}
 	// A summary of events with no type keeps the older shape.
 	plain := telemetry.Event{Harness: "claude-code", Agent: "subagent", Outcome: telemetry.OutcomeRewriteEmitted, FromModel: "unknown", Timestamp: ev.Timestamp}
-	raw, _ = json.Marshal(telemetry.ExportSummary([]telemetry.Event{plain}, 7, now))
+	raw, _ = json.Marshal(readout.ExportSummary([]telemetry.Event{plain}, 7, now))
 	if strings.Contains(string(raw), "agent_types") {
 		t.Errorf("no types recorded, field must be omitted: %s", raw)
 	}
@@ -82,7 +83,7 @@ func TestExportCarriesAgentTypesWithoutRawNames(t *testing.T) {
 
 func printDetail(evs []telemetry.Event) string {
 	var b strings.Builder
-	telemetry.PrintStats(evs, telemetry.StatsOptions{Detail: true}, &b)
+	readout.PrintStats(evs, readout.StatsOptions{Detail: true}, &b)
 	return b.String()
 }
 

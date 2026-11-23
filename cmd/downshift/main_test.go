@@ -20,6 +20,7 @@ import (
 // developer's own events.jsonl and skew `downshift stats`. Only HOME is set so
 // tests that choose their own HOME or DOWNSHIFT_* variables keep working.
 func TestMain(m *testing.M) {
+	wireRuntime()
 	// Tests run hooks; the background refresh must never start a real harness CLI.
 	discoverRefreshSpawn = func(string) error { return nil }
 	fromcore.Install(catalog.Load())

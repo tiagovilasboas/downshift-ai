@@ -206,7 +206,7 @@ Downshift decomposes recorded tokens into four orthogonal classes:
 
 ### 5.2 Why cache reads are separated from billable routing tokens
 
-In [`internal/telemetry/routing_tokens.go`](../../internal/telemetry/routing_tokens.go), Downshift defines:
+In [`internal/telemetry/readout/routing_tokens.go`](../../internal/telemetry/readout/routing_tokens.go), Downshift defines:
 
 $$\text{Tokens}_{\text{billable}} = \text{Input} + \text{Output} + \text{CacheWrite}$$
 

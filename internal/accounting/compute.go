@@ -5,6 +5,7 @@ package accounting
 
 import (
 	"fmt"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"strings"
 	"time"
 
@@ -45,8 +46,8 @@ func (s Scope) Label() string {
 type Numbers struct {
 	Scope Scope `json:"scope"`
 	// Routing is, per harness, the billable tokens that ran below the session
-	// model, from telemetry.RoutingTokens over the scoped events. No total.
-	Routing telemetry.RoutingView `json:"routing"`
+	// model, from readout.RoutingTokens over the scoped events. No total.
+	Routing readout.RoutingView `json:"routing"`
 	// Compactor is the shell-output compression over the same scope.
 	Compactor Compactor `json:"compactor"`
 	// ModelSwitched and EffortChanged split the spawns Downshift changed.
@@ -58,7 +59,7 @@ type Numbers struct {
 	HeldGuardrail     int `json:"held_guardrail"`
 	UpshiftNotApplied int `json:"upshift_not_applied"`
 	// TokensSavedEstimate is the Compactor's estimated tokens
-	// (telemetry.TokensSavedEstimate), the only tokens that were not spent.
+	// (readout.TokensSavedEstimate), the only tokens that were not spent.
 	// An estimate.
 	TokensSavedEstimate int64 `json:"tokens_saved_estimate"`
 	// Ledger is the Compactor estimate and the delegate workers.
@@ -104,14 +105,14 @@ type Display struct {
 // event with no session belongs to no session and is left out; for the other
 // scopes every exec event in the window counts. Telemetry decisions with no
 // session id count in Routing but not in the spawn counts, because
-// telemetry.BuildPanel reads one session at a time.
+// readout.BuildPanel reads one session at a time.
 func Compute(events []telemetry.Event, execEvents []execwrap.Event, scope Scope) Numbers {
 	scoped := scopeTelemetry(events, scope)
 	n := Numbers{Scope: scope}
 	n.Routing = routingForScope(scoped, events, scope)
 	n.ModelSwitched, n.EffortChanged, n.Held, n.HeldGuardrail, n.UpshiftNotApplied = countSpawns(scoped)
 	n.Compactor = compactorTotals(scopeExec(execEvents, scope, time.Now()))
-	n.TokensSavedEstimate = telemetry.TokensSavedEstimate(n.Compactor.Tokens)
+	n.TokensSavedEstimate = readout.TokensSavedEstimate(n.Compactor.Tokens)
 	n.workers = workerTokensOf(scoped)
 	n.Ledger = ledgerOf(n)
 	n.Display = displayOf(n)
@@ -137,11 +138,11 @@ func scopeTelemetry(events []telemetry.Event, scope Scope) []telemetry.Event {
 
 // routingForScope computes RoutingTokens over scoped while preserving decision
 // and refutation lookup across the day-window boundary when scope.Kind == ScopeDays.
-func routingForScope(scoped, all []telemetry.Event, scope Scope) telemetry.RoutingView {
+func routingForScope(scoped, all []telemetry.Event, scope Scope) readout.RoutingView {
 	if scope.Kind == ScopeDays {
-		return telemetry.RoutingTokensWithLookup(scoped, all)
+		return readout.RoutingTokensWithLookup(scoped, all)
 	}
-	return telemetry.RoutingTokens(scoped)
+	return readout.RoutingTokens(scoped)
 }
 
 // scopeExec keeps the exec events of scope. A timestamp that does not parse
@@ -188,8 +189,8 @@ func compactorTotals(evs []execwrap.Event) Compactor {
 
 func displayOf(n Numbers) Display {
 	return Display{
-		TokensSaved:      telemetry.TokensSavedEstimateLine(n.TokensSavedEstimate) + " (" + n.Scope.Label() + ": compactor)",
-		TokensSavedShort: telemetry.ShortTokens(n.TokensSavedEstimate),
+		TokensSaved:      readout.TokensSavedEstimateLine(n.TokensSavedEstimate) + " (" + n.Scope.Label() + ": compactor)",
+		TokensSavedShort: readout.ShortTokens(n.TokensSavedEstimate),
 		ScopeLabel:       n.Scope.Label(),
 		Routing:          routingText(n.Routing),
 		Compactor:        compactorText(n.Compactor),
@@ -199,7 +200,7 @@ func displayOf(n Numbers) Display {
 
 // routingText is one "harness: line" per harness, joined by "; ", never a
 // total across harnesses. "" when no spawn has tokens.
-func routingText(v telemetry.RoutingView) string {
+func routingText(v readout.RoutingView) string {
 	var parts []string
 	for _, h := range v.HarnessOrder() {
 		if line := v.ByHarness[h].Line(); line != "" {

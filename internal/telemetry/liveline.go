@@ -6,14 +6,13 @@ package telemetry
 import (
 	"fmt"
 	"os"
-	"sort"
 	"strings"
 )
 
 // This file is the one place the text shown to the developer inside a harness
-// (statusline summary, child-end line) is built. Adapters and the CLI bridge
-// only attach it to their wire output. Nothing here reads prompt text: it
-// renders routing metadata that is already in the event log.
+// (child-end line) is built. Adapters and the CLI bridge only attach it to
+// their wire output. Nothing here reads prompt text: it renders routing
+// metadata that is already in the event log.
 
 // Quiet reports the operator opt-out DOWNSHIFT_QUIET=1: no routing text is
 // shown inside the harness (spawn message and child-end line). Logging to the
@@ -44,112 +43,6 @@ func ShortModel(id string) string {
 	return strings.Join(keep, "-")
 }
 
-// SessionRouting is the routing picture of one session, from the event log.
-type SessionRouting struct {
-	Spawns    int    // routing decisions made for the session
-	TopModel  string // short name of the model most children ran on
-	TopModelN int    // how many children ran on TopModel
-	// Tokens is the session's routing tokens (RoutingTokens). Live views show
-	// tokens only; never dollars.
-	Tokens   RoutingRow
-	Switched int // spawns whose model or effort Downshift changed
-	Held     int // spawns Downshift considered and left unchanged
-	OnDoubt  int // frontier decisions resting on an unconfident classification
-	// QuotaStale marks that an expired quota snapshot is still holding model
-	// rewrites (core.StaleQuotaHold). The caller sets it; the event log has no
-	// say in it.
-	QuotaStale bool
-}
-
-// QuotaStaleMarker is the segment appended while a stale snapshot holds.
-const QuotaStaleMarker = "quota stale"
-
-// SessionSummary folds the events that belong to sessionHash (see
-// HashSessionID). An empty hash matches nothing: a summary must never mix
-// sessions. Cost-only records contribute only their signed real delta.
-func SessionSummary(events []Event, sessionHash string) SessionRouting {
-	var s SessionRouting
-	if sessionHash == "" {
-		return s
-	}
-	byModel := map[string]int{}
-	refuted := RefutedRewrites(events)
-	var mine []Event
-	for _, ev := range events {
-		if ev.SessionID != sessionHash {
-			continue
-		}
-		mine = append(mine, ev)
-	}
-	s.Tokens = RoutingTokens(mine).Only()
-	for _, ev := range mine {
-		if IsCostOnlyOutcome(ev.Outcome) || IsFailureOutcome(ev.Outcome) {
-			continue
-		}
-		s.Spawns++
-		switch SpawnStateOf(ev) {
-		case StateSwitched:
-			s.Switched++
-		case StateHeld:
-			s.Held++
-		}
-		served, isRefuted := refuted[ev.Harness+"\n"+DecisionKey(ev)]
-		ran := ev.FromModel
-		switch {
-		case isRefuted:
-			ran = ranOnRefute(ev, served)
-		case AppliedRewrite(ev.Outcome, ev.Corrections) && ev.Outcome == OutcomeRewriteEmitted:
-			ran = ev.ToModel
-		}
-		if ran != "" && ran != "unknown" {
-			byModel[ShortModel(ran)]++
-		}
-		if spentOnDoubt(ev) && !isRefuted {
-			s.OnDoubt++
-		}
-	}
-	names := make([]string, 0, len(byModel))
-	for m := range byModel {
-		names = append(names, m)
-	}
-	sort.Strings(names) // deterministic tie-break
-	for _, m := range names {
-		if byModel[m] > s.TopModelN {
-			s.TopModel, s.TopModelN = m, byModel[m]
-		}
-	}
-	return s
-}
-
-// Line renders the statusline summary, or "" when the session has no routing
-// activity and no stale quota to flag. Segments without data are omitted.
-func (s SessionRouting) Line() string {
-	if s.Spawns == 0 {
-		// Nothing routed yet, but a holding snapshot is the reason nothing will.
-		if s.QuotaStale {
-			return "◆ downshift · " + QuotaStaleMarker
-		}
-		return ""
-	}
-	noun := "subagents"
-	if s.Spawns == 1 {
-		noun = "subagent"
-	}
-	parts := []string{"◆ downshift", fmt.Sprintf("%d %s", s.Spawns, noun)}
-	parts = append(parts, fmt.Sprintf("%d switched · %d held", s.Switched, s.Held))
-	if s.TopModel != "" {
-		parts = append(parts, fmt.Sprintf("%d on %s", s.TopModelN, s.TopModel))
-	}
-	if s.Tokens.Line() != "" {
-		parts = append(parts, s.Tokens.Line())
-	}
-	parts = append(parts, fmt.Sprintf("%d on doubt", s.OnDoubt))
-	if s.QuotaStale {
-		parts = append(parts, QuotaStaleMarker)
-	}
-	return strings.Join(parts, " · ")
-}
-
 // ChildEndLine renders the one-line message shown when a child ends, from the
 // usage record built for it: the model it ran on (final_model), its work and
 // cache tokens and, when a different requested model is known, whether those
@@ -163,16 +56,16 @@ func ChildEndLine(ev Event) string {
 		ran = ShortModel(ev.ToModel)
 		parts = append(parts, "finished on "+ran)
 	}
-	if hasChildTokens(ev) {
-		c := classesOf(ev.TokenUsageOrZero())
-		parts = append(parts, fmt.Sprintf("%s tokens (work %s, cache %s)", formatTokens(c.Total), formatTokens(c.Input+c.Output), formatTokens(c.Cache())))
+	if HasChildTokens(ev) {
+		c := ClassesOf(ev.TokenUsageOrZero())
+		parts = append(parts, fmt.Sprintf("%s tokens (work %s, cache %s)", FormatTokens(c.Total), FormatTokens(c.Input+c.Output), FormatTokens(c.Cache())))
 	}
 	if want := ev.FromModel; want != "" && want != "unknown" && ShortModel(want) != ran && ev.HasTokenUsage() {
 		guess := ""
 		if ev.BaselineSource == BaselineInferred {
 			guess = " (inferred baseline)"
 		}
-		switch tierDirection(ev.Harness, want, ev.ToModel) {
+		switch TierDirection(ev.Harness, want, ev.ToModel) {
 		case TokenCheaper:
 			parts = append(parts, "lower tier than "+ShortModel(want)+guess)
 		case TokenPricier:
@@ -185,7 +78,8 @@ func ChildEndLine(ev Event) string {
 	return "↳ downshift: " + strings.Join(parts, " · ")
 }
 
-func formatTokens(n int64) string {
+// FormatTokens formats a token count into a compact human string (e.g. 1.2k, 12k, 1.5M).
+func FormatTokens(n int64) string {
 	switch {
 	case n >= 1_000_000:
 		return fmt.Sprintf("%.1fM", float64(n)/1e6)

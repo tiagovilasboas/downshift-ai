@@ -5,6 +5,7 @@ package main
 
 import (
 	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 )
 
 // ── stats ─────────────────────────────────────────────────────────────────────
@@ -13,9 +14,9 @@ type stats struct {
 	total, down, up, ok int
 	// held counts classified shifts the hook left unchanged.
 	held int
-	// routing is the shared routing-tokens view (telemetry.RoutingTokens), per
+	// routing is the shared routing-tokens view (readout.RoutingTokens), per
 	// harness and never summed: a live widget shows tokens, never dollars.
-	routing   telemetry.RoutingView
+	routing   readout.RoutingView
 	harnesses []string // all distinct harnesses active today, most-recent first
 }
 
@@ -54,7 +55,7 @@ func compute(all []event) (stats, []event) {
 		}
 		recent = append(recent, e)
 	}
-	st.routing = telemetry.RoutingTokens(window)
+	st.routing = readout.RoutingTokens(window)
 	if len(recent) > maxRecent {
 		recent = recent[len(recent)-maxRecent:]
 	}

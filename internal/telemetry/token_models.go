@@ -21,20 +21,21 @@ const (
 	TokenUnattributed = "unattributed"
 )
 
-func knownModel(id string) bool { return id != "" && id != "unknown" }
+// KnownModel reports whether id is a non-empty, non-"unknown" model id.
+func KnownModel(id string) bool { return id != "" && id != "unknown" }
 
-// tokenModels returns the requested and ran model of a usage record. The record
+// TokenModels returns the requested and ran model of a usage record. The record
 // is the observation, so it wins; the linked decision fills a missing id. A
 // rewrite the harness did not honor ran on the requested model.
-func tokenModels(usage, decision Event, found, refuted bool) (requested, ran string) {
+func TokenModels(usage, decision Event, found, refuted bool) (requested, ran string) {
 	requested, ran = usage.FromModel, usage.ToModel
-	if !knownModel(requested) && found {
+	if !KnownModel(requested) && found {
 		requested = decision.FromModel
 	}
 	if refuted {
 		return requested, requested
 	}
-	if !knownModel(ran) && found {
+	if !KnownModel(ran) && found {
 		if AppliedRewrite(decision.Outcome, decision.Corrections) {
 			ran = decision.ToModel
 		} else {

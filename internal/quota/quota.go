@@ -37,12 +37,16 @@ const (
 // SourceName is the fixed provenance vocabulary safe for prompt-free logs.
 func SourceName(source string) string { return quotamodel.SourceName(source) }
 
-func init() {
-	core.LoadQuotaHook = Load
-	core.LoadNativeQuotaHook = LoadNative
-	core.ParseNativeQuotaHook = ParseNative
-	core.RegisterNativeQuotaHook = RegisterNativeSource
-	core.PublishNativeQuotaSources()
+// Register wires quota's readers and native source parser onto core and
+// publishes each harness's native export source. The returned function restores
+// the previous hooks.
+func Register() (restore func()) {
+	return core.RegisterQuota(core.QuotaHooks{
+		Load:           Load,
+		LoadNative:     LoadNative,
+		ParseNative:    ParseNative,
+		RegisterNative: RegisterNativeSource,
+	})
 }
 
 func Path() (string, error) {

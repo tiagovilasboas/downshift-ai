@@ -41,11 +41,11 @@ func ReadEventsWithRotatedFrom(path string, maxBytes int64) ([]Event, error) {
 		part, err := readEventsTailFrom(s.path, s.maxBytes, parseEventsRaw)
 		events = append(events, part...)
 		if err != nil {
-			linkLateUsage(events)
+			LinkLateUsage(events)
 			return events, err
 		}
 	}
-	linkLateUsage(events)
+	LinkLateUsage(events)
 	return events, nil
 }
 
