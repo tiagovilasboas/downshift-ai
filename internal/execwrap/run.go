@@ -165,7 +165,7 @@ func Run(argv []string, o Options) (res Result) {
 	g.skipObservation = o.SkipObservation
 	g.desktop = o.Desktop
 	g.balanced = o.Balanced
-	g.bal = balanceConfig{threshold: o.BalanceThreshold, limits: o.BalanceLimits}
+	g.bal = balanceConfig{threshold: o.BalanceThreshold, limits: o.BalanceLimits, bypassFail: AntiLoopActive(o.Session)}
 	// With a terminal on stdin a program may prompt on stderr: holding that
 	// prompt would hide it, so the first stderr byte releases the output.
 	g.stderrReleases = !g.merge && interactiveStdin(o.Stdin)

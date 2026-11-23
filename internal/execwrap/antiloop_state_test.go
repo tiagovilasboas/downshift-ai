@@ -128,3 +128,63 @@ func TestAntiLoop_SweepsStaleFiles(t *testing.T) {
 		}
 	}
 }
+
+func TestAntiLoopActive_ThresholdAndWindow(t *testing.T) {
+	t.Setenv(paths.EnvStateDir, t.TempDir())
+	t0 := time.Now()
+	if AntiLoopActive("") || AntiLoopActive("not-a-hash") {
+		t.Fatal("empty or invalid session reported active")
+	}
+	failN(nil, loopSess, "deadbeef0001", 1, t0)
+	if antiLoopActiveAt(loopSess, t0) {
+		t.Fatal("single failure activated bypass, want >= 2")
+	}
+	failN(nil, loopSess, "deadbeef0001", 1, t0)
+	if !antiLoopActiveAt(loopSess, t0) {
+		t.Fatal("2 consecutive identical failures did not activate bypass")
+	}
+	if antiLoopActiveAt(loopSess, t0.Add(antiLoopWindow+time.Minute)) {
+		t.Fatal("expired streak still reported active")
+	}
+	RecordAntiLoop(loopSess, 0, "")
+	if antiLoopActiveAt(loopSess, t0) {
+		t.Fatal("passing run did not clear active bypass")
+	}
+}
+
+func TestCompactCapturedFailed_AntiLoopBypassDeliversRaw(t *testing.T) {
+	t.Setenv(paths.EnvStateDir, t.TempDir())
+	raw := failingMake(500)
+	keep, _ := fallbackKeep()
+	first := CompactCapturedFailed([]string{"make", "test"}, FamilyMake, raw, 2, keep, 0, loopSess, Shapes{})
+	if !first.Compacted || first.Detail != DetailFallbackCut {
+		t.Fatalf("first failing run = compacted:%v detail:%q, want fallback_cut", first.Compacted, first.Detail)
+	}
+	RecordAntiLoop(loopSess, 2, first.KeptID)
+	RecordAntiLoop(loopSess, 2, first.KeptID)
+
+	third := CompactCapturedFailed([]string{"make", "test"}, FamilyMake, raw, 2, keep, 0, loopSess, Shapes{})
+	if third.Compacted || third.Detail != DetailAntiLoopBypass || !bytes.Equal(third.Output, raw) {
+		t.Fatalf("third failing run = compacted:%v detail:%q len:%d (want false, %q, raw %d)", third.Compacted, third.Detail, len(third.Output), DetailAntiLoopBypass, len(raw))
+	}
+
+	RecordAntiLoop(loopSess, 0, "")
+	afterPass := CompactCapturedFailed([]string{"make", "test"}, FamilyMake, raw, 2, keep, 0, loopSess, Shapes{})
+	if !afterPass.Compacted || afterPass.Detail != DetailFallbackCut {
+		t.Fatalf("after pass = compacted:%v detail:%q, want fallback_cut", afterPass.Compacted, afterPass.Detail)
+	}
+}
+
+func TestCompactCaptured_AntiLoopDoesNotAffectPassingRuns(t *testing.T) {
+	t.Setenv(paths.EnvStateDir, t.TempDir())
+	failN(nil, loopSess, "deadbeef0001", 2, time.Now())
+	if !AntiLoopActive(loopSess) {
+		t.Fatal("expected active anti-loop")
+	}
+	raw := failingMake(500)
+	keep, _ := fallbackKeep()
+	clean := CompactCapturedShaped([]string{"make", "test"}, FamilyMake, raw, 0, keep, true, 0, loopSess, Shapes{})
+	if !clean.Compacted || len(clean.Output) >= len(raw) {
+		t.Fatalf("passing run skipped compaction during failure streak: compacted=%v len=%d/%d", clean.Compacted, len(clean.Output), len(raw))
+	}
+}

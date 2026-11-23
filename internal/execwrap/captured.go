@@ -46,7 +46,9 @@ func compactHeld(argv []string, data []byte, family Family, exitCode int, wroteS
 		}
 	}
 	if balanced && !h.compacted {
-		if cut, ok := fallbackCut(keep, family, argv, exitCode, data, h.detail, bal); ok {
+		if exitCode != 0 && bal.bypassFail && keep != nil && family != FamilyNone && !balanceRefused[family] && !rawStoreRefused[family] && len(data) > bal.limit() {
+			h.detail = DetailAntiLoopBypass
+		} else if cut, ok := fallbackCut(keep, family, argv, exitCode, data, h.detail, bal); ok {
 			h = held{out: cut, compacted: true, folded: true, detail: DetailFallbackCut}
 		}
 	}
@@ -133,7 +135,7 @@ func compactCaptured(argv []string, family Family, data []byte, exitCode int, ke
 			keep = func([]byte) (string, bool) { return stored(data) }
 		}
 	}
-	bal := balanceConfig{threshold: balanceThreshold, fallbackOnly: fallbackOnly}
+	bal := balanceConfig{threshold: balanceThreshold, fallbackOnly: fallbackOnly, bypassFail: exitCode != 0 && AntiLoopActive(session)}
 	h := compactHeld(argv, work, family, exitCode, false, captureKept(keep, &kept, session), nil, balanced, bal)
 	if lossless && !h.compacted {
 		h.compacted, h.passthrough, h.detail = true, "", ""

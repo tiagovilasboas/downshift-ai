@@ -10,6 +10,11 @@ import "github.com/tiagovilasboas/downshift-ai/internal/compressor"
 // fallbackCut shortened instead. It is a bounded code, never output text.
 const DetailFallbackCut = "fallback_cut"
 
+// DetailAntiLoopBypass marks a failing run whose lossy fallback cut was
+// automatically bypassed because the session hit an active repeated-failure
+// streak, delivering full raw output instead.
+const DetailAntiLoopBypass = "anti_loop_bypass"
+
 // fallbackCut is the last resort for a family that has a compressor which let
 // the output through whole: the same balanced cut unclassified output gets,
 // stored in CCR first so every dropped line can be retrieved. A failed run
@@ -25,7 +30,7 @@ func fallbackCut(keep func([]byte) (string, bool), family Family, argv []string,
 			res, ok = nil, false
 		}
 	}()
-	if keep == nil || family == FamilyNone || balanceRefused[family] || rawStoreRefused[family] || len(raw) <= cfg.limit() {
+	if keep == nil || (exitCode != 0 && cfg.bypassFail) || family == FamilyNone || balanceRefused[family] || rawStoreRefused[family] || len(raw) <= cfg.limit() {
 		return nil, false
 	}
 	kind := balanceKindOf(family, argv)

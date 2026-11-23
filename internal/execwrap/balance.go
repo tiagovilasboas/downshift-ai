@@ -22,6 +22,9 @@ type balanceConfig struct {
 	// fallbackOnly limits a run to the fallback cut of balance_fallback.go
 	// (a captured failed run: the family's own result is never cut).
 	fallbackOnly bool
+	// bypassFail disables lossy cuts on failing runs when the session is in an
+	// active anti-loop failure streak, delivering full raw output instead.
+	bypassFail bool
 }
 
 // limit is the size above which the balanced cut applies.
@@ -73,7 +76,7 @@ func balance(keep func(raw []byte) (string, bool), family Family, argv []string,
 	if threshold <= 0 {
 		threshold = BalanceThreshold
 	}
-	if keep == nil || balanceRefused[family] || len(shown) <= threshold {
+	if keep == nil || (exitCode != 0 && cfg.bypassFail) || balanceRefused[family] || len(shown) <= threshold {
 		return nil, false
 	}
 	body := shown

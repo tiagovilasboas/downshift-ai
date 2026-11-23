@@ -47,6 +47,7 @@ var detailLabel = map[string]string{
 	"unknown_shape":    "no known line shape",
 	"no_compressor":    "family has no compressor",
 	"compressor_panic": "compressor failed, output kept",
+	"anti_loop_bypass": "repeated failure in session; raw output kept to break loop",
 }
 
 // metacharLabel words a metachar class for people.
