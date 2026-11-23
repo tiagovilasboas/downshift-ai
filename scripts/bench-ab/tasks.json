@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "refactor-clamp",
+      "kind": "refactor",
+      "title": "Implement Clamp(v, lo, hi int) int cleanly",
+      "source_dir": "internal/outcome/testdata/t01-clamp",
+      "visible_files": ["stub.go"],
+      "hidden_test_files": ["check_test.go"],
+      "need_go_mod": "module clamptask\n\ngo 1.21\n",
+      "prompt": "Implement Clamp(v, lo, hi int) int in stub.go so it returns lo when v < lo, hi when v > hi, and v otherwise. Run `go test -v ./...` before finishing and keep changes minimal."
+    },
+    {
+      "id": "debug-reverse",
+      "kind": "debug",
+      "title": "Fix UTF-8 rune reversal in Reverse(s string)",
+      "source_dir": "scripts/bench-ab/fixtures/debug-reverse",
+      "visible_files": ["go.mod", "reverse.go", "check_test.go"],
+      "hidden_test_files": ["check_test.go"],
+      "prompt": "Fix the bug in reverse.go so Reverse(s string) reverses valid UTF-8 strings rune-by-rune. Run `go test -v ./...` to diagnose and verify all tests pass."
+    }
+  ]
+}
