@@ -52,6 +52,15 @@ downshift update
 
 [![Interactive setup detects harnesses, lets you choose components and review changes, writes after confirmation, then the user verifies the setup](docs/brand/readme-media/setup-flow.svg)](docs/brand/readme-media/setup-flow.png)
 
+## New in v0.21.0
+
+- **Active anti-loop bypass (`#211`)**: after two consecutive identical failing CCR digests in the same session within 30 minutes, lossy compaction steps aside (`anti_loop_bypass`) and passes the raw failure output verbatim until the command passes.
+- **Prompt-cache health & CCR retrieval telemetry (`#212`)**: `downshift report` and `downshift stats` surface per-harness prompt `cache hit %` (`cache_read`, `cache_write`, `input`) alongside CCR retrieval share (`% of cut`).
+- **1-command offline proof benchmark & public A/B kit (`#213`)**: `make bench-proof` verifies 89.2% byte compaction (`324,913 -> 35,113` bytes), 4/4 byte-exact `downshift retrieve` recovery, `anti_loop_bypass`, prompt-cache invariance, and `.downshift/policy.json` risk floors offline; `scripts/bench-ab/` adds a paired live A/B kit.
+- **Prompt-cache safety & positioning docs (`#214`)**: added [Prompt-cache safety](docs/features/prompt-cache-safety.md), [Reproducing benchmarks](docs/guides/reproduce-benchmark.md), and native `/compact` coexistence notes.
+
+[v0.21.0 release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.21.0.md)
+
 ## New in v0.20 (v0.20.1)
 
 - **More output compacted, nothing lost**: lossless passes for output with no family (ANSI, progress, repeats, grep rows, diffs, path lists), a byte-budget cut stored in CCR, rtk-style passes (long lines, near-repeats, shell JSON, diff context), piped and chained family commands, and a fallback cut when a family compressor cannot parse the output. On a 30-day replay of real sessions (26,452 outputs over 1 KB) the cut rose from 27.4% to 32.2%; every lossy cut stays retrievable with `downshift retrieve`.
@@ -61,18 +70,6 @@ downshift update
 - **Zero-allocation prompt word count (`v0.20.1`)**: prompt classification avoids `strings.Fields` slice allocations on large prompts.
 
 [v0.20.0 release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.20.0.md) · [v0.20.1 release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.20.1.md)
-
-## New in v0.18 (v0.18.1): compaction reaches far more of what agents run
-
-**Projected 3.5x to 4.5x more tokens cut per month on the same workload**, from about 1.0M to about 3.5M to 4.5M (saved bytes / 4). This is a projection over one operator's last 30 days of Claude Code transcripts (69,341 tool results), not yet measured after the release: [method and limits](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/evidence/compaction-projection-2026-11-17.md).
-
-- **Post-run cut from 4 KB** (was 16 KB) on Claude Code, including suppressed permission modes and background runs (`v0.18.1`), with raw output kept for `downshift retrieve` and 6 rotated compactor log generations retained.
-- **WebFetch, MCP, and large Read results compacted** after the run: `WebFetch` and `mcp__*` outputs over 4 KB pass through balanced compaction; `Read` stays untouched up to 64 KB (above 64 KB keeps head and tail verbatim).
-- **More commands wrapped before the run**: `;` / `&&` chains, quoted globs, `/opt/homebrew/bin/gh`-style paths, bare `| head` / `| tail`, and `agent-desktop` (`snapshot`/`find`) classified as read-only (`v0.18.1`).
-- **New compressors**: JSON from `gh api` / `curl`, `gh pr checks`, `gh pr diff`, git lists, large `git diff` / `show` / `status`, plus nine families (terraform plan, cargo clippy and tree, docker and kubectl logs, composer, artisan, az pipelines).
-- **Cross-harness skills parity & telemetry (`v0.18.1`)**: `downshift setup --yes` installs `ponytail` and Downshift skills across Claude Code, Codex, Cursor, OpenCode, Antigravity, and Kiro/KiroCrew (`SkillsDir`), wires `antigravity` session IDs and `kiro.HandlePostToolUse`, tracks `ponytail` skill adoption in `downshift stats`, and ships the compositor-first `web-motion` skill in the Claude Code plugin.
-
-[v0.18.0 release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.18.0.md) · [v0.18.1 release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.18.1.md) · After updating, run `downshift setup --yes` (and `claude plugin update downshift@downshift` with the plugin) to get the new matcher and refreshed skills.
 
 ## Token optimization for AI coding agents
 
