@@ -52,6 +52,13 @@ downshift update
 
 [![Interactive setup detects harnesses, lets you choose components and review changes, writes after confirmation, then the user verifies the setup](docs/brand/readme-media/setup-flow.svg)](docs/brand/readme-media/setup-flow.png)
 
+## New in v0.22.0
+
+- **Subprocess hang & prompt guards (`#219`)**: `DOWNSHIFT_EXEC_TIMEOUT` bounds `downshift compact` child runs (exiting `124` on timeout), and non-TTY invocations inject `GIT_TERMINAL_PROMPT=0` and `GH_PROMPT_DISABLED=1` so background `git`/`gh` commands fail fast instead of hanging.
+- **Cleaner telemetry & startup wiring (`#218`)**: split `internal/telemetry` read-outs into `internal/telemetry/readout` and replaced implicit `init()` hook registration with explicit `wireRuntime()` wiring in `cmd/downshift`.
+
+[v0.22.0 release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.22.0.md)
+
 ## New in v0.21.0
 
 - **Active anti-loop bypass (`#211`)**: after two consecutive identical failing CCR digests in the same session within 30 minutes, lossy compaction steps aside (`anti_loop_bypass`) and passes the raw failure output verbatim until the command passes.
@@ -60,16 +67,6 @@ downshift update
 - **Prompt-cache safety & positioning docs (`#214`)**: added [Prompt-cache safety](docs/features/prompt-cache-safety.md), [Reproducing benchmarks](docs/guides/reproduce-benchmark.md), and native `/compact` coexistence notes.
 
 [v0.21.0 release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.21.0.md)
-
-## New in v0.20 (v0.20.1)
-
-- **More output compacted, nothing lost**: lossless passes for output with no family (ANSI, progress, repeats, grep rows, diffs, path lists), a byte-budget cut stored in CCR, rtk-style passes (long lines, near-repeats, shell JSON, diff context), piped and chained family commands, and a fallback cut when a family compressor cannot parse the output. On a 30-day replay of real sessions (26,452 outputs over 1 KB) the cut rose from 27.4% to 32.2%; every lossy cut stays retrievable with `downshift retrieve`.
-- **Session dedup**: a file read or a command output repeated in the same session becomes a short pointer to the first copy.
-- **New families**: `swift test`, `ctest`, `mix test`, plus `git branch`, `git remote`, `git ls-files` and `ls`.
-- **Better measurement**: `downshift report` breaks unclassified output down by program, line bucket and net saving, and shows subagent outcomes by spawn origin.
-- **Zero-allocation prompt word count (`v0.20.1`)**: prompt classification avoids `strings.Fields` slice allocations on large prompts.
-
-[v0.20.0 release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.20.0.md) · [v0.20.1 release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.20.1.md)
 
 ## Token optimization for AI coding agents
 

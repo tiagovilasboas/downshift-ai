@@ -9,14 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-11-23
+
+Release notes: [docs/releases/v0.22.0.md](docs/releases/v0.22.0.md).
+
 ### Added
 
-- **Compactor execution timeout (`DOWNSHIFT_EXEC_TIMEOUT`).** Optional Go duration (such as `30s` or `2m`) bounds `downshift compact` child execution and exits `124` on timeout (unset or invalid means no timeout).
-- **Non-TTY prompt guard in `downshift compact`.** Injects `GIT_TERMINAL_PROMPT=0` and `GH_PROMPT_DISABLED=1` when `stdin` is not a terminal so background `git`/`gh` commands fail fast instead of hanging on interactive prompts.
+- **Compactor execution timeout (`DOWNSHIFT_EXEC_TIMEOUT`, `#219`).** Optional Go duration (such as `30s` or `2m`) bounds `downshift compact` child execution and exits `124` on timeout (unset or invalid means no timeout).
+- **Non-TTY prompt guard in `downshift compact` (`#219`).** Injects `GIT_TERMINAL_PROMPT=0` and `GH_PROMPT_DISABLED=1` when `stdin` is not a terminal so background `git`/`gh` commands fail fast instead of hanging on interactive prompts.
 
 ### Changed
 
-- **Telemetry readout split & explicit startup wiring.** Split readout helpers into `internal/telemetry/readout` and moved cross-package runtime hook registration into explicit `wireRuntime()` startup wiring in `cmd/downshift`.
+- **Telemetry readout split & explicit startup wiring (`#218`).** Split readout helpers into `internal/telemetry/readout` and moved cross-package runtime hook registration into explicit `wireRuntime()` startup wiring in `cmd/downshift`.
+- **Dependencies (`#216`, `#217`).** Bumped `charm.land/bubbletea/v2` (`2.1.1 -> 2.1.2`) and `actions/setup-go` (`7.0.0 -> 7.1.0`).
 
 ## [0.21.0] - 2026-11-23
 
