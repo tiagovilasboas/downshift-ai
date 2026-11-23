@@ -47,8 +47,8 @@ func (r RoutingRow) Rows() []string {
 	if r.UnobservedSpawns > 0 {
 		out = append(out, fmt.Sprintf("unobserved  %s (no model could be ranked)", spawnsText(r.UnobservedSpawns)))
 	}
-	if r.CacheRead > 0 {
-		out = append(out, fmt.Sprintf("cache read  %s (apart from billable)", formatTokens(r.CacheRead)))
+	if line := r.cacheReadText(false); line != "" {
+		out = append(out, line)
 	}
 	if len(out) == 0 {
 		out = append(out, "unobserved")

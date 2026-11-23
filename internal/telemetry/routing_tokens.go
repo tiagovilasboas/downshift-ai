@@ -40,6 +40,10 @@ type RoutingRow struct {
 	UnobservedSpawns int `json:"unobserved_spawns"`
 	// CacheRead is the cache-read tokens of every spawn, apart from billable.
 	CacheRead int64 `json:"cache_read"`
+	// CacheWrite and Input hold the non-read prompt input classes alongside
+	// CacheRead so reports can show prompt-cache hit rate per harness.
+	CacheWrite int64 `json:"cache_write,omitempty"`
+	Input      int64 `json:"input,omitempty"`
 }
 
 // Observed reports whether any spawn was placed against the session model.
@@ -68,6 +72,8 @@ func (r *RoutingRow) Add(o RoutingRow) {
 	r.FallbackBelowBillable += o.FallbackBelowBillable
 	r.UnobservedSpawns += o.UnobservedSpawns
 	r.CacheRead += o.CacheRead
+	r.CacheWrite += o.CacheWrite
+	r.Input += o.Input
 }
 
 // RoutingView is RoutingRow folded per harness and per agent type. It has no
@@ -95,6 +101,7 @@ func (v RoutingView) Spawn(d Event) RoutingRow {
 type spawnPlacement struct {
 	harness, agent      string
 	billable, cacheRead int64
+	cacheWrite, input   int64
 	onSession           bool // some record ranked against the session model
 	belowSession        bool
 	quota               QuotaUnits // session-placed records weighted by tier
@@ -104,7 +111,7 @@ type spawnPlacement struct {
 }
 
 func (p *spawnPlacement) tokens() RoutingRow {
-	t := RoutingRow{CacheRead: p.cacheRead}
+	t := RoutingRow{CacheRead: p.cacheRead, CacheWrite: p.cacheWrite, Input: p.input}
 	origin := OriginOf(p.onSession, p.belowSession, p.rewritten)
 	switch {
 	case origin != OriginUnattributed:
@@ -159,6 +166,8 @@ func accumulateRoutingSpawn(ev Event, decisions map[linkKey]Event, refuted map[l
 	}
 	sp.billable += c.Billable()
 	sp.cacheRead += c.CacheRead
+	sp.cacheWrite += c.CacheWrite
+	sp.input += c.Input
 	requested, ran := tokenModels(ev, decision, found, isRefuted)
 	if found && decision.ParentModel != "" {
 		if base, got, ok := tiersVs(ev.Harness, decision.ParentModel, ran); ok {

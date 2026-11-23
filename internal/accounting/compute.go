@@ -80,6 +80,8 @@ type Compactor struct {
 	// RetrievedBytes is what `downshift retrieve` pulled back into context from
 	// the runs counted here. SavedBytes and Tokens are already net of it.
 	RetrievedBytes int64 `json:"retrieved_bytes,omitempty"`
+	// RetrievedPct is the share of gross compacted bytes pulled back via retrieve.
+	RetrievedPct float64 `json:"retrieved_pct,omitempty"`
 }
 
 // Display is the final text of the figures, so no surface formats them again.
@@ -174,13 +176,13 @@ func scopeExec(execEvents []execwrap.Event, scope Scope, now time.Time) []execwr
 func compactorTotals(evs []execwrap.Event) Compactor {
 	sum := execwrap.SummarizeEvents(evs)
 	return Compactor{
-		Commands:   sum.Commands,
-		Compacted:  sum.Compacted,
-		RawBytes:   sum.RawBytes,
-		SavedBytes: sum.SavedBytes,
-		Tokens:     sum.EstimatedTokensSaved,
-
+		Commands:       sum.Commands,
+		Compacted:      sum.Compacted,
+		RawBytes:       sum.RawBytes,
+		SavedBytes:     sum.SavedBytes,
+		Tokens:         sum.EstimatedTokensSaved,
 		RetrievedBytes: sum.RetrievedBytes,
+		RetrievedPct:   sum.RetrievedPct,
 	}
 }
 
@@ -213,7 +215,11 @@ func routingText(v telemetry.RoutingView) string {
 func compactorText(c Compactor) string {
 	text := fmt.Sprintf("Commands: %d · Compacted: %d", c.Commands, c.Compacted)
 	if c.RetrievedBytes > 0 {
-		text += fmt.Sprintf(" · Read back with retrieve: %d bytes", c.RetrievedBytes)
+		if c.RetrievedPct > 0 {
+			text += fmt.Sprintf(" · Read back with retrieve: %d bytes (%.1f%% of cut)", c.RetrievedBytes, c.RetrievedPct)
+		} else {
+			text += fmt.Sprintf(" · Read back with retrieve: %d bytes", c.RetrievedBytes)
+		}
 	}
 	return text
 }

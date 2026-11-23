@@ -53,6 +53,9 @@ type Summary struct {
 	// RetrievedBytes is what `downshift retrieve` pulled back into context for
 	// the runs counted here. SavedBytes is already net of it.
 	RetrievedBytes int64 `json:"retrieved_bytes,omitempty"`
+	// RetrievedPct is the share of gross compacted bytes pulled back via
+	// `downshift retrieve`, capped at 100.0 (sensor for compression signal loss).
+	RetrievedPct float64 `json:"retrieved_pct,omitempty"`
 }
 
 // PassthroughNotRecorded is the PassthroughByReason key of a not-compacted row
@@ -126,6 +129,7 @@ func SummarizeSession(path, session string) (Summary, error) {
 // call it.
 func SummarizeEvents(evs []Event) Summary {
 	s := Summary{TokenEstimate: "estimated: saved_bytes / 4"}
+	var grossCut int64
 	for _, ev := range evs {
 		s.Commands++
 		if ev.Compacted {
@@ -142,6 +146,9 @@ func SummarizeEvents(evs []Event) Summary {
 		}
 		s.RawBytes += ev.RawBytes
 		s.EmittedBytes += ev.EmittedBytes
+		if ev.RawBytes > ev.EmittedBytes {
+			grossCut += ev.RawBytes - ev.EmittedBytes
+		}
 		if ev.Folded {
 			s.FoldedRuns++
 		}
@@ -160,6 +167,9 @@ func SummarizeEvents(evs []Event) Summary {
 			s.ByFamily = map[Family]int64{}
 		}
 		s.ByFamily[ev.Family]++
+	}
+	if s.RetrievedBytes > 0 && grossCut > 0 {
+		s.RetrievedPct = min(100.0, 100*float64(s.RetrievedBytes)/float64(grossCut))
 	}
 	s.EstimatedTokensSaved = s.SavedBytes / BytesPerToken
 	return s

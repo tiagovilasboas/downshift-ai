@@ -64,6 +64,12 @@ func TestApplyRetrievals(t *testing.T) {
 			if s.RetrievedBytes != back {
 				t.Errorf("summary retrieved = %d, want %d", s.RetrievedBytes, back)
 			}
+			if back == 0 && s.RetrievedPct != 0 {
+				t.Errorf("summary retrieved pct with 0 retrieved = %v, want 0", s.RetrievedPct)
+			}
+			if s.RetrievedPct < 0 || s.RetrievedPct > 100 {
+				t.Errorf("summary retrieved pct out of [0,100]: %v", s.RetrievedPct)
+			}
 		})
 	}
 }
