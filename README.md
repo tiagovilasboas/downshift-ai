@@ -199,6 +199,25 @@ These are separate measurements in different units and workloads. The synthetic 
 
 [Compaction benchmark](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/reference/bench.md) · [Routing study](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/evidence/four-arm-mechanical-2026-10-21.md) · [Evidence guide](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/guides/evidence.md)
 
+### Reproduce it yourself in 5 seconds
+
+Verify compaction, lossless CCR retrieval, failing-test signal retention, active anti-loop raw bypass, and prompt-cache invariance directly against the compiled binary with zero API cost:
+
+```bash
+make bench-proof
+```
+
+For live paired **Off vs. Downshift** runs on Claude Code or Codex (measuring acceptance on hidden `go test` checks alongside billable tokens, cache hit %, and reference API list-rate estimates), use the reproducible harness in [`scripts/bench-ab/`](docs/guides/reproduce-benchmark.md).
+
+Downshift also publishes negative studies alongside positive ones: two pre-v0.20 controlled Claude Code batches found no billable-token drop when verbose outputs were already piped or small ([compaction study](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/evidence/compaction-token-study-2026-11-16.md), [post-O8 routing study](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/evidence/post-o8-mechanical-study-2026-11-16.md)), which is why `v0.18`–`v0.20` added post-run 4 KiB cuts, piped/chained extraction, and unclassified passes.
+
+## Why Downshift alongside native `/compact` and vendor routing?
+
+- **Prompt-cache safe by construction:** Downshift never swaps your main session's model mid-turn or rewrites past conversation history. Routing acts strictly on fresh subagent spawns and compaction acts before tool results enter context, while `downshift stats` / `downshift report` expose per-harness `cache hit %` and `cache write` counts directly ([Prompt-cache safety](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/features/prompt-cache-safety.md)).
+- **Signal-first compaction with active anti-loop protection:** Six test runners keep failures verbatim; when an unrecognized failure hits a 2-attempt session loop (`anti_loop_bypass`), Downshift automatically bypasses lossy cuts to deliver full raw output, and `downshift report` tracks how often `downshift retrieve` had to pull cut bytes back (`% of cut`).
+- **Vendor-neutral across harnesses:** Works across Claude Code, Codex, OpenCode, Cursor, Kiro, KiroCrew, and Antigravity — plus `downshift compact -- <cmd>` runs in any shell without vendor lock-in.
+- **Transparent local FinOps & user-owned policy:** Vendors optimize inside opaque defaults. Downshift puts explicit tier floors and rules in `.downshift/policy.json` and measures rework by verdict, uncompacted coverage, and cache health locally without sending prompts off your machine.
+
 ## Research behind the design
 
 Downshift's design starts from Anthropic's published work on orchestration. A strong lead plans and checks, cheaper workers do bounded work, and every extra agent has to earn its tokens.

@@ -198,6 +198,25 @@ São medições separadas, com unidades e cargas de trabalho diferentes. Os tota
 
 [Benchmark de compactação](../reference/bench.md) · [Estudo de roteamento](../evidence/four-arm-mechanical-2026-10-21.md) · [Guia de evidências](../guides/evidence.md)
 
+### Reproduza você mesmo em 5 segundos
+
+Valide compactação, recuperação sem perdas no CCR, preservação de falhas em testes, bypass automático anti-loop e invariância de cache de prompt direto no binário compilado, sem gastar tokens de API:
+
+```bash
+make bench-proof
+```
+
+Para rodar testes pareados **Off vs. Downshift** ao vivo no Claude Code ou no Codex (medindo taxa de aceitação objetiva com `go test` oculto além de tokens faturáveis, `cache hit %` e estimativa em preço de lista de API), use o kit em [como reproduzir o benchmark](../guides/reproduce-benchmark.md).
+
+O projeto também publica estudos com resultado negativo ao lado dos positivos: dois lotes controlados pré-v0.20 no Claude Code não mostraram queda nos tokens faturáveis quando os comandos já vinham curtos ou encadeados ([estudo de compactação](../evidence/compaction-token-study-2026-11-16.md), [estudo pós-O8](../evidence/post-o8-mechanical-study-2026-11-16.md)) — o que motivou as expansões de corte pós-execução (4 KiB), pipes/cadeias e saída não classificada na `v0.18`–`v0.20`.
+
+## Por que usar Downshift além de `/compact` e roteamento nativo?
+
+- **Cache de prompt preservado por construção:** o Downshift não troca o modelo da sessão principal no meio do turno nem reescreve histórico já enviado. O roteamento atua na fronteira do subagente e a compactação ocorre na entrada da saída de ferramentas, enquanto `downshift stats` e `downshift report` expõem `cache hit %` e `cache write` por harness ([Segurança de prompt cache](../features/prompt-cache-safety.md)).
+- **Compactação orientada a sinal com anti-loop ativo:** seis test runners preservam falhas linha a linha; quando uma saída não reconhecida falha duas vezes seguidas na mesma sessão (`anti_loop_bypass`), o corte com perda é desligado automaticamente para entregar o log bruto na terceira tentativa, e o `downshift report` mede o percentual recuperado via `downshift retrieve` (`% of cut`).
+- **Independência de fornecedor e multi-harness:** integra Claude Code, Codex, OpenCode, Cursor, Kiro, KiroCrew e Antigravity — além de `downshift compact -- <cmd>` funcionar como CLI pura em qualquer ambiente.
+- **FinOps local transparente e política nas suas mãos:** `.downshift/policy.json` garante pisos explícitos para áreas sensíveis (`authz`, pagamentos, criptografia) e mede retrabalho por veredito, cobertura não compactada e saúde do cache sem enviar prompts para fora da máquina.
+
 ## A pesquisa por trás do design
 
 O design do Downshift parte dos trabalhos publicados pela Anthropic sobre orquestração. Um líder forte planeja e confere, workers mais baratos fazem trabalho delimitado, e cada agente a mais precisa pagar os tokens que gasta.
