@@ -79,6 +79,13 @@ read from stderr. The compacted text goes to stdout and ends with the
 
 The Jest, pytest and cargo grammars follow the same contract: a line the grammar does not know keeps the run raw. `tsc` is not compacted when it fails, since a failing `tsc` prints only errors.
 
+### Active anti-loop bypass & signal-recovery sensor
+
+When a command fails, hiding the wrong detail risks an error-retry loop that burns far more tokens than the compaction saved. Two runtime guards prevent silent signal loss:
+
+1. **Active anti-loop bypass (`anti_loop_bypass`):** Whenever a session records two consecutive identical failing CCR digests (`KeptID`) within a 30-minute window, Downshift automatically disables lossy failure cuts (`balance` / `fallback_cut`) on subsequent failing runs until a passing command clears the streak, returning verbatim raw output (`passthrough_detail: anti_loop_bypass`). Passing commands continue to compact normally.
+2. **CCR retrieval share sensor (`read back`):** `downshift report` and `downshift stats` subtract every byte pulled back via `downshift retrieve` from net savings and display the retrieval percentage (`% of cut`). A rising retrieval rate flags commands where aggressive cutting hid a detail the agent still needed.
+
 The saving depends on how many tests passed. On the real transcripts used as
 test fixtures (vitest 3.2.7, 4.1.12 and 5.0.5, `@playwright/test` 1.64.1; 10 to
 15 tests, 4 failing) the output is 3% to 6% smaller, because almost all the
