@@ -141,6 +141,7 @@ func compactShell(in hookport.ToolOutput, o Options) Result {
 			res.RawBytes = int64(len(in.Stdout) + len(in.Stderr))
 			res.Output.Stdout = ptr
 			res.EmittedBytes = int64(len(ptr) + len(in.Stderr))
+			execwrap.RecordAntiLoop(o.Session, 0, "")
 			return settle(res, in)
 		}
 	}
@@ -199,6 +200,7 @@ func compactShell(in hookport.ToolOutput, o Options) Result {
 		}
 	}
 	res.EmittedBytes = int64(len(res.Output.Stdout) + len(res.Output.Stderr))
+	execwrap.RecordAntiLoop(o.Session, exit, res.KeptID)
 	return settle(res, in)
 }
 
