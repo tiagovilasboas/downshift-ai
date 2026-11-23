@@ -205,6 +205,10 @@ func TestCompactorTextShowsBytesReadBack(t *testing.T) {
 	if got := compactorText(Compactor{Commands: 4, Compacted: 3, RetrievedBytes: 250}); got != want {
 		t.Fatalf("with retrievals = %q, want %q", got, want)
 	}
+	wantPct := "Commands: 4 · Compacted: 3 · Read back with retrieve: 250 bytes (25.0% of cut)"
+	if got := compactorText(Compactor{Commands: 4, Compacted: 3, RetrievedBytes: 250, RetrievedPct: 25}); got != wantPct {
+		t.Fatalf("with retrieval pct = %q, want %q", got, wantPct)
+	}
 }
 
 // Compute reports the saving net of what retrieve pulled back.
@@ -216,6 +220,9 @@ func TestComputeCompactorIsNetOfRetrievals(t *testing.T) {
 	c := compactorTotals(evs)
 	if c.SavedBytes != 600 || c.RetrievedBytes != 300 || c.Tokens != 150 {
 		t.Fatalf("compactor = %+v, want saved 600, retrieved 300, tokens 150", c)
+	}
+	if c.RetrievedPct < 33.2 || c.RetrievedPct > 33.4 {
+		t.Fatalf("compactor RetrievedPct = %.2f, want ~33.3", c.RetrievedPct)
 	}
 }
 
@@ -250,7 +257,7 @@ func TestCompute_DaysWindowKeepsCrossBoundaryDecision(t *testing.T) {
 	got := win.Routing.ByHarness["claude-code"]
 	want := telemetry.RoutingRow{
 		Spawns: 2, BelowSpawns: 1, Billable: 350, BelowBillable: 250,
-		RewrittenSpawns: 1, RewrittenBillable: 250,
+		RewrittenSpawns: 1, RewrittenBillable: 250, Input: 350,
 	}
 	if got != want {
 		t.Fatalf("Compute windowed routing = %+v, want %+v", got, want)

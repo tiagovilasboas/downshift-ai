@@ -74,8 +74,8 @@ func (r RoutingRow) routingNotes() []string {
 	if r.UnobservedSpawns > 0 {
 		out = append(out, fmt.Sprintf("%s unobserved (no model could be ranked)", agentsText(r.UnobservedSpawns)))
 	}
-	if r.CacheRead > 0 {
-		out = append(out, fmt.Sprintf("cache read %s, apart from the tokens above", ShortTokens(r.CacheRead)))
+	if line := r.cacheReadText(true); line != "" {
+		out = append(out, line)
 	}
 	return out
 }

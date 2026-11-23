@@ -33,7 +33,7 @@ func TestPanelBelowSession_PerHarnessNeverSummed(t *testing.T) {
 	wantRow := belowSessionRow{
 		Harness:       "claude-code",
 		Observed:      true,
-		RoutingRow:    telemetry.RoutingRow{Spawns: 1, BelowSpawns: 1, Billable: 1500, BelowBillable: 1500},
+		RoutingRow:    telemetry.RoutingRow{Spawns: 1, BelowSpawns: 1, Billable: 1500, BelowBillable: 1500, Input: 1000},
 		QuotaEstimate: &wantQ,
 		QuotaShort:    wantQ.Short(),
 		QuotaLine:     wantQ.Line(),
@@ -48,13 +48,13 @@ func TestPanelBelowSession_PerHarnessNeverSummed(t *testing.T) {
 			map[string]belowSessionRow{"claude-code": wantRow}},
 		{"no rankable model reads unobserved", belowEvents("codex", "d2", "", "claude-sonnet-4-6"),
 			map[string]belowSessionRow{"codex": {Harness: "codex", Observed: false,
-				RoutingRow: telemetry.RoutingRow{UnobservedSpawns: 1}}}},
+				RoutingRow: telemetry.RoutingRow{UnobservedSpawns: 1, Input: 1000}}}},
 		{"two harnesses stay two rows", append(
 			belowEvents("claude-code", "d1", "claude-opus-4-8", "claude-sonnet-4-6"),
 			belowEvents("codex", "d2", "", "claude-sonnet-4-6")...),
 			map[string]belowSessionRow{
 				"claude-code": wantRow,
-				"codex":       {Harness: "codex", RoutingRow: telemetry.RoutingRow{UnobservedSpawns: 1}},
+				"codex":       {Harness: "codex", RoutingRow: telemetry.RoutingRow{UnobservedSpawns: 1, Input: 1000}},
 			}},
 	}
 	for _, tc := range cases {

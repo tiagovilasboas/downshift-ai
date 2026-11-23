@@ -20,11 +20,11 @@ func TestRoutingTokens_RewrittenIsAPartOfBelow(t *testing.T) {
 		want    RoutingRow
 	}{
 		{"applied rewrite below session", OutcomeRewriteEmitted, opus, sonnet,
-			RoutingRow{Spawns: 1, BelowSpawns: 1, Billable: 1700, BelowBillable: 1700, RewrittenSpawns: 1, RewrittenBillable: 1700}},
+			RoutingRow{Spawns: 1, BelowSpawns: 1, Billable: 1700, BelowBillable: 1700, RewrittenSpawns: 1, RewrittenBillable: 1700, CacheWrite: 200, Input: 1000}},
 		{"kept spawn that the caller already asked below", OutcomeAllow, sonnet, sonnet,
-			RoutingRow{Spawns: 1, BelowSpawns: 1, Billable: 1700, BelowBillable: 1700}},
+			RoutingRow{Spawns: 1, BelowSpawns: 1, Billable: 1700, BelowBillable: 1700, CacheWrite: 200, Input: 1000}},
 		{"rewrite that did not go below session", OutcomeRewriteEmitted, sonnet, opus,
-			RoutingRow{Spawns: 1, Billable: 1700}},
+			RoutingRow{Spawns: 1, Billable: 1700, CacheWrite: 200, Input: 1000}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

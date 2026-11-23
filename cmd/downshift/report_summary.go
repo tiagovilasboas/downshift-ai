@@ -29,6 +29,7 @@ type paneRow struct {
 	Commands       int64   `json:"compactor_commands"`
 	Compacted      int64   `json:"compactor_compacted"`
 	RetrievedBytes int64   `json:"compactor_retrieved_bytes"`
+	RetrievedPct   float64 `json:"compactor_retrieved_pct,omitempty"`
 	// HookCommands ran through the harness hook (session-tagged);
 	// DirectCommands ran with no session (a typed `downshift compact`).
 	HookCommands   int64 `json:"compactor_hook_commands"`
@@ -90,7 +91,7 @@ func paneRowOf(h string, n accounting.Numbers, direct accounting.Compactor) (pan
 	c := n.Compactor
 	s := paneRow{
 		Harness: h, TokensSaved: c.Tokens, RawBytes: c.RawBytes, SavedBytes: c.SavedBytes,
-		Commands: c.Commands, Compacted: c.Compacted, RetrievedBytes: c.RetrievedBytes,
+		Commands: c.Commands, Compacted: c.Compacted, RetrievedBytes: c.RetrievedBytes, RetrievedPct: c.RetrievedPct,
 		HookCommands: c.Commands - direct.Commands, DirectCommands: direct.Commands,
 		ModelSwitched: n.ModelSwitched, EffortChanged: n.EffortChanged, Held: n.Held, HeldGuardrail: n.HeldGuardrail,
 	}
@@ -117,6 +118,9 @@ func paneCells(s paneRow) []string {
 	read := "-"
 	if s.RetrievedBytes > 0 {
 		read = humanBytes(s.RetrievedBytes)
+		if s.RetrievedPct > 0 {
+			read = fmt.Sprintf("%s (%.1f%% of cut)", read, s.RetrievedPct)
+		}
 	}
 	return []string{
 		s.Harness, telemetry.ShortTokens(s.TokensSaved), cut,

@@ -211,7 +211,8 @@
         "fallback_billable": 1500,
         "fallback_below_billable": 1500,
         "unobserved_spawns": 0,
-        "cache_read": 0
+        "cache_read": 0,
+        "input": 1000
       }
     },
     "by_agent_type": {
@@ -226,7 +227,8 @@
         "fallback_billable": 1500,
         "fallback_below_billable": 1500,
         "unobserved_spawns": 0,
-        "cache_read": 0
+        "cache_read": 0,
+        "input": 1000
       }
     }
   },
@@ -270,7 +272,8 @@
           "fallback_billable": 1500,
           "fallback_below_billable": 1500,
           "unobserved_spawns": 0,
-          "cache_read": 0
+          "cache_read": 0,
+          "input": 1000
         }
       },
       "by_agent_type": {
@@ -285,7 +288,8 @@
           "fallback_billable": 1500,
           "fallback_below_billable": 1500,
           "unobserved_spawns": 0,
-          "cache_read": 0
+          "cache_read": 0,
+          "input": 1000
         }
       }
     },
@@ -510,7 +514,8 @@
               "fallback_billable": 1500,
               "fallback_below_billable": 1500,
               "unobserved_spawns": 0,
-              "cache_read": 0
+              "cache_read": 0,
+              "input": 1000
             }
           },
           "by_agent_type": {
@@ -525,7 +530,8 @@
               "fallback_billable": 1500,
               "fallback_below_billable": 1500,
               "unobserved_spawns": 0,
-              "cache_read": 0
+              "cache_read": 0,
+              "input": 1000
             }
           }
         },
@@ -757,7 +763,8 @@
         "fallback_billable": 1500,
         "fallback_below_billable": 1500,
         "unobserved_spawns": 0,
-        "cache_read": 0
+        "cache_read": 0,
+        "input": 1000
       },
       "quota_used": {
         "status": "unknown",
