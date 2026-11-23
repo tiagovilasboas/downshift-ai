@@ -10,6 +10,7 @@ package operatorexport
 
 import (
 	"encoding/json"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"sort"
 	"time"
 
@@ -83,7 +84,7 @@ type HarnessRow struct {
 // passes events, exec events, the window and now, which keeps it a pure
 // function the test can pin.
 func Build(events []telemetry.Event, execEvents []execwrap.Event, days int, now time.Time) Export {
-	rep := telemetry.BuildReport(events, days)
+	rep := readout.BuildReport(events, days)
 
 	scope := accounting.Scope{Kind: accounting.ScopeDays, Days: days}
 	nums := accounting.Compute(events, execEvents, scope)
@@ -93,7 +94,7 @@ func Build(events []telemetry.Event, execEvents []execwrap.Event, days int, now 
 	// an old log) is folded into the unknown sentinel, so it can neither leak
 	// nor make the allowlist refuse the whole export.
 	byName := map[string]*HarnessRow{}
-	routing := map[string]*telemetry.RoutingRow{}
+	routing := map[string]*readout.RoutingRow{}
 	for _, h := range perHarness {
 		name := h.Harness
 		if !knownHarnessValue(name) {
@@ -106,7 +107,7 @@ func Build(events []telemetry.Event, execEvents []execwrap.Event, days int, now 
 		}
 		row.CompactorAvoided += h.CompactorAvoided
 		if routing[name] == nil {
-			routing[name] = &telemetry.RoutingRow{}
+			routing[name] = &readout.RoutingRow{}
 		}
 		routing[name].Add(h.Routing)
 	}
@@ -134,7 +135,7 @@ func Build(events []telemetry.Event, execEvents []execwrap.Event, days int, now 
 	}
 }
 
-func groupOf(g telemetry.GroupSummary) Group {
+func groupOf(g readout.GroupSummary) Group {
 	return Group{Spawns: g.Spawns, Ended: g.Ended, Completed: g.Completed, Reworked: g.Reworked}
 }
 

@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"reflect"
 	"strings"
 	"testing"
@@ -29,11 +30,11 @@ func belowEvents(harness, id, parent, child string) []telemetry.Event {
 }
 
 func TestPanelBelowSession_PerHarnessNeverSummed(t *testing.T) {
-	wantQ := telemetry.QuotaUnits{Session: 3000, Ran: 1500}
+	wantQ := readout.QuotaUnits{Session: 3000, Ran: 1500}
 	wantRow := belowSessionRow{
 		Harness:       "claude-code",
 		Observed:      true,
-		RoutingRow:    telemetry.RoutingRow{Spawns: 1, BelowSpawns: 1, Billable: 1500, BelowBillable: 1500, Input: 1000},
+		RoutingRow:    readout.RoutingRow{Spawns: 1, BelowSpawns: 1, Billable: 1500, BelowBillable: 1500, Input: 1000},
 		QuotaEstimate: &wantQ,
 		QuotaShort:    wantQ.Short(),
 		QuotaLine:     wantQ.Line(),
@@ -48,18 +49,18 @@ func TestPanelBelowSession_PerHarnessNeverSummed(t *testing.T) {
 			map[string]belowSessionRow{"claude-code": wantRow}},
 		{"no rankable model reads unobserved", belowEvents("codex", "d2", "", "claude-sonnet-4-6"),
 			map[string]belowSessionRow{"codex": {Harness: "codex", Observed: false,
-				RoutingRow: telemetry.RoutingRow{UnobservedSpawns: 1, Input: 1000}}}},
+				RoutingRow: readout.RoutingRow{UnobservedSpawns: 1, Input: 1000}}}},
 		{"two harnesses stay two rows", append(
 			belowEvents("claude-code", "d1", "claude-opus-4-8", "claude-sonnet-4-6"),
 			belowEvents("codex", "d2", "", "claude-sonnet-4-6")...),
 			map[string]belowSessionRow{
 				"claude-code": wantRow,
-				"codex":       {Harness: "codex", RoutingRow: telemetry.RoutingRow{UnobservedSpawns: 1, Input: 1000}},
+				"codex":       {Harness: "codex", RoutingRow: readout.RoutingRow{UnobservedSpawns: 1, Input: 1000}},
 			}},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			rows := panelWithReport(telemetry.PanelView{}, belowSession, tc.events, nil).BelowSession
+			rows := panelWithReport(readout.PanelView{}, belowSession, tc.events, nil).BelowSession
 			if len(rows) != len(tc.want) {
 				t.Fatalf("rows = %+v, want %d", rows, len(tc.want))
 			}
@@ -74,7 +75,7 @@ func TestPanelBelowSession_PerHarnessNeverSummed(t *testing.T) {
 
 // The JSON carries counts and the harness name only: no prompt, path or id.
 func TestPanelBelowSession_JSONShape(t *testing.T) {
-	out := panelWithReport(telemetry.PanelView{}, belowSession, belowEvents("claude-code", "secret-id", "claude-opus-4-8", "claude-sonnet-4-6"), nil)
+	out := panelWithReport(readout.PanelView{}, belowSession, belowEvents("claude-code", "secret-id", "claude-opus-4-8", "claude-sonnet-4-6"), nil)
 	raw, err := json.Marshal(out.BelowSession)
 	if err != nil {
 		t.Fatal(err)
@@ -107,7 +108,7 @@ func TestPanelBelowSession_OtherSessionLeftOut(t *testing.T) {
 	for i := range other {
 		other[i].SessionID = telemetry.HashSessionID("s-other")
 	}
-	rows := panelWithReport(telemetry.PanelView{}, belowSession, append(events, other...), nil).BelowSession
+	rows := panelWithReport(readout.PanelView{}, belowSession, append(events, other...), nil).BelowSession
 	if len(rows) != 1 || rows[0].Harness != "claude-code" {
 		t.Fatalf("rows = %+v, want this session's claude-code row only", rows)
 	}

@@ -5,12 +5,12 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/execwrap"
-	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
 )
 
 // seedCompactionTwoHarnesses records exec compaction events for two harnesses
@@ -70,13 +70,13 @@ func TestReport_LeadsWithCompactionPerHarness(t *testing.T) {
 			codex = line
 		}
 	}
-	if !strings.Contains(claude, telemetry.ShortTokens(1000)) {
-		t.Errorf("claude-code lead row lacks %q: %q", telemetry.ShortTokens(1000), claude)
+	if !strings.Contains(claude, readout.ShortTokens(1000)) {
+		t.Errorf("claude-code lead row lacks %q: %q", readout.ShortTokens(1000), claude)
 	}
-	if !strings.Contains(codex, telemetry.ShortTokens(200)) {
-		t.Errorf("codex lead row lacks %q: %q", telemetry.ShortTokens(200), codex)
+	if !strings.Contains(codex, readout.ShortTokens(200)) {
+		t.Errorf("codex lead row lacks %q: %q", readout.ShortTokens(200), codex)
 	}
-	if strings.Contains(section, telemetry.ShortTokens(1200)) {
+	if strings.Contains(section, readout.ShortTokens(1200)) {
 		t.Errorf("per-harness token savings must not be summed:\n%s", section)
 	}
 }

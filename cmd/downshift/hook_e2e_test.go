@@ -6,7 +6,7 @@ package main
 // TestHookE2E_RewriteEventStats is the hook-layer end-to-end proof: realistic
 // Cursor preToolUse JSON on stdin drives the real adapter route path (no mocks
 // of core policy), emits a model rewrite on stdout, appends one durable JSONL
-// event, and telemetry.Aggregate reads that event back as 1 DOWNSHIFT with
+// event, and readout.Aggregate reads that event back as 1 DOWNSHIFT with
 // positive normalised savings.
 //
 // Scope note: this is hook-layer E2E, not a real subagent spawn. A real spawn
@@ -16,6 +16,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"os"
 	"path/filepath"
 	"strings"
@@ -133,7 +134,7 @@ func TestHookE2E_RewriteEventStats(t *testing.T) {
 	}
 
 	// Stats aggregation over the file must count the downshift.
-	stats := telemetry.Aggregate(events)
+	stats := readout.Aggregate(events)
 	if stats.Total != 1 || stats.Downshifted != 1 {
 		t.Fatalf("stats = %+v, want Total=1 Downshifted=1", stats)
 	}

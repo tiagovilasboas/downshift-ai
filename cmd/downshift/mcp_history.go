@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/core"
 	"github.com/tiagovilasboas/downshift-ai/internal/mcp/tools"
@@ -41,6 +42,6 @@ func (h mcpHistory) Summary(_ context.Context, harness string) (tools.SessionSum
 	if hash == "" {
 		return tools.SessionSummary{Note: noSessionNote, ByTier: map[string]int{}, ByAgentType: map[string]int{}}, nil
 	}
-	s := telemetry.SummarizeSpawns(h.read(), hash)
+	s := readout.SummarizeSpawns(h.read(), hash)
 	return tools.SessionSummary{Known: true, Spawns: s.Spawns, ByTier: s.ByTier, ByAgentType: s.ByAgentType, AboveAgentDefault: s.AboveAgentDefault}, nil
 }

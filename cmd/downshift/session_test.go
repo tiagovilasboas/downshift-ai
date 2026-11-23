@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"os"
 	"path/filepath"
 	"strings"
@@ -283,7 +284,7 @@ func TestSession_PanelIsPromptFreeStateAndSavings(t *testing.T) {
 	if rc != 0 {
 		t.Fatalf("rc=%d", rc)
 	}
-	var v telemetry.PanelView
+	var v readout.PanelView
 	if err := json.Unmarshal([]byte(out), &v); err != nil {
 		t.Fatalf("not JSON: %v\n%s", err, out)
 	}

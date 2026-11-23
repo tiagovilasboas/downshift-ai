@@ -10,6 +10,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"os"
 	"path/filepath"
 	"slices"
@@ -106,18 +107,18 @@ func TestHookE2E_MultilangGuardAcrossHarnesses(t *testing.T) {
 					if event.ToModel != ids[2] {
 						t.Errorf("guarded spawn model=%s want %s", event.ToModel, ids[2])
 					}
-					if telemetry.Aggregate(events).ReasonCodes["UNSUPPORTED_LANGUAGE"] != 1 {
+					if readout.Aggregate(events).ReasonCodes["UNSUPPORTED_LANGUAGE"] != 1 {
 						t.Error("guard not counted")
 					}
 					// View folding requires an opaque session; supply one for adapters
 					// whose fixture does not carry a native session ID.
 					viewEvents := append([]telemetry.Event(nil), events...)
 					viewEvents[0].SessionID = "qa-multilang-session"
-					if why := telemetry.Why(viewEvents, "qa-multilang-session"); !strings.Contains(why, "UNSUPPORTED_LANGUAGE") {
+					if why := readout.Why(viewEvents, "qa-multilang-session"); !strings.Contains(why, "UNSUPPORTED_LANGUAGE") {
 						t.Errorf("why omits guard: %s", why)
 					}
 					var detail bytes.Buffer
-					telemetry.PrintStats(events, telemetry.StatsOptions{Detail: true}, &detail)
+					readout.PrintStats(events, readout.StatsOptions{Detail: true}, &detail)
 					if !strings.Contains(detail.String(), "UNSUPPORTED_LANGUAGE") {
 						t.Errorf("stats omits guard: %s", detail.String())
 					}

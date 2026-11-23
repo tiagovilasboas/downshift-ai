@@ -15,7 +15,7 @@ package telemetry
 // reader and for the history already on disk. Only an empty link is filled; a
 // usage that already names a decision, or an agent with no resolved record,
 // is left as written. The log is never rewritten.
-func linkLateUsage(events []Event) {
+func LinkLateUsage(events []Event) {
 	type agentKey struct{ harness, hash string }
 	linked := map[agentKey]string{}
 	for _, ev := range events {
@@ -26,10 +26,10 @@ func linkLateUsage(events []Event) {
 	if len(linked) == 0 {
 		return
 	}
-	decisions := map[linkKey]Event{}
+	decisions := map[LinkKey]Event{}
 	for _, ev := range events {
 		if IsDecisionRow(ev) {
-			decisions[linkKey{ev.Harness, DecisionKey(ev)}] = ev
+			decisions[LinkKey{ev.Harness, DecisionKey(ev)}] = ev
 		}
 	}
 	for i := range events {
@@ -41,7 +41,7 @@ func linkLateUsage(events []Event) {
 		if !ok {
 			continue
 		}
-		d, ok := decisions[linkKey{ev.Harness, key}]
+		d, ok := decisions[LinkKey{ev.Harness, key}]
 		if !ok {
 			continue
 		}

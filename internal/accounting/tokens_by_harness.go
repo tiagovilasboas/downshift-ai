@@ -4,6 +4,7 @@
 package accounting
 
 import (
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"sort"
 	"time"
 
@@ -47,10 +48,10 @@ type HarnessTokens struct {
 	// column then reads "unobserved", never 0. Routing carries the session
 	// and the fallback figures apart: they are different baselines and are
 	// never added.
-	RoutingObserved bool                  `json:"routing_observed"`
-	Routing         telemetry.RoutingRow  `json:"routing"`
-	Quota           QuotaUsed             `json:"quota_used"`
-	QuotaEstimate   *telemetry.QuotaUnits `json:"quota_estimate,omitempty"`
+	RoutingObserved bool                `json:"routing_observed"`
+	Routing         readout.RoutingRow  `json:"routing"`
+	Quota           QuotaUsed           `json:"quota_used"`
+	QuotaEstimate   *readout.QuotaUnits `json:"quota_estimate,omitempty"`
 }
 
 // TokensByHarness returns one HarnessTokens per harness that has a decision or
@@ -83,7 +84,7 @@ func TokensByHarness(events []telemetry.Event, execEvents []execwrap.Event, scop
 			continue
 		}
 		r := row(h)
-		view := telemetry.RoutingTokensWithLookup(evs, lookup)
+		view := readout.RoutingTokensWithLookup(evs, lookup)
 		routing := view.ByHarness[h]
 		r.Routing = routing
 		r.RoutingObserved = routing.Observed() || routing.FallbackObserved()

@@ -12,6 +12,7 @@ import (
 	"github.com/tiagovilasboas/downshift-ai/internal/adapters/antigravity"
 	"github.com/tiagovilasboas/downshift-ai/internal/core"
 	"github.com/tiagovilasboas/downshift-ai/internal/core/decidertest"
+	"github.com/tiagovilasboas/downshift-ai/internal/quota"
 )
 
 // stubResolver is a minimal core.Resolver modeling an Antigravity-native
@@ -94,6 +95,8 @@ func decodeOverwriteSubagents(t *testing.T, out antigravity.Output) []map[string
 }
 
 func TestMain(m *testing.M) {
+	core.WireSession()
+	quota.Register()
 	os.Setenv("DOWNSHIFT_STATE_DIR", filepath.Join(os.TempDir(), "downshift-test-state-antigravity"))
 	os.Setenv("DOWNSHIFT_SESSION_MODELS", filepath.Join(os.TempDir(), "downshift-session-models-absent.json"))
 	os.Setenv("DOWNSHIFT_DISCOVERY", "off")

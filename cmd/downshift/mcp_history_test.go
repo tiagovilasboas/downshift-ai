@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"os"
 	"path/filepath"
 	"strings"
@@ -70,7 +71,7 @@ func TestReadSessionEvents_NotTailBounded(t *testing.T) {
 	if err := os.WriteFile(log, []byte(b.String()), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	got := telemetry.SummarizeSpawns(readSessionEvents(), mine)
+	got := readout.SummarizeSpawns(readSessionEvents(), mine)
 	if got.Spawns != 1 || got.ByTier["mid"] != 1 {
 		t.Fatalf("summary = %+v, want the one early spawn counted", got)
 	}

@@ -7,6 +7,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"io"
 	"os"
 	"os/signal"
@@ -24,7 +25,7 @@ const minWatchInterval = 200 * time.Millisecond
 const ansiClear = "\x1b[H\x1b[2J"
 
 // runWatch is `downshift watch` (U4): the live session tree. It redraws the
-// same tree as `downshift session` (telemetry.SessionTree) every interval from
+// same tree as `downshift session` (readout.SessionTree) every interval from
 // a bounded tail of the event log, for every harness. It writes nothing and
 // exits on Ctrl-C.
 func runWatch(args []string, stdout, stderr io.Writer, catalog core.Resolver) int {
@@ -94,11 +95,11 @@ func watchFrame(events []telemetry.Event, sessionFlag string, catalog core.Resol
 	if err != nil {
 		return "", err
 	}
-	opt := telemetry.TreeOptions{Paused: telemetry.SessionPaused(hash), Now: now}
+	opt := readout.TreeOptions{Paused: telemetry.SessionPaused(hash), Now: now}
 	var b strings.Builder
 	fmt.Fprintf(&b, "downshift watch · %s · every %s · Ctrl-C to quit\n", now.Format("15:04:05"), interval)
-	b.WriteString(telemetry.ActivityLine(events, hash, now) + "\n")
-	b.WriteString(telemetry.SessionTree(events, hash, opt))
+	b.WriteString(readout.ActivityLine(events, hash, now) + "\n")
+	b.WriteString(readout.SessionTree(events, hash, opt))
 	if hash == "" {
 		b.WriteString("waiting for a session: no subagent has been logged yet\n")
 	}

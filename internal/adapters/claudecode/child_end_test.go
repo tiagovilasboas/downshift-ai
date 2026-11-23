@@ -5,6 +5,7 @@ package claudecode_test
 
 import (
 	"encoding/json"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"strings"
 	"testing"
 
@@ -60,7 +61,7 @@ func TestChildEnd_IgnoresNonAgentToolsAndDoesNotCountAsDecision(t *testing.T) {
 	fail, _ := json.Marshal(map[string]any{"hook_event_name": "PostToolUseFailure", "tool_name": "Agent", "session_id": "sess-stop", "error": "x"})
 	claudecode.HandlePostToolUse(fail, "test", res)
 	all, _ := telemetry.ReadEvents()
-	stats := telemetry.Aggregate(all)
+	stats := readout.Aggregate(all)
 	if stats.Total != 1 {
 		t.Fatalf("child_ended moved the decision count: Total=%d", stats.Total)
 	}

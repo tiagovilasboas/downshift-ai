@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"io"
 	"time"
 
@@ -26,7 +27,7 @@ type panelOptions struct {
 // writePanel prints the panel JSON for hash. events is the session tail; the
 // full logs are read only when the report is wanted.
 func writePanel(events []telemetry.Event, hash string, opt panelOptions, stdout, stderr io.Writer) int {
-	view := telemetry.BuildPanel(events, hash)
+	view := readout.BuildPanel(events, hash)
 	why := accounting.BuildSpawnWhy(events, hash)
 	var out any = panelNoReport{PanelView: view, Why: why}
 	if !opt.NoReport {
@@ -54,7 +55,7 @@ func writePanel(events []telemetry.Event, hash string, opt panelOptions, stdout,
 // panelNoReport is the panel without the report: the session view plus, per
 // spawn, why it changed or not (the routing note as one short cell).
 type panelNoReport struct {
-	telemetry.PanelView
+	readout.PanelView
 	Why []accounting.SpawnWhy `json:"routing_why"`
 }
 
@@ -99,7 +100,7 @@ type compactorDirect struct {
 // `downshift report` (same window, all sessions, full event and exec logs),
 // and TokensSavedScope names that scope.
 type panelOut struct {
-	telemetry.PanelView
+	readout.PanelView
 	Report              accounting.Numbers `json:"report"`
 	Compactor           *compactorPanel    `json:"compactor,omitempty"`
 	TokensSavedEstimate int64              `json:"tokens_saved_estimate"`
@@ -108,7 +109,7 @@ type panelOut struct {
 	TokensSavedScope string `json:"tokens_saved_scope"`
 	// BelowSession is, per harness of this session, the billable tokens that
 	// ran below the session model plus the requested-model fallback apart
-	// (telemetry.RoutingTokens). Never summed.
+	// (readout.RoutingTokens). Never summed.
 	BelowSession []belowSessionRow `json:"below_session_by_harness"`
 	// Efficiency is the `downshift report --json` efficiency block for the
 	// report's default window: per harness, never summed, no tokens, no money.
@@ -126,7 +127,7 @@ type panelOut struct {
 // block and BelowSession use the session scope. With no exec run of the
 // session and no direct call there is no Compactor block; with only direct
 // calls the block carries them and zero session commands.
-func panelWithReport(v telemetry.PanelView, hash string, events []telemetry.Event, execEvents []execwrap.Event) panelOut {
+func panelWithReport(v readout.PanelView, hash string, events []telemetry.Event, execEvents []execwrap.Event) panelOut {
 	scope := accounting.Scope{Kind: accounting.ScopeDays, Days: defaultReportDays}
 	nums := accounting.Compute(events, execEvents, scope)
 	session := accounting.Scope{Kind: accounting.ScopeSession, SessionHash: hash}

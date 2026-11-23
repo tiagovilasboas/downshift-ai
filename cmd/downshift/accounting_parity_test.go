@@ -6,10 +6,10 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"testing"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/accounting"
-	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
 )
 
 // Parity: every surface shows what accounting.Compute gives for the same logs.
@@ -46,7 +46,7 @@ func TestParityFixtureIsDiverse(t *testing.T) {
 }
 
 // routingSpawnCount counts the spawns of a view, a count and not a token figure.
-func routingSpawnCount(v telemetry.RoutingView) int {
+func routingSpawnCount(v readout.RoutingView) int {
 	n := 0
 	for _, r := range v.ByHarness {
 		n += r.Spawns + r.FallbackSpawns + r.UnobservedSpawns
@@ -56,7 +56,7 @@ func routingSpawnCount(v telemetry.RoutingView) int {
 
 // routingBelow reports the tokens that ran below any baseline, only to check
 // that the fixture has such a case.
-func routingBelow(v telemetry.RoutingView) int64 {
+func routingBelow(v readout.RoutingView) int64 {
 	var n int64
 	for _, r := range v.ByHarness {
 		n += r.BelowBillable + r.FallbackBelowBillable
@@ -73,11 +73,11 @@ func TestParity_ReportJSON(t *testing.T) {
 		t.Fatalf("rc=%d %s", rc, errOut.String())
 	}
 	var rep struct {
-		Numbers                 json.RawMessage       `json:"numbers"`
-		Routing                 telemetry.RoutingView `json:"routing_tokens"`
-		CompactorSavedBytes     int64                 `json:"compactor_saved_bytes"`
-		CompactorTokensEstimate int64                 `json:"compactor_tokens_estimate"`
-		TokensSavedEstimate     int64                 `json:"tokens_saved_estimate"`
+		Numbers                 json.RawMessage     `json:"numbers"`
+		Routing                 readout.RoutingView `json:"routing_tokens"`
+		CompactorSavedBytes     int64               `json:"compactor_saved_bytes"`
+		CompactorTokensEstimate int64               `json:"compactor_tokens_estimate"`
+		TokensSavedEstimate     int64               `json:"tokens_saved_estimate"`
 	}
 	if err := json.Unmarshal(out.Bytes(), &rep); err != nil {
 		t.Fatal(err)

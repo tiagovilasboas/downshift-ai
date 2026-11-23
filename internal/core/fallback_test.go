@@ -9,9 +9,12 @@ import (
 	"testing"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/core"
+	"github.com/tiagovilasboas/downshift-ai/internal/quota"
 )
 
 func TestMain(m *testing.M) {
+	core.WireSession()
+	quota.Register()
 	os.Setenv("DOWNSHIFT_SESSION_MODELS", filepath.Join(os.TempDir(), "downshift-session-models-absent.json"))
 	os.Setenv("DOWNSHIFT_DISCOVERY", "off")
 	os.Exit(m.Run())

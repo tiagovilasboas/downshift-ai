@@ -4,6 +4,7 @@
 package accounting
 
 import (
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"sort"
 	"time"
 
@@ -117,7 +118,7 @@ func BuildPeriods(events []telemetry.Event, execEvents []execwrap.Event, o Perio
 	for p, evs := range byPeriod {
 		// Decisions of any day link the usage rows of this period.
 		all := append(append([]telemetry.Event{}, evs...), decisions...)
-		for h, r := range telemetry.RoutingTokens(all).ByHarness {
+		for h, r := range readout.RoutingTokens(all).ByHarness {
 			if r.Spawns > 0 {
 				cell(p, h).RoutingBelowTokens = r.BelowBillable
 			}

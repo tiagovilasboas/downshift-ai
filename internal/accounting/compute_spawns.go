@@ -3,10 +3,13 @@
 
 package accounting
 
-import "github.com/tiagovilasboas/downshift-ai/internal/telemetry"
+import (
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
+)
 
 // countSpawns folds the panel counts of every session with the same helper
-// the Agents panel uses (telemetry.BuildPanel). Events without a session id
+// the Agents panel uses (readout.BuildPanel). Events without a session id
 // are skipped: BuildPanel reads one session at a time and has no path for them.
 func countSpawns(events []telemetry.Event) (modelSwitched, effort, held, guardrail, upshift int) {
 	bySession := map[string][]telemetry.Event{}
@@ -16,7 +19,7 @@ func countSpawns(events []telemetry.Event) (modelSwitched, effort, held, guardra
 		}
 	}
 	for id, evs := range bySession {
-		p := telemetry.BuildPanel(evs, id)
+		p := readout.BuildPanel(evs, id)
 		modelSwitched += p.ModelSwitched
 		effort += p.EffortChanged
 		held += p.Held

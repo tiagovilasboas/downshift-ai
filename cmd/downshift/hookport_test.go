@@ -5,6 +5,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -142,7 +143,7 @@ func TestCodexTranscriptPathIsNotObservedChildUsage(t *testing.T) {
 	}
 
 	// The hook records this decision and no usage event.
-	sum, rec := telemetry.ObservedChildTokens([]telemetry.Event{event})
+	sum, rec := readout.ObservedChildTokens([]telemetry.Event{event})
 	if rec != 0 || sum != 0 {
 		t.Fatalf("records=%d sum=%d, want unobserved 0/0", rec, sum)
 	}

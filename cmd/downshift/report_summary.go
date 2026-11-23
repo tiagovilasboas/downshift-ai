@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"io"
 	"sort"
 	"strings"
@@ -123,7 +124,7 @@ func paneCells(s paneRow) []string {
 		}
 	}
 	return []string{
-		s.Harness, telemetry.ShortTokens(s.TokensSaved), cut,
+		s.Harness, readout.ShortTokens(s.TokensSaved), cut,
 		fmt.Sprintf("%d · %d", s.Commands, s.Compacted), fmt.Sprintf("%d · %d", s.HookCommands, s.DirectCommands), read,
 		fmt.Sprintf("%d · %d · %d (%d guardrail)", s.ModelSwitched, s.EffortChanged, s.Held, s.HeldGuardrail), cheaper,
 	}

@@ -4,6 +4,7 @@
 package telemetry_test
 
 import (
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"testing"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
@@ -46,7 +47,7 @@ func TestAggregate_ByEntryAndDuplicate(t *testing.T) {
 		{Harness: "claude-code", Outcome: telemetry.OutcomeAllow, Complexity: "TRIVIAL", ToolUseHash: "h1", Entry: telemetry.EntryMod},
 		{Harness: "claude-code", Outcome: telemetry.OutcomeAllow, Complexity: "MEDIUM"}, // empty entry → hook
 	}
-	s := telemetry.Aggregate(events)
+	s := readout.Aggregate(events)
 	if s.ByEntry[telemetry.EntryHook] != 2 || s.ByEntry[telemetry.EntryMod] != 1 {
 		t.Fatalf("ByEntry = %#v", s.ByEntry)
 	}

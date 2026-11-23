@@ -200,7 +200,7 @@ type NBUpshiftRecord struct {
 }
 
 // HasTokenUsage reports whether the event carries any provider token count.
-func (e Event) HasTokenUsage() bool { return classesOf(e.TokenUsageOrZero()).Total > 0 }
+func (e Event) HasTokenUsage() bool { return ClassesOf(e.TokenUsageOrZero()).Total > 0 }
 
 // TokenUsageOrZero returns the event token usage, nil-safe.
 // Missing pointers and negative values are clamped to 0.

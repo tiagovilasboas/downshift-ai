@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"testing"
 	"time"
 
@@ -37,7 +38,7 @@ func TestPanel_CompactorNamesItsScopeAndShowsDirectCalls(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := panelWithReport(telemetry.PanelView{Session: mine}, mine, nil, tc.events)
+			got := panelWithReport(readout.PanelView{Session: mine}, mine, nil, tc.events)
 			if got.TokensSavedScope != "last 30 days, all sessions" {
 				t.Fatalf("tokens_saved_scope = %q", got.TokensSavedScope)
 			}

@@ -5,6 +5,7 @@ package telemetry_test
 
 import (
 	"encoding/json"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -124,7 +125,7 @@ func TestPrintStats_ShowsUsageLinked(t *testing.T) {
 	usage := makeEvent("claude-code", "TRIVIAL", "DOWNSHIFT")
 	usage.Outcome = telemetry.OutcomeUsage
 	var buf strings.Builder
-	telemetry.PrintStats([]telemetry.Event{usage}, telemetry.StatsOptions{Detail: true, Days: 0}, &buf)
+	readout.PrintStats([]telemetry.Event{usage}, readout.StatsOptions{Detail: true, Days: 0}, &buf)
 	if !strings.Contains(buf.String(), "Usage linked") {
 		t.Errorf("stats must show Usage linked line, got:\n%s", buf.String())
 	}
@@ -179,7 +180,7 @@ func TestPrintStats_ShowsBaseline(t *testing.T) {
 	base := makeEvent("claude-code", "SIMPLE", "OK")
 	base.Outcome = telemetry.OutcomeBaseline
 	var buf strings.Builder
-	telemetry.PrintStats([]telemetry.Event{base}, telemetry.StatsOptions{Detail: true, Days: 0}, &buf)
+	readout.PrintStats([]telemetry.Event{base}, readout.StatsOptions{Detail: true, Days: 0}, &buf)
 	if !strings.Contains(buf.String(), "Baseline (unrouted)") {
 		t.Errorf("stats must show Baseline line, got:\n%s", buf.String())
 	}

@@ -6,6 +6,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"os"
 	"strconv"
 	"strings"
@@ -22,7 +23,7 @@ import (
 // --export           print a pasteable JSON summary for multi-user evidence
 // --by-harness       Markdown review table: spawns, tier, effort and linked tokens per harness
 func runStats(args []string) int {
-	opts := telemetry.StatsOptions{Days: 30}
+	opts := readout.StatsOptions{Days: 30}
 	export := false
 	byHarness := false
 	for _, arg := range args {
@@ -52,7 +53,7 @@ func runStats(args []string) int {
 		return 1
 	}
 	if byHarness {
-		telemetry.PrintCuration(os.Stdout, telemetry.BuildCuration(telemetry.FilterByDays(events, opts.Days)))
+		readout.PrintCuration(os.Stdout, readout.BuildCuration(telemetry.FilterByDays(events, opts.Days)))
 		return 0
 	}
 
@@ -62,7 +63,7 @@ func runStats(args []string) int {
 	nums := accounting.Compute(events, execEvents, accounting.Scope{Kind: accounting.ScopeDays, Days: opts.Days})
 
 	if export {
-		sum := telemetry.ExportSummary(events, opts.Days, time.Now().UTC())
+		sum := readout.ExportSummary(events, opts.Days, time.Now().UTC())
 		out, err := json.MarshalIndent(statsExport{Summary: sum, TokenLedger: nums.Ledger}, "", "  ")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error exporting summary: %v\n", err)
@@ -81,7 +82,7 @@ func runStats(args []string) int {
 	}
 	fmt.Fprintln(os.Stdout, accounting.AdoptionLine(accounting.BuildAdoption(events, accounting.Scope{Kind: accounting.ScopeDays, Days: opts.Days})))
 	if len(events) > 0 {
-		telemetry.PrintStats(events, opts, os.Stdout)
+		readout.PrintStats(events, opts, os.Stdout)
 		if n := telemetry.RotatedBackupCount(); n > 0 {
 			fmt.Fprintf(os.Stdout, "Note: %d rotated log backup(s) next to events.jsonl are included in these totals (up to 64 MiB).\n", n)
 			telemetry.PrintBackupLine(os.Stdout)
@@ -93,6 +94,6 @@ func runStats(args []string) int {
 // statsExport is the `stats --export` JSON: the telemetry summary with its
 // keys as before, plus the token ledger every surface shares.
 type statsExport struct {
-	telemetry.Summary
+	readout.Summary
 	TokenLedger accounting.Ledger `json:"token_ledger"`
 }

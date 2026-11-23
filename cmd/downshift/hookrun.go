@@ -6,6 +6,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"io"
 	"os"
 	"time"
@@ -178,7 +179,7 @@ func runHookAdapter[E any](
 		}
 		// Spawn-time surface. Honor and usage stay unobserved until that
 		// harness's own post-spawn port records them. One line, spawn events only.
-		fmt.Fprintf(os.Stderr, "downshift: honor=unobserved quota=%s usage=unobserved\n", telemetry.ProjectQuota(decision.Session.QuotaStatus, decision.Session.CreditHeld))
+		fmt.Fprintf(os.Stderr, "downshift: honor=unobserved quota=%s usage=unobserved\n", readout.ProjectQuota(decision.Session.QuotaStatus, decision.Session.CreditHeld))
 		event := fromcore.FromDecision(decision, correlationID, telemetryVersion())
 		fate.recordOutcome(&event)
 		// Provenance is stricter than routing: never replace an absent or

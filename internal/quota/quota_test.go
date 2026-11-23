@@ -81,6 +81,7 @@ func TestCursorPoolsRequireRuntimeMembership(t *testing.T) {
 }
 
 func TestLoadNativeCursorExportIsBoundedAndFailClosed(t *testing.T) {
+	t.Cleanup(Register())
 	now := time.Now().UTC()
 	reset := now.Add(time.Hour).UnixMilli()
 	payload, _ := json.Marshal(map[string]any{

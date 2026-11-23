@@ -33,7 +33,7 @@ func ReadEventsFrom(path string) ([]Event, error) {
 
 func parseEvents(r io.Reader) ([]Event, error) {
 	events, err := parseEventsRaw(r)
-	linkLateUsage(events)
+	LinkLateUsage(events)
 	return events, err
 }
 

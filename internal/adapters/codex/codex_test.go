@@ -13,6 +13,7 @@ import (
 	"github.com/tiagovilasboas/downshift-ai/internal/catalog"
 	"github.com/tiagovilasboas/downshift-ai/internal/core"
 	"github.com/tiagovilasboas/downshift-ai/internal/core/decidertest"
+	"github.com/tiagovilasboas/downshift-ai/internal/quota"
 )
 
 var cat = catalog.Load()
@@ -241,6 +242,8 @@ func TestHandle_EmptyMessageFailsOpen(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
+	core.WireSession()
+	quota.Register()
 	os.Setenv("DOWNSHIFT_STATE_DIR", filepath.Join(os.TempDir(), "downshift-test-state-codex"))
 	os.Setenv("DOWNSHIFT_SESSION_MODELS", filepath.Join(os.TempDir(), "downshift-session-models-absent.json"))
 	os.Setenv("DOWNSHIFT_DISCOVERY", "off")

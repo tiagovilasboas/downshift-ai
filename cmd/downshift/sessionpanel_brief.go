@@ -3,7 +3,9 @@
 
 package main
 
-import "github.com/tiagovilasboas/downshift-ai/internal/telemetry"
+import (
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
+)
 
 // panelBrief is `session --panel --brief`: exactly what the agents band draws.
 // The session counts, the summary and the spawn rows are the PanelView's
@@ -45,7 +47,7 @@ type briefSpawn struct {
 }
 
 // briefOf is the band's view without a report.
-func briefOf(v telemetry.PanelView) panelBrief {
+func briefOf(v readout.PanelView) panelBrief {
 	b := panelBrief{
 		Session: v.Session, Summary: v.Summary,
 		Switched: v.Switched, ModelSwitched: v.ModelSwitched, EffortChanged: v.EffortChanged,
@@ -62,23 +64,23 @@ func briefOf(v telemetry.PanelView) panelBrief {
 }
 
 // briefWithTokens is briefOf plus the report's final figure and its short text.
-func briefWithTokens(v telemetry.PanelView, tokensSaved int64, workingMemoryLine string) panelBrief {
+func briefWithTokens(v readout.PanelView, tokensSaved int64, workingMemoryLine string) panelBrief {
 	b := briefOf(v)
 	b.TokensSavedEstimate = &tokensSaved
-	b.TokensSavedShort = telemetry.TokensShort(tokensSaved)
+	b.TokensSavedShort = readout.TokensShort(tokensSaved)
 	b.WorkingMemoryLine = workingMemoryLine
 	return b
 }
 
 // withTokens fills the spawn's routing tokens: below its session model, else
 // below its requested model when no session model ranked.
-func (s briefSpawn) withTokens(t telemetry.RoutingRow) briefSpawn {
+func (s briefSpawn) withTokens(t readout.RoutingRow) briefSpawn {
 	switch {
 	case t.Observed():
 		s.BelowBillable, s.Baseline = t.BelowBillable, "session"
 	case t.FallbackObserved():
 		s.BelowBillable, s.Baseline = t.FallbackBelowBillable, "requested_fallback"
 	}
-	s.BelowShort = telemetry.TokensShort(s.BelowBillable)
+	s.BelowShort = readout.TokensShort(s.BelowBillable)
 	return s
 }

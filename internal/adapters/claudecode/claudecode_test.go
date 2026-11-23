@@ -13,6 +13,7 @@ import (
 	"github.com/tiagovilasboas/downshift-ai/internal/catalog"
 	"github.com/tiagovilasboas/downshift-ai/internal/core"
 	"github.com/tiagovilasboas/downshift-ai/internal/core/decidertest"
+	"github.com/tiagovilasboas/downshift-ai/internal/quota"
 )
 
 // cat is the shared test resolver — same embedded catalog the binary uses.
@@ -138,6 +139,8 @@ func TestHandle_MalformedInputFailsOpen(t *testing.T) {
 }
 
 func TestMain(m *testing.M) {
+	core.WireSession()
+	quota.Register()
 	os.Setenv("DOWNSHIFT_STATE_DIR", filepath.Join(os.TempDir(), "downshift-test-state-claudecode"))
 	os.Setenv("DOWNSHIFT_SESSION_MODELS", filepath.Join(os.TempDir(), "downshift-session-models-absent.json"))
 	os.Setenv("DOWNSHIFT_DISCOVERY", "off")

@@ -5,11 +5,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"io"
 	"strings"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/accounting"
-	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
 )
 
 // printReportMarkdown writes the default report: the sections of the text
@@ -23,10 +23,10 @@ func printReportMarkdown(w io.Writer, out reportOut, scope string) {
 	}
 	fmt.Fprintln(w)
 	printCompactionDetailMarkdown(w, out.CompactionDetail)
-	telemetry.PrintRoutingSectionMarkdown(w, out.Report.Routing)
+	readout.PrintRoutingSectionMarkdown(w, out.Report.Routing)
 	printEfficiencyMarkdown(w, out.Efficiency)
 
-	telemetry.PrintSegmentedReportMarkdown(w, out.Report, out.ByHarness)
+	readout.PrintSegmentedReportMarkdown(w, out.Report, out.ByHarness)
 	printOutcomeOriginMarkdown(w, out.Report.OutcomeMatrix)
 
 	fmt.Fprint(w, "## Why spawns changed\n\n")

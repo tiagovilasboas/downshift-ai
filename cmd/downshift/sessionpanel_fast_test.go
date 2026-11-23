@@ -8,6 +8,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"os"
 	"sort"
 	"testing"
@@ -24,7 +25,7 @@ func appendPanelFixture(t *testing.T) {
 	ev := telemetry.Event{
 		Timestamp: time.Now().UTC().Format(time.RFC3339Nano), Harness: "claude-code", SessionID: telemetry.HashSessionID("s-1"),
 		Agent: "worker", Complexity: "SIMPLE", FromModel: "claude-opus-4-7", ToModel: "claude-haiku-4-5",
-		Verdict: "DOWNSHIFT", Outcome: "rewrite_emitted", Tier: "SMALL", CorrelationID: "corr-fast", ToolUseHash: telemetry.ToolUseKey("toolu_fast"),
+		Verdict: "DOWNSHIFT", Outcome: "rewrite_emitted", Tier: "SMALL", CorrelationID: "corr-fast", ToolUseHash: readout.ToolUseKey("toolu_fast"),
 	}
 	// endEnv points DOWNSHIFT_EVENT_LOG at the log the panel reads.
 	if err := telemetry.AppendTo(os.Getenv("DOWNSHIFT_EVENT_LOG"), ev); err != nil {
@@ -134,8 +135,8 @@ func TestPanelBrief_FieldsMatchFullPanel(t *testing.T) {
 		t.Fatalf("--brief tokens_saved_estimate = %d, full = %d (%v)", estimate, fullEstimate, err)
 	}
 	var short string
-	if err := json.Unmarshal(brief["tokens_saved_short"], &short); err != nil || short != telemetry.TokensShort(estimate) {
-		t.Fatalf("--brief tokens_saved_short = %q, want %q (%v)", short, telemetry.TokensShort(estimate), err)
+	if err := json.Unmarshal(brief["tokens_saved_short"], &short); err != nil || short != readout.TokensShort(estimate) {
+		t.Fatalf("--brief tokens_saved_short = %q, want %q (%v)", short, readout.TokensShort(estimate), err)
 	}
 }
 

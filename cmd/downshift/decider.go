@@ -15,10 +15,6 @@ import (
 	"github.com/tiagovilasboas/downshift-ai/internal/routing/policy"
 )
 
-// init installs the routing v2 decider at the edge, like SetConfig: every
-// adapter reaches it through core.Route.
-func init() { core.SetDecider(routingDecider{now: time.Now}) }
-
 // routingDecider reads the inputs of one spawn (project policy, tier floor,
 // quota snapshot, catalog) and asks routing/decide. It holds no policy of its
 // own. Any error leaves the spawn unchanged: the hook fails open.

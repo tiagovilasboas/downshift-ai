@@ -1,15 +1,17 @@
 // Copyright (c) 2026 Tiago Vilas Boas.
 // SPDX-License-Identifier: Apache-2.0
 
-package telemetry
+package telemetry_test
 
 import (
 	"encoding/json"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"testing"
 )
 
 func TestMCPToolEventHasNoText(t *testing.T) {
-	ev := MCPTool("delegate", "cap", ToolCounts{Tasks: 2, Write: 1, GatewayRouted: 1})
+	ev := telemetry.MCPTool("delegate", "cap", telemetry.ToolCounts{Tasks: 2, Write: 1, GatewayRouted: 1})
 	raw, err := json.Marshal(ev)
 	if err != nil {
 		t.Fatal(err)
@@ -39,12 +41,12 @@ func TestMCPToolEventHasNoText(t *testing.T) {
 }
 
 func TestAggregateSkipsMCPTool(t *testing.T) {
-	ev := MCPTool("plan", "", ToolCounts{Steps: 3, SpawnSteps: 3})
-	s := Aggregate([]Event{ev})
+	ev := telemetry.MCPTool("plan", "", telemetry.ToolCounts{Steps: 3, SpawnSteps: 3})
+	s := readout.Aggregate([]telemetry.Event{ev})
 	if s.Total != 0 {
 		t.Errorf("Total = %d, want 0", s.Total)
 	}
-	if !IsObservationOutcome(OutcomeMCPTool) {
+	if !telemetry.IsObservationOutcome(telemetry.OutcomeMCPTool) {
 		t.Error("mcp_tool must be an observation outcome")
 	}
 }

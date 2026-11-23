@@ -223,11 +223,10 @@ points down or sideways to an inner package, and `core` never points back out.
  ┌─────────────────────────────────────────────────────────────────────┐
  │ internal/core  Route → Decider · PlanSession · Resolver · Caps       │
  │   imports only: classify fuse quotamodel session                     │
- │   hook vars (ports): NBSuggestHook NBTrivialHook                     │
- │   LoadQuotaHook LoadNativeQuotaHook                                  │
+ │   hook vars (ports): LoadQuotaHook LoadNativeQuotaHook               │
  │   ParseNativeQuotaHook RegisterNativeQuotaHook                       │
  └──▲───────────────────────────────▲──────────────────────────────────┘
-    │ implement / register at init  │ import core (depend inward)
+    │ register at startup (wire.go) │ import core (depend inward)
  ┌──┴────────────────────────┐   ┌──┴────────────────────────────────────┐
  │ hook providers            │   │ services over core                    │
  │ quota → LoadQuota*        │   │ catalog (Resolver) · discovery · models│
@@ -486,20 +485,20 @@ bundled: [companions.md](../guides/companions.md).
 
 These were re-measured on 2026-11-15. Nothing here is hidden elsewhere.
 
-1. **`telemetry` is large.** The `internal/` tree holds 708 non-test `.go`
-   files across 83 packages as of 2026-11-15
+1. **`telemetry` split into log/schema vs read-outs.** The `internal/` tree holds 797 non-test `.go`
+   files across 84 packages as of 2026-11-23
    (`find internal -name '*.go' -not -name '*_test.go' | wc -l`;
-   `go list ./internal/... | wc -l`). `telemetry` alone holds 60 non-test files
-   (events, cost, stats, report, rotation, pause, session tree, completion)
-   behind one package, imported by adapters, `childend`, `hookport`,
-   `accounting`, `mainwork`, `loop`, `operatorexport` and `execwrap`. A split (event log and appenders vs read-outs) is proposed,
-   not done.
-2. **`init`-registered hooks in `core` (Fullstack P1-1).** The result of
-   `core.Route` depends on which decider `cmd/downshift` installed and which
-   packages it blank-imported (the quota loaders, `quota`). Adapter tests link
-   `quota` (adapters import it) but run a test decider (`decidertest`), not
-   `routing/decide`. Behaviour is covered at `runHookAdapter` and `core.Route` tests, but
-   an adapter test alone does not prove production routing.
+   `go list ./internal/... | wc -l`). `internal/telemetry` holds 38 non-test files
+   (event schema, sanitization, log I/O, locking, rotation, pause, live state) and
+   `internal/telemetry/readout` holds 39 non-test files (pure in-memory stats, report,
+   session tree, panel, export), with `fromcore` as the sole `core` bridge.
+2. **Explicit runtime wiring in `cmd/downshift` (replacing `init()` hooks).**
+   `cmd/downshift/wire.go` (`wireRuntime()`) explicitly calls `core.WireSession()`,
+   `quota.Register()`, `core.SetDecider(routingDecider{...})`, `shellwrap.SetEnvFuncs(...)`,
+   `learning.Register()`, and installs `telemetry.VerificationReported` at startup instead
+   of relying on blank-import `init()` side effects. Adapter tests call `core.WireSession()`
+   and `quota.Register()` in `TestMain` and run `decidertest` (`core.SetDecider`) rather than
+   `routing/decide`, so adapter unit tests alone do not prove production routing.
 3. **Import-graph sensor is automated.** `internal/archtest/imports_test.go`
    (`TestImportGraph`, run by `go test ./...`) fails on the forbidden imports
    listed under the dependency check above. Rules outside that list are still
@@ -514,7 +513,9 @@ These were re-measured on 2026-11-15. Nothing here is hidden elsewhere.
    one tracked field trial is -12% on mechanical pieces, not a general rate.
 6. **Output replacement after the run is Claude Code only.** Claude Code accepts
    a replacement (`updatedToolOutput`) and Downshift sends one for shell and
-   search results through `internal/postrun` (read results are never touched).
+   search results through `internal/postrun`, while `Read` results stay
+   untouched up to 64 KiB and use the balanced middle cut above
+   `postrun.ReadThreshold` (64 KiB) since `v0.18.0`.
    Every other harness declares no `ReplacesToolOutput`, so the sensor there
    reports a hypothetical reduction and compaction is the command rewrite or the
    direct `downshift compact` call. See the

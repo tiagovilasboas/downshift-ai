@@ -5,6 +5,7 @@ package telemetry_test
 
 import (
 	"fmt"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"os"
 	"path/filepath"
 	"strings"
@@ -86,7 +87,7 @@ func TestReadLegacyPriceFieldsStillParses(t *testing.T) {
 	}
 
 	// The decoded legacy decision still enters the report.
-	if stats := telemetry.Aggregate(got); stats.Total != 1 || stats.Downshifted != 1 {
+	if stats := readout.Aggregate(got); stats.Total != 1 || stats.Downshifted != 1 {
 		t.Errorf("legacy line not in report: Total=%d Downshifted=%d, want 1 and 1", stats.Total, stats.Downshifted)
 	}
 }
@@ -107,7 +108,7 @@ func TestReadLegacyE5FieldsStillParses(t *testing.T) {
 	if len(got) != 1 || got[0].Verdict != "DOWNSHIFT" {
 		t.Fatalf("legacy E5 line decoded wrong: %+v", got)
 	}
-	if stats := telemetry.Aggregate(got); stats.Total != 1 || stats.Downshifted != 1 {
+	if stats := readout.Aggregate(got); stats.Total != 1 || stats.Downshifted != 1 {
 		t.Errorf("legacy E5 line not in report: Total=%d Downshifted=%d, want 1 and 1", stats.Total, stats.Downshifted)
 	}
 }
@@ -303,7 +304,7 @@ func TestAggregate_CountsVerdicts(t *testing.T) {
 		makeEvent("cc", "MEDIUM", "OK"),
 		makeEvent("cc", "MEDIUM", "UNKNOWN"),
 	}
-	s := telemetry.Aggregate(events)
+	s := readout.Aggregate(events)
 	if s.Total != 5 {
 		t.Errorf("Total = %d, want 5", s.Total)
 	}
@@ -322,7 +323,7 @@ func TestAggregate_CountsVerdicts(t *testing.T) {
 }
 
 func TestAggregate_EmptySlice(t *testing.T) {
-	s := telemetry.Aggregate(nil)
+	s := readout.Aggregate(nil)
 	if s.Total != 0 {
 		t.Errorf("Total = %d, want 0", s.Total)
 	}
@@ -335,7 +336,7 @@ func TestPrintStats_Detail_NoMoneyOrPriceLens(t *testing.T) {
 		makeEvent("cc", "TRIVIAL", "DOWNSHIFT"),
 	}
 	var buf strings.Builder
-	telemetry.PrintStats(events, telemetry.StatsOptions{Detail: true, Days: 30}, &buf)
+	readout.PrintStats(events, readout.StatsOptions{Detail: true, Days: 30}, &buf)
 	out := buf.String()
 
 	if strings.Contains(out, "$") {
@@ -352,7 +353,7 @@ func TestPrintStats_Detail_NoMoneyOrPriceLens(t *testing.T) {
 func TestPrintStats_AllTimeLabel(t *testing.T) {
 	events := []telemetry.Event{makeEvent("cc", "TRIVIAL", "DOWNSHIFT")}
 	var buf strings.Builder
-	telemetry.PrintStats(events, telemetry.StatsOptions{Detail: true, Days: 0}, &buf)
+	readout.PrintStats(events, readout.StatsOptions{Detail: true, Days: 0}, &buf)
 	if !strings.Contains(buf.String(), "All time") {
 		t.Error("days=0 should show 'All time' label")
 	}

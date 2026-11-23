@@ -5,30 +5,29 @@ package main
 
 import (
 	"fmt"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"io"
-
-	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
 )
 
 const outcomeOriginNote = "Observational: origins are not randomized, so this does not show that a cheaper model causes fewer or more failures."
 
-func checkedShareText(o telemetry.OriginOutcome) string {
+func checkedShareText(o readout.OriginOutcome) string {
 	if s, ok := o.CheckedShare(); ok {
 		return fmt.Sprintf("%.0f%%", s*100)
 	}
 	return "-"
 }
 
-func originLabel(o telemetry.OriginOutcome) string {
+func originLabel(o readout.OriginOutcome) string {
 	if o.SmallSample() {
-		return fmt.Sprintf("%s (small sample, n<%d)", o.Origin, telemetry.SmallSampleN)
+		return fmt.Sprintf("%s (small sample, n<%d)", o.Origin, readout.SmallSampleN)
 	}
 	return string(o.Origin)
 }
 
 // printOutcomeOriginMarkdown writes accepted vs rework per spawn origin.
-func printOutcomeOriginMarkdown(w io.Writer, matrix []telemetry.OutcomeMatrixRow) {
-	rows := telemetry.OutcomesByOrigin(matrix)
+func printOutcomeOriginMarkdown(w io.Writer, matrix []readout.OutcomeMatrixRow) {
+	rows := readout.OutcomesByOrigin(matrix)
 	if len(rows) == 0 {
 		return
 	}
@@ -43,8 +42,8 @@ func printOutcomeOriginMarkdown(w io.Writer, matrix []telemetry.OutcomeMatrixRow
 }
 
 // printOutcomeOriginText is the same block for the plain-text report.
-func printOutcomeOriginText(w io.Writer, matrix []telemetry.OutcomeMatrixRow) {
-	rows := telemetry.OutcomesByOrigin(matrix)
+func printOutcomeOriginText(w io.Writer, matrix []readout.OutcomeMatrixRow) {
+	rows := readout.OutcomesByOrigin(matrix)
 	if len(rows) == 0 {
 		return
 	}

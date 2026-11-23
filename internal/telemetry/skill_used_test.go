@@ -1,9 +1,11 @@
 // Copyright (c) 2026 Tiago Vilas Boas.
 // SPDX-License-Identifier: Apache-2.0
 
-package telemetry
+package telemetry_test
 
 import (
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"testing"
 	"time"
 )
@@ -26,7 +28,7 @@ func TestSkillNameLabel(t *testing.T) {
 		{"sk-ant-SECRETVALUE123", "other"},
 	}
 	for _, tc := range cases {
-		if got := SkillNameLabel(tc.in); got != tc.want {
+		if got := telemetry.SkillNameLabel(tc.in); got != tc.want {
 			t.Errorf("SkillNameLabel(%q) = %q, want %q", tc.in, got, tc.want)
 		}
 	}
@@ -34,39 +36,39 @@ func TestSkillNameLabel(t *testing.T) {
 
 func TestSkillUsedIsIgnoredAsDecisionAndCost(t *testing.T) {
 	now := time.Now().UTC()
-	dec := Event{
+	dec := telemetry.Event{
 		CorrelationID: "d1", Timestamp: now.Add(-2 * time.Minute).Format(time.RFC3339Nano),
-		Harness: "claude-code", SessionID: "s1", Outcome: OutcomeAllow, Verdict: "OK",
+		Harness: "claude-code", SessionID: "s1", Outcome: telemetry.OutcomeAllow, Verdict: "OK",
 	}
-	childErr := Event{
+	childErr := telemetry.Event{
 		CorrelationID: "e1", Timestamp: now.Add(-time.Minute).Format(time.RFC3339Nano),
-		Harness: "claude-code", SessionID: "s1", Outcome: OutcomeChildEnded,
-		LinkedDecision: "d1", ChildStatus: ChildError,
+		Harness: "claude-code", SessionID: "s1", Outcome: telemetry.OutcomeChildEnded,
+		LinkedDecision: "d1", ChildStatus: telemetry.ChildError,
 	}
-	skill := SkillUsed("claude-code", "s1", "ponytail", "v1")
+	skill := telemetry.SkillUsed("claude-code", "s1", "ponytail", "v1")
 	skill.Timestamp = now.Format(time.RFC3339Nano)
 
-	if !IsObservationOutcome(OutcomeSkillUsed) {
+	if !telemetry.IsObservationOutcome(telemetry.OutcomeSkillUsed) {
 		t.Fatal("OutcomeSkillUsed must be an observation outcome")
 	}
-	if !IsCostOnlyOutcome(OutcomeSkillUsed) {
+	if !telemetry.IsCostOnlyOutcome(telemetry.OutcomeSkillUsed) {
 		t.Fatal("OutcomeSkillUsed must be cost-only/observation excluded from decisions")
 	}
-	if IsDecisionRow(skill) {
+	if telemetry.IsDecisionRow(skill) {
 		t.Fatal("OutcomeSkillUsed must not be treated as a decision row")
 	}
-	if isTaskDecision(skill) {
+	if readout.IsTaskDecision(skill) {
 		t.Fatal("OutcomeSkillUsed must not be treated as a task decision")
 	}
-	s := Aggregate([]Event{dec, skill})
+	s := readout.Aggregate([]telemetry.Event{dec, skill})
 	if s.Total != 1 || s.UsageRecords != 0 || s.UsageObserved != 0 {
 		t.Fatalf("Aggregate counted skill_used as decision or usage: %+v", s)
 	}
-	tasks := BuildTasks([]Event{dec, childErr, skill})
+	tasks := readout.BuildTasks([]telemetry.Event{dec, childErr, skill})
 	if len(tasks) != 1 {
 		t.Fatalf("BuildTasks returned %d tasks, want 1: %+v", len(tasks), tasks)
 	}
-	if retries := RespawnAfterFailure([]Event{dec, childErr, skill}, 10*time.Minute); len(retries) != 0 {
+	if retries := readout.RespawnAfterFailure([]telemetry.Event{dec, childErr, skill}, 10*time.Minute); len(retries) != 0 {
 		t.Fatalf("RespawnAfterFailure counted skill_used as respawn: %+v", retries)
 	}
 }

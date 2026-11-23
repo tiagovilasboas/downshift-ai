@@ -6,6 +6,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -42,7 +43,7 @@ func TestSpawnStderrSurfaceLine(t *testing.T) {
 			if len(events) != 1 {
 				t.Fatalf("events = %d, want 1", len(events))
 			}
-			if got := telemetry.ProjectQuota(events[0].QuotaStatus, events[0].CreditHeld); got != tc.wantQuota {
+			if got := readout.ProjectQuota(events[0].QuotaStatus, events[0].CreditHeld); got != tc.wantQuota {
 				t.Fatalf("logged quota projects to %q, want %q (status %q creditHeld %v)", got, tc.wantQuota, events[0].QuotaStatus, events[0].CreditHeld)
 			}
 		})

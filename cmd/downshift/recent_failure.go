@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"time"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
@@ -24,5 +25,5 @@ func recentFailedDownshift(session string, now time.Time) bool {
 	if err != nil {
 		return false
 	}
-	return telemetry.FailedDownshiftWithin(events, session, now)
+	return readout.FailedDownshiftWithin(events, session, now)
 }

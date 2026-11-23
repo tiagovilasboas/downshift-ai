@@ -4,6 +4,7 @@
 package telemetry_test
 
 import (
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"strings"
 	"testing"
 	"time"
@@ -43,7 +44,7 @@ func TestAggregate_CountsCorrected(t *testing.T) {
 	held := makeEvent("cc", "TRIVIAL", "DOWNSHIFT")
 	held.Corrections = []string{core.RuleUnconfidentDowngrade}
 	held.SafeVerdict = "OK"
-	s := telemetry.Aggregate([]telemetry.Event{clean, held})
+	s := readout.Aggregate([]telemetry.Event{clean, held})
 	if s.Corrected != 1 {
 		t.Errorf("Corrected = %d, want 1", s.Corrected)
 	}
@@ -60,11 +61,11 @@ func TestAggregate_CountsCorrected(t *testing.T) {
 func TestAggregate_AllowOutcomeIsNotSavings(t *testing.T) {
 	allowed := makeEvent("cc", "MEDIUM", "DOWNSHIFT")
 	allowed.Outcome = telemetry.OutcomeAllow
-	s := telemetry.Aggregate([]telemetry.Event{allowed})
+	s := readout.Aggregate([]telemetry.Event{allowed})
 	if s.Downshifted != 0 || s.NotApplied != 1 {
 		t.Fatalf("Downshifted=%d NotApplied=%d, want 0/1", s.Downshifted, s.NotApplied)
 	}
-	sum := telemetry.ExportSummary([]telemetry.Event{allowed}, 0, time.Now())
+	sum := readout.ExportSummary([]telemetry.Event{allowed}, 0, time.Now())
 	if sum.DownshiftRate != 0 || sum.NotApplied != 1 {
 		t.Fatalf("export downshift_rate=%.2f not_applied=%d, want 0/1", sum.DownshiftRate, sum.NotApplied)
 	}
@@ -74,7 +75,7 @@ func TestPrintStats_ShowsSafetyHeld(t *testing.T) {
 	held := makeEvent("cc", "TRIVIAL", "DOWNSHIFT")
 	held.Corrections = []string{core.RuleUnconfidentDowngrade}
 	var sb strings.Builder
-	telemetry.PrintStats([]telemetry.Event{held}, telemetry.StatsOptions{Detail: true}, &sb)
+	readout.PrintStats([]telemetry.Event{held}, readout.StatsOptions{Detail: true}, &sb)
 	if !strings.Contains(sb.String(), "Safety-held") {
 		t.Errorf("stats output must mention safety-held decisions, got:\n%s", sb.String())
 	}

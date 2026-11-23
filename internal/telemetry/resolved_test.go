@@ -5,6 +5,7 @@ package telemetry_test
 
 import (
 	"encoding/json"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"path/filepath"
 	"testing"
 
@@ -50,11 +51,11 @@ func TestResolved_DatedIDMatchingTheWrittenModelCountsAsHonored(t *testing.T) {
 	claudecode.HandlePostToolUse(launchPayload("s1", small+"-20251001"), "test", cat)
 
 	events, _ := telemetry.ReadEvents()
-	shifted, honored := telemetry.CountInferredHonored(events)
+	shifted, honored := readout.CountInferredHonored(events)
 	if shifted != 1 || honored != 1 {
 		t.Fatalf("shifted=%d honored=%d, want 1 1", shifted, honored)
 	}
-	stats := telemetry.Aggregate(events)
+	stats := readout.Aggregate(events)
 	if stats.Total != 1 || stats.UsageLinked != 0 {
 		t.Fatalf("a resolved record must not move decision or usage counts: total=%d usage=%d", stats.Total, stats.UsageLinked)
 	}
@@ -77,7 +78,7 @@ func TestResolved_DifferentModelIsRecordedAsNotHonored(t *testing.T) {
 	if got == nil || got.RewriteHonored == nil || *got.RewriteHonored {
 		t.Fatalf("want a resolved record with rewrite_honored=false, got %+v", got)
 	}
-	if _, honored := telemetry.CountInferredHonored(events); honored != 0 {
+	if _, honored := readout.CountInferredHonored(events); honored != 0 {
 		t.Fatalf("honored = %d, want 0", honored)
 	}
 }

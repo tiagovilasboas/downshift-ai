@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/tiagovilasboas/downshift-ai/internal/telemetry/readout"
 	"io"
 	"strings"
 	"time"
@@ -173,7 +174,7 @@ func statuslineQuota(b []byte) string {
 // expired quota snapshot still holds rewrites it appends "· quota stale", even
 // when the session summary itself is unavailable.
 func statuslineRouting(b []byte) (line string) {
-	var sum telemetry.SessionRouting
+	var sum readout.SessionRouting
 	defer func() {
 		if recover() != nil {
 			line = ""
@@ -195,7 +196,7 @@ func statuslineRouting(b []byte) (line string) {
 		return sum.Line()
 	}
 	stale := sum.QuotaStale
-	sum = telemetry.SessionSummary(events, hash)
+	sum = readout.SessionSummary(events, hash)
 	sum.QuotaStale = stale
 	return sum.Line()
 }
