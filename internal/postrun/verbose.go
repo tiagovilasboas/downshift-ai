@@ -64,6 +64,15 @@ func compactVerboseText(in hookport.ToolOutput, o Options) Result {
 	if o.Keep == nil {
 		return settle(res, in)
 	}
+	if ptr, id, ok := dedupMCPDoc(in, o); ok {
+		res.Output.Content = ptr
+		res.EmittedBytes = int64(len(ptr))
+		res.KeptID = id
+		res.Compacted = true
+		res.Folded = true
+		res.Passthrough = ""
+		return settle(res, in)
+	}
 	cut, applied := compactVerboseBody(in.VerboseKind, in.ToolName, []byte(in.Content), balanceThreshold(o), o.Balanced)
 	if !applied {
 		return settle(res, in)
