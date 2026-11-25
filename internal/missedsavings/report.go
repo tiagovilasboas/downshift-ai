@@ -71,8 +71,9 @@ func newTally(harness string) *tally {
 	}
 }
 
-// add records one command with the byte size of its result (0 when unknown).
-func (t *tally) add(c Class, bytes int64) {
+// add records one command with the byte size of its result (0 when unknown)
+// and whether the result carries a post-run compaction marker.
+func (t *tally) add(c Class, bytes int64, compacted bool) {
 	t.stat.Commands++
 	t.stat.Coverage.BashTotalBytes += bytes
 	switch c.Kind {
@@ -80,6 +81,11 @@ func (t *tally) add(c Class, bytes int64) {
 		t.stat.Wrapped++
 		t.stat.Coverage.BashCompactedBytes += bytes
 	case KindBare:
+		if compacted {
+			t.stat.Wrapped++
+			t.stat.Coverage.BashCompactedBytes += bytes
+			return
+		}
 		t.stat.Bare++
 		t.stat.BareBytes += bytes
 		k := missKey{c.Family, c.Binary}
@@ -96,12 +102,19 @@ func (t *tally) add(c Class, bytes int64) {
 		if c.Meta != "" {
 			t.stat.MetacharKind[c.Meta]++
 		}
+		if compacted {
+			t.stat.Coverage.BashCompactedBytes += bytes
+		}
 	}
 }
 
-// addNonBash records the output bytes of one non-Bash tool call.
-func (t *tally) addNonBash(bytes int64) {
+// addNonBash records the output bytes of one non-Bash tool call and counts it
+// as compacted when its result carries a compaction marker.
+func (t *tally) addNonBash(bytes int64, compacted bool) {
 	t.stat.Coverage.NonBashTotalBytes += bytes
+	if compacted {
+		t.stat.Coverage.NonBashCompactedBytes += bytes
+	}
 }
 
 // merge folds the tallies into a Report with the top n missed groups.

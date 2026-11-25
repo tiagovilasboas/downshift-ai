@@ -275,3 +275,76 @@ func TestScanCoverageBashAndNonBash(t *testing.T) {
 		t.Fatalf("total coverage = %+v", cov)
 	}
 }
+
+func TestHasCompactMarker(t *testing.T) {
+	cases := []struct {
+		name string
+		text string
+		want bool
+	}{
+		{"kept", "summary\n[downshift compact: 12000 to 800 bytes; downshift retrieve abcdef012345]\n", true},
+		{"kept with session", "summary\n[downshift compact: 12000 to 800 bytes; downshift retrieve --session=aaaaaaaaaaaa abcdef012345]\n", true},
+		{"not kept", "summary\n[downshift compact: 4000 to 300 bytes; original not kept]\n", true},
+		{"older spelling", "summary\n[downshift compact: compacted 9 to 3 bytes; full output: downshift retrieve 0123456789ab]\n", true},
+		{"with trailing exit note", "summary\n[downshift compact: 10 to 2 bytes; original not kept]\n[downshift compact: exit 1, returned 0 (|| true)]\n", true},
+		{"stderr note only", "ok\n[downshift compact: stderr discarded (2>/dev/null)]\n", false},
+		{"mid-output quote", "[downshift compact: 10 to 2 bytes; original not kept]\nmore lines after\n", false},
+		{"plain", "just plain output\n", false},
+	}
+	for _, tc := range cases {
+		if got := hasCompactMarker(tc.text); got != tc.want {
+			t.Errorf("%s: hasCompactMarker = %v, want %v", tc.name, got, tc.want)
+		}
+	}
+}
+
+func TestScanCoveragePostRunCompaction(t *testing.T) {
+	home := t.TempDir()
+	h := time.Hour
+	mcpCompacted := strings.Repeat("m", 800) + "\n[downshift compact: 12000 to 800 bytes; downshift retrieve abcdef012345]\n"
+	mcpUncompacted := strings.Repeat("r", 500)
+	bashPostCompacted := strings.Repeat("b", 400) + "\n[downshift compact: 5000 to 400 bytes; downshift retrieve 111111111111]\n"
+	bashSkippedCompacted := strings.Repeat("s", 300) + "\n[downshift compact: 4000 to 300 bytes; original not kept]\n"
+	bashBareUncompacted := strings.Repeat("u", 600)
+	mcpQuotedMarker := "[downshift compact: 999 to 10 bytes; original not kept]\nnot a trailing marker\n"
+
+	writeLines(t, filepath.Join(home, ".claude", "projects", "p1", "s.jsonl"),
+		claudeNonBashUse(h, "m1", "mcp__grafana__query_loki"),
+		claudeResult(h, "m1", mcpCompacted),
+		claudeNonBashUse(h, "m2", "Read"),
+		claudeResult(h, "m2", mcpUncompacted),
+		claudeNonBashUse(h, "m3", "Grep"),
+		claudeResult(h, "m3", mcpQuotedMarker),
+		claudeUse(h, "b1", "go test ./..."),
+		claudeResult(h, "b1", bashPostCompacted),
+		claudeUse(h, "b2", "cat foo.txt | grep bar"),
+		claudeResult(h, "b2", bashSkippedCompacted),
+		claudeUse(h, "b3", "npm test"),
+		claudeResult(h, "b3", bashBareUncompacted),
+	)
+
+	r, err := Scan(Options{Home: home, Harness: HarnessClaudeCode, Since: 24 * h, Label: "1d", Top: 10, Dedup: true, Now: testNow})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.Total.Wrapped != 1 || r.Total.Bare != 1 || r.Total.Skipped != 1 {
+		t.Fatalf("counts = %+v", r.Total)
+	}
+	cov := r.Total.Coverage
+	wantNonBashComp := int64(len(mcpCompacted))
+	wantNonBashTotal := int64(len(mcpCompacted) + len(mcpUncompacted) + len(mcpQuotedMarker))
+	if cov.NonBashCompactedBytes != wantNonBashComp || cov.NonBashTotalBytes != wantNonBashTotal {
+		t.Fatalf("non-bash bytes = %d / %d, want %d / %d", cov.NonBashCompactedBytes, cov.NonBashTotalBytes, wantNonBashComp, wantNonBashTotal)
+	}
+	if cov.NonBashCoveragePct <= 0 {
+		t.Fatalf("expected non-bash coverage > 0, got %.1f%%", cov.NonBashCoveragePct)
+	}
+	wantBashComp := int64(len(bashPostCompacted) + len(bashSkippedCompacted))
+	wantBashTotal := wantBashComp + int64(len(bashBareUncompacted))
+	if cov.BashCompactedBytes != wantBashComp || cov.BashTotalBytes != wantBashTotal {
+		t.Fatalf("bash bytes = %d / %d, want %d / %d", cov.BashCompactedBytes, cov.BashTotalBytes, wantBashComp, wantBashTotal)
+	}
+	if cov.TotalCompactedBytes != wantBashComp+wantNonBashComp || cov.TotalOutputBytes != wantBashTotal+wantNonBashTotal {
+		t.Fatalf("total coverage = %+v", cov)
+	}
+}
