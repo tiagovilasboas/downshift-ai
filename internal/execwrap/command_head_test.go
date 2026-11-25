@@ -33,6 +33,16 @@ func TestCommandHead(t *testing.T) {
 		{"cd x && export A=1", "cd"},
 		{"cd 'a;b' && jq .", "jq"},
 		{"cd x || true; mysecrettool", "unknown"},
+		{"cd X && go test ./...", "go"},
+		{"for f in a b; do git status; done", "git"},
+		{"while read -r f; do git status; done", "git"},
+		{"if [ -f go.mod ]; then go test ./...; fi", "go"},
+		{"until [ -f ready ]; do gh pr list; done", "gh"},
+		{"k(){ gh pr list; }", "gh"},
+		{"k() { gh pr list; }", "gh"},
+		{"function k { go test ./...; }", "go"},
+		{"k(){}", "unknown"},
+		{"for f in a b; do done", "unknown"},
 	}
 	for _, c := range cases {
 		if got := CommandHead(c.in); got != c.want {
@@ -50,6 +60,7 @@ func TestCommandHeadNeverLeaksTokens(t *testing.T) {
 		"/opt/secret/bin/foo --token abc", `C:\tools\deploy.exe x`, "./my-private.sh",
 		"FOO=bar customtool arg", "/usr/local/bin/node x", "sudo /srv/app/run", "weirdprog",
 		"cd /home/secret && /opt/priv/tool x", "source /secret/env.sh; ./private.sh",
+		"for f in a b; do /opt/secret; done", "k(){ /opt/secret; }",
 	} {
 		got := CommandHead(in)
 		if strings.ContainsAny(got, `/\`) || !vocab[got] {

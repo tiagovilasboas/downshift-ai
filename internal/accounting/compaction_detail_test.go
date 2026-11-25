@@ -38,9 +38,9 @@ func TestBuildCompactionDetail(t *testing.T) {
 		{
 			Harness: "claude-code", Commands: 4, Compacted: 1,
 			Families: []FamilyCompaction{
-				{Family: "git-diff", Commands: 1, RawTokens: 2000},
-				{Family: "go-test", Commands: 2, Compacted: 1, RawTokens: 1200, AvoidedTokens: 900},
-				{Family: "git-status", Commands: 1, RawTokens: 10},
+				{Family: "git-diff", Commands: 1, RawTokens: 2000, RawBytes: 8000},
+				{Family: "go-test", Commands: 2, Compacted: 1, RawTokens: 1200, AvoidedTokens: 900, RawBytes: 4800, SavedBytes: 3600},
+				{Family: "git-status", Commands: 1, RawTokens: 10, RawBytes: 40},
 			},
 			NotCompacted: []ReasonCount{
 				{Reason: execwrap.PassthroughNotRecorded, Count: 1},
@@ -51,7 +51,7 @@ func TestBuildCompactionDetail(t *testing.T) {
 		},
 		{
 			Harness: UnknownHarness, Commands: 1,
-			Families:       []FamilyCompaction{{Family: "make", Commands: 1, RawTokens: 100}},
+			Families:       []FamilyCompaction{{Family: "make", Commands: 1, RawTokens: 100, RawBytes: 400}},
 			NotCompacted:   []ReasonCount{{Reason: execwrap.PassthroughNonZeroExit, Count: 1}},
 			Skipped:        []ReasonCount{},
 			UnknownReasons: []ReasonCount{{Reason: UnknownLegacyRow, Count: 1}},

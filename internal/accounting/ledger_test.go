@@ -72,3 +72,16 @@ func TestLedgerLine(t *testing.T) {
 		})
 	}
 }
+
+func TestCompactorScopeLine(t *testing.T) {
+	if got := CompactorScopeLine(Compactor{}, Scope{Kind: ScopeDays, Days: 7}); got != "" {
+		t.Errorf("zero commands = %q, want empty", got)
+	}
+	got := CompactorScopeLine(Compactor{
+		Commands: 2, Compacted: 1, RawBytes: 4400, SavedBytes: 4000, RetrievedBytes: 200,
+	}, Scope{Kind: ScopeDays, Days: 30})
+	want := "Compactor (last 30 days, all harnesses): 91% (3.9 KB of 4.3 KB) net cut, 2 · 1 runs · compacted · 200 B read back (use `downshift report` for per-harness)"
+	if got != want {
+		t.Errorf("CompactorScopeLine =\n %q\nwant:\n %q", got, want)
+	}
+}

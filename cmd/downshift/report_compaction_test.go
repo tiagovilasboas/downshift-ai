@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tiagovilasboas/downshift-ai/internal/accounting"
 	"github.com/tiagovilasboas/downshift-ai/internal/execwrap"
 )
 
@@ -146,5 +147,15 @@ func TestReport_JSONCarriesCompactionLead(t *testing.T) {
 	}
 	if got["claude-code"] != 1000 || got["codex"] != 200 {
 		t.Errorf("compaction_by_harness = %v, want claude-code 1000 and codex 200", got)
+	}
+}
+
+func TestCutPctUsesBytesNotTruncatedTokens(t *testing.T) {
+	// 7 raw bytes, 4 saved bytes -> 57% on bytes, whereas /4 tokens (1/1) would report 100%.
+	got := cutPct(accounting.FamilyCompaction{
+		Family: "git-status", RawTokens: 1, AvoidedTokens: 1, RawBytes: 7, SavedBytes: 4,
+	})
+	if got != "57%" {
+		t.Fatalf("cutPct = %q, want 57%%", got)
 	}
 }

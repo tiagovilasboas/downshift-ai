@@ -40,6 +40,14 @@ func TestProducerProgram(t *testing.T) {
 		{"echo $(git log | wc -l)", "echo"},
 		{"git status || echo failed", "git"},
 		{"true && ls -la | sort", "ls"},
+		{"cd X && go test ./...", "go"},
+		{"for f in a b; do git status; done", "git"},
+		{"for f in a b; do git status | tail -5; done", "git"},
+		{"while true; do gh pr list; done", "gh"},
+		{"if [ -f go.mod ]; then go test ./... | tail; fi", "go"},
+		{"until [ -f ready ]; do git diff; done", "git"},
+		{"k(){ gh pr list; }", "gh"},
+		{"k() { go test ./... | tail; }", "go"},
 	}
 	for _, c := range cases {
 		if got := ProducerProgram(c.in); got != c.want {

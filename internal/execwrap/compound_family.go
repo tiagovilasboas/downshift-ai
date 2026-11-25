@@ -43,9 +43,21 @@ func segmentFamily(seg string) Family {
 	if i := strings.IndexAny(seg, "<>"); i >= 0 {
 		seg = seg[:i]
 	}
+	seg = stripFuncHeader(seg)
 	words := strings.Fields(seg)
 	for i, w := range words {
 		words[i] = strings.Trim(w, `'"`)
+	}
+	for len(words) > 0 {
+		w := words[0]
+		if w == "for" {
+			return FamilyNone
+		}
+		if w == "{" || w == "}" || w == "!" || shellControlKeywords[w] {
+			words = words[1:]
+			continue
+		}
+		break
 	}
 	_, argv := splitEnvAssignments(words)
 	if len(argv) == 0 || argv[0] == "downshift" {
