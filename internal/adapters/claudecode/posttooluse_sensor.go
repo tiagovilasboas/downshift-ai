@@ -21,19 +21,57 @@ func recordSensorToolObservation(payload map[string]any, sessionHash string) {
 		toolName = "tool"
 	}
 
-	var outputBytes []byte
+	rawResp := payload["tool_response"]
+	outputBytes := rawToolOutputBytes(rawResp)
 	isError := false
-	exitCode := -1
-	if resp, ok := payload["tool_response"].(map[string]any); ok {
-		outputBytes = toolOutputBytes(resp)
+	exitCode := 0
+	if resp, ok := rawResp.(map[string]any); ok {
+		if b, _ := resp["isError"].(bool); b {
+			isError = true
+		}
+		if b, _ := resp["interrupted"].(bool); b {
+			isError = true
+		}
 		if status, ok := resp["status"].(string); ok && (status == "error" || status == "failed") {
 			isError = true
 		}
 		if code, ok := exitCodeField(resp); ok {
 			exitCode = code
+		} else if isError {
+			exitCode = 1
 		}
 	}
 	_ = st.RecordToolResult(sessionHash, harnessID, toolName, outputBytes, exitCode, isError)
+}
+
+func rawToolOutputBytes(raw any) []byte {
+	switch v := raw.(type) {
+	case string:
+		return []byte(v)
+	case []any:
+		return contentBlocksBytes(v)
+	case map[string]any:
+		return toolOutputBytes(v)
+	default:
+		return nil
+	}
+}
+
+func contentBlocksBytes(blocks []any) []byte {
+	var b []byte
+	for _, block := range blocks {
+		m, ok := block.(map[string]any)
+		if !ok {
+			continue
+		}
+		if typ, _ := m["type"].(string); typ == "image" {
+			continue
+		}
+		if text, ok := m["text"].(string); ok {
+			b = append(b, text...)
+		}
+	}
+	return b
 }
 
 // toolOutputBytes is the text the model reads from one tool result, in the
@@ -59,17 +97,12 @@ func toolOutputBytes(resp map[string]any) []byte {
 	case string:
 		return []byte(c)
 	case []any:
-		for _, block := range c {
-			if m, ok := block.(map[string]any); ok {
-				if text, ok := m["text"].(string); ok {
-					b = append(b, text...)
-				}
-			}
-		}
-		return b
+		return contentBlocksBytes(c)
 	}
-	if out, ok := resp["output"].(string); ok {
-		return []byte(out)
+	for _, key := range []string{"output", "text", "result"} {
+		if out, ok := resp[key].(string); ok {
+			return []byte(out)
+		}
 	}
 	return nil
 }

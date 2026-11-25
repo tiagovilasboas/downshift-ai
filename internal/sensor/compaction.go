@@ -15,7 +15,10 @@ import (
 	"github.com/tiagovilasboas/downshift-ai/internal/paths"
 )
 
-const compactionMaxAge = 90 * 24 * time.Hour
+const (
+	compactionMaxAge = 30 * 24 * time.Hour
+	maxToolNameLen   = 128
+)
 
 // compactionMaxRecords is the newest-record cap. Tests may lower it.
 var compactionMaxRecords = 5000
@@ -59,17 +62,32 @@ func newCompactionRecord(sessionHash, harness, toolName string, output []byte, i
 	if sessionDigest(sessionHash) {
 		rec.SessionHash = sessionHash
 	}
-	if validToolName(toolName) {
-		rec.Tool = toolName
+	if clean := sanitizeToolName(toolName); clean != "" {
+		rec.Tool = clean
 	}
 	if res.Applied {
-		rec.ReducedBytes = int64(res.OriginalBytes - res.ReducedBytes)
+		saved := int64(res.OriginalBytes - res.ReducedBytes)
+		if saved > 0 {
+			rec.ReducedBytes = saved
+		} else {
+			rec.Applied = false
+		}
 	}
 	return rec
 }
 
+func sanitizeToolName(name string) string {
+	if len(name) > maxToolNameLen {
+		name = name[:maxToolNameLen]
+	}
+	if !validToolName(name) {
+		return ""
+	}
+	return name
+}
+
 func validToolName(name string) bool {
-	if len(name) < 1 || len(name) > 40 {
+	if len(name) < 1 || len(name) > maxToolNameLen {
 		return false
 	}
 	for _, c := range name {
@@ -98,8 +116,8 @@ func (s *Store) appendCompaction(rec CompactionRecord) error {
 }
 
 // AppendCompaction appends one JSON line to path. The line is the record only.
-// Writers in other processes share path.lock. Records older than 90 days, and
-// records past the newest 5000, are dropped on the same locked rewrite.
+// Writers in other processes share path.lock. Records older than 30 days are
+// pruned, and records past the newest compactionMaxRecords rotate into path.1.
 func AppendCompaction(path string, rec CompactionRecord) error {
 	return withPathLock(path, func() error {
 		return appendCompactionUnlocked(path, rec)
@@ -131,52 +149,6 @@ func appendCompactionUnlocked(path string, rec CompactionRecord) error {
 		return err
 	}
 	return retainCompaction(path, time.Now().UTC())
-}
-
-func retainCompaction(path string, now time.Time) error {
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		return err
-	}
-	lines := bytes.Split(raw, []byte("\n"))
-	kept := make([][]byte, 0, len(lines))
-	for _, line := range lines {
-		if len(bytes.TrimSpace(line)) == 0 {
-			continue
-		}
-		var rec CompactionRecord
-		if err := json.Unmarshal(line, &rec); err != nil {
-			kept = append(kept, line)
-			continue
-		}
-		ts, err := time.Parse(time.RFC3339Nano, rec.Timestamp)
-		if err == nil && now.Sub(ts) > compactionMaxAge {
-			continue
-		}
-		kept = append(kept, line)
-	}
-	if len(kept) > compactionMaxRecords {
-		kept = kept[len(kept)-compactionMaxRecords:]
-	}
-	nonEmpty := 0
-	for _, line := range lines {
-		if len(bytes.TrimSpace(line)) > 0 {
-			nonEmpty++
-		}
-	}
-	if len(kept) == nonEmpty {
-		return nil
-	}
-	payload := append(bytes.Join(kept, []byte("\n")), '\n')
-	tmp := fmt.Sprintf("%s.%d.%d.tmp", path, os.Getpid(), now.UnixNano())
-	if err := os.WriteFile(tmp, payload, 0600); err != nil {
-		return err
-	}
-	if err := os.Rename(tmp, path); err != nil {
-		_ = os.Remove(tmp)
-		return err
-	}
-	return nil
 }
 
 // SummarizeCompactionLog aggregates the append-only log by harness.
