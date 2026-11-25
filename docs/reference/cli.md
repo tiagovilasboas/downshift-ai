@@ -356,7 +356,7 @@ Press `q` to quit.
 Run a command with output compaction.
 
 ```bash
-downshift compactor -- <command> [args...]
+downshift compact -- <command> [args...]
 ```
 
 **Aliases:** `compact`, `exec`
@@ -367,9 +367,9 @@ unknown name is ignored and the harness is read from the environment.
 
 **Examples:**
 ```bash
-downshift compactor -- go test ./...
-downshift compactor -- cargo build --release
-downshift compactor -- git status
+downshift compact -- go test ./...
+downshift compact -- cargo build --release
+downshift compact -- git status
 ```
 
 **Exit codes:**
@@ -383,8 +383,8 @@ Prints nothing and writes no exec log row. The shell helper from
 `downshift enable` calls it before wrapping.
 
 ```bash
-downshift compactor --allowlisted -- go test ./...   # exit 0
-downshift compactor --allowlisted -- docker run x    # exit 1
+downshift compact --allowlisted -- go test ./...   # exit 0
+downshift compact --allowlisted -- docker run x    # exit 1
 ```
 
 ### `downshift retrieve`
@@ -442,8 +442,8 @@ eval "$(downshift enable)"
 **Alias:** `shell-init` (legacy)
 
 Each function asks the binary whether the command is allowlisted
-(`downshift compactor --allowlisted`, one extra fork, no run, no log row). An allowlisted
-command runs as `downshift compactor -- <command>`; any other command runs as
+(`downshift compact --allowlisted`, one extra fork, no run, no log row). An allowlisted
+command runs as `downshift compact -- <command>`; any other command runs as
 typed with `command`, so `git -C <dir> status`, `npm --version` or
 `docker run` behave exactly as without the helper. The functions only act
 when stdout is not a terminal (agent context, pipes, `$(...)`, CI); an

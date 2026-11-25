@@ -283,13 +283,13 @@ manual (see Known gaps).
 **Output compaction.** Two paths: (1) **Shell wrapping (Claude Code only):**
 `PreToolUse` → `shellwrap.Policy` → if shell command and harness supports
 `updatedInput`, `AdviseAdapter` returns rewritten command with `downshift
-compactor -- <cmd>` prefix; the harness runs the wrapped command and
+compact -- <cmd>` prefix; the harness runs the wrapped command and
 `execwrap` compacts output in real time when the family is recognized. (2)
 **Observe-only (all harnesses):** `PostToolUse` → `sensor` records tool output
 bytes and the hypothetical reduction `safe` mode would reach → `{}` (plus an
 optional status line). The model never sees a shorter result unless the
 wrapping path ran. For manual use, the user pipes output through `downshift
-context compress` or `downshift compactor --`. Packages: `internal/shellwrap`,
+context compress` or `downshift compact --`. Packages: `internal/shellwrap`,
 `internal/execwrap`, `internal/compressor`, `internal/sensor`.
 With CCR on (the default; `DOWNSHIFT_CCR=0` turns it off; `"ccr": false` keeps only failed runs), `cmd/downshift` hands execwrap a `Keep` port backed by
 `internal/ccr`: the raw output is stored and the marker names its id for

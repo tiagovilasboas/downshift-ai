@@ -159,7 +159,7 @@ Two other figures have a different scope and say so:
   sessions**, including runs with no session; `tokens_saved_scope` names it
   (`"last 30 days, all sessions"`).
 - `compactor.direct` is the runs of that window with **no session tag** (a direct
-  `downshift compactor -- ...`), which the session figures never include:
+  `downshift compact -- ...`), which the session figures never include:
   `{scope, commands, saved_bytes, estimated_tokens_saved, line}`, with `line` reading
   `direct calls, no session: N, ~X tokens saved`. It is shown apart and never added to the
   session figures.

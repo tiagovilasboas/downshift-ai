@@ -224,7 +224,7 @@ A worker sees only the task text and its directory, so write the whole brief int
 
 - **Goal:** one sentence, unambiguous.
 - **Allowed files:** the exact paths the worker may edit.
-- **Verification:** the exact command that must exit 0, run as `downshift compactor -- <command>`.
+- **Verification:** the exact command that must exit 0, run as `downshift compact -- <command>`.
 - **Tier hint:** `[tier=small]` at the start of the prompt for mechanical work: a search, a read, a rename,
   running one command and reporting it, or a small well-specified edit. The hint only moves down, never up,
   and a pinned model or a declared policy wins. Choose by tier, never by model name.
