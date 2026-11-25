@@ -37,6 +37,7 @@ func ParseToolOutput(raw []byte) (hookport.ToolOutput, bool) {
 	toolName := stringFieldAny(payload, "tool_name", "toolName")
 	out := hookport.ToolOutput{
 		Category:    core.ClaudeCodeCaps.CategoryOf(toolName),
+		ToolName:    toolName,
 		VerboseKind: verboseKindOf(toolName),
 		Session:     stringFieldAny(payload, "session_id", "sessionId"),
 		ExitCode:    -1,
