@@ -73,7 +73,7 @@ func TestCursorShellRewrite_WrapsAndKeepsSiblings(t *testing.T) {
 // allow: Cursor's own approval flow decides. Non-shell calls keep the allow.
 func TestCursorShellRewrite_UnchangedIsNeutral(t *testing.T) {
 	cases := map[string]string{
-		"not allowlisted":   cursorShellPayload(t, "Shell", "cat go.mod"),
+		"not allowlisted":   cursorShellPayload(t, "Shell", "echo hi"),
 		"rm -rf":            cursorShellPayload(t, "Shell", "rm -rf build"),
 		"shell no object":   `{"tool_name":"Shell","tool_input":"go test"}`,
 		"garbage (unknown)": "not json",

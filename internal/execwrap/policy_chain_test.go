@@ -48,8 +48,18 @@ func TestDecide_Chains(t *testing.T) {
 		{"or list", "gofmt -l x; go test || true", false, "", "", nil, ReasonUnsafeChar},
 		{"background", "go test & git status; go vet", false, "", "", nil, ReasonUnsafeChar},
 		{"triple ampersand", "go test &&& git status", false, "", "", nil, ReasonUnsafeChar},
-		{"quoted separator", "git commit -m 'a; b'; go test", false, "", "", nil, ReasonUnsafeChar},
-		{"double quoted separator in a chain", `go vet ./...; go test -run "A && B"`, false, "", "", nil, ReasonUnsafeChar},
+		{"quoted separator", "git commit -m 'a; b'; go test", true,
+			w + "'git' 'commit' '-m' 'a; b'; " + w + "go test",
+			"git commit -m 'a; b'", []string{"git commit -m a; b", "go test"}, ReasonAllowlistedQuoted},
+		{"double quoted separator in a chain", `go vet ./...; go test -run "A && B"`, true,
+			w + `go vet ./...; ` + w + `'go' 'test' '-run' 'A && B'`,
+			"go vet ./...", []string{`go test -run A && B`, `go test -run "A && B"`}, ReasonAllowlistedQuoted},
+		{"and list with single quoted and", "git status && git commit -m 'a && b'", true,
+			w + "git status && " + w + "'git' 'commit' '-m' 'a && b'",
+			"git status", []string{"git commit -m a && b", "git commit -m 'a && b'"}, ReasonAllowlistedQuoted},
+		{"unclosed single quote in chain", "git commit -m 'a; go test", false, "", "", nil, ReasonUnsafeChar},
+		{"unclosed double quote in chain", `go vet ./...; go test -run "A && B`, false, "", "", nil, ReasonUnsafeChar},
+		{"escaped quote inside double quotes in chain", `go vet ./...; go test -run "A\"B && C"`, false, "", "", nil, ReasonUnsafeChar},
 		{"subshell", "(go test); git status", false, "", "", nil, ReasonUnsafeChar},
 		{"substitution", "echo $(id); go test", false, "", "", nil, ReasonUnsafeChar},
 		{"backtick", "go test `pwd`; git status", false, "", "", nil, ReasonUnsafeChar},
@@ -100,5 +110,41 @@ func TestWithSession_Chain(t *testing.T) {
 	}
 	if WithSession(got, hashA) != got {
 		t.Fatalf("WithSession tagged a tagged chain twice")
+	}
+}
+
+func TestSplitChain_QuoteAware(t *testing.T) {
+	cases := []struct {
+		name     string
+		command  string
+		wantOK   bool
+		wantSegs []string
+		wantSeps []string
+	}{
+		{"single quoted semicolon", "git commit -m 'a; b'; go test", true,
+			[]string{"git commit -m 'a; b'", "go test"}, []string{"; "}},
+		{"double quoted &&", `go vet ./...; go test -run "A && B"`, true,
+			[]string{"go vet ./...", `go test -run "A && B"`}, []string{"; "}},
+		{"escaped quote inside double quotes", `echo "a\"; b" && go test`, true,
+			[]string{`echo "a\"; b"`, "go test"}, []string{" && "}},
+		{"escaped backslash before closing double quote", `echo "a\\" ; go test`, true,
+			[]string{`echo "a\\"`, "go test"}, []string{" ; "}},
+		{"backslash literal inside single quotes", `echo 'a\' ; go test`, true,
+			[]string{`echo 'a\'`, "go test"}, []string{" ; "}},
+		{"escaped semicolon outside quotes", `echo a\; b; go test`, true,
+			[]string{`echo a\; b`, "go test"}, []string{"; "}},
+		{"unclosed single quote", "git commit -m 'a; go test", false, nil, nil},
+		{"unclosed double quote", `go test -run "a && b; git status`, false, nil, nil},
+		{"trailing backslash in double quote", `echo "abc\`, false, nil, nil},
+		{"only quoted separator no outer chain", "git commit -m 'a; b'", false, nil, nil},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			segs, seps, ok := splitChain(tc.command)
+			if ok != tc.wantOK || !reflect.DeepEqual(segs, tc.wantSegs) || !reflect.DeepEqual(seps, tc.wantSeps) {
+				t.Fatalf("splitChain(%q) = (%q, %q, %v), want (%q, %q, %v)",
+					tc.command, segs, seps, ok, tc.wantSegs, tc.wantSeps, tc.wantOK)
+			}
+		})
 	}
 }

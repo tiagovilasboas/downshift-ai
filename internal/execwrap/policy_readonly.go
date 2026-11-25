@@ -34,6 +34,7 @@ var readOnlyFamilies = map[Family]func(argv []string) bool{
 	FamilyGitDiff:    gitReadArgs,
 	FamilyGitShow:    gitReadArgs,
 	FamilyGitBranch:  func(argv []string) bool { return onlyWords(argv[2:], gitBranchListFlags) },
+	FamilyGitFetch:   gitFetchReadArgs,
 	FamilyGitRemote:  func(argv []string) bool { return onlyWords(argv[2:], gitRemoteListFlags) },
 	FamilyGitStash:   func(argv []string) bool { return len(argv) >= 3 && argv[2] == "list" && gitReadArgs(argv) },
 	FamilyGitLsFiles: gitReadArgs,
@@ -53,6 +54,12 @@ var readOnlyFamilies = map[Family]func(argv []string) bool{
 	FamilyAsdf:         func(argv []string) bool { return versionListSubcommands[argv[1]] },
 	FamilyDirenv:       func(argv []string) bool { return argv[1] == "status" },
 	FamilyLs:           func([]string) bool { return true },
+	FamilyFind:         findReadArgs,
+	FamilyGrep:         func([]string) bool { return true },
+	FamilyRg:           func([]string) bool { return true },
+	FamilyRgFiles:      func([]string) bool { return true },
+	FamilyFileRead:     fileReadArgs,
+	FamilyWc:           func(argv []string) bool { return wcListArgs(argv[1:]) },
 	FamilyAgentDesktop: func([]string) bool { return true },
 }
 
@@ -63,6 +70,20 @@ var gitReadOther = map[string]bool{"rev-parse": true, "ls-files": true}
 // gitWriteFlags write a file or run a configured program from a read
 // subcommand (git diff --output, --ext-diff, --textconv).
 var gitWriteFlags = []string{"output", "ext-diff", "textconv"}
+
+// gitFetchUnsafeFlags run a remote helper/upload-pack binary, force-overwrite
+// or prune refs, or update the checked-out branch.
+var gitFetchUnsafeFlags = []string{
+	"c", "config", "upload-pack", "exec", "receive-pack",
+	"f", "force", "p", "prune", "P", "prune-tags", "u", "update-head-ok", "refmap",
+}
+
+// findUnsafePrimaries are the find primaries that execute a command or write
+// files; guarded here alongside findPlainForm as defense in depth.
+var findUnsafePrimaries = []string{
+	"exec", "execdir", "ok", "okdir", "delete",
+	"fprint", "fprint0", "fprintf", "fls",
+}
 
 // gitBranchListFlags and gitRemoteListFlags only list. A positional word
 // would create, rename or delete a branch or remote, so none is accepted.
@@ -89,6 +110,38 @@ var goListWriteFlags = []string{"toolexec", "exec", "export", "compiled", "mod"}
 var versionListSubcommands = map[string]bool{"list": true, "ls": true, "current": true}
 
 func gitReadArgs(argv []string) bool { return !namesFlag(argv[2:], gitWriteFlags...) }
+
+func gitFetchReadArgs(argv []string) bool {
+	args := argv[2:]
+	if namesFlag(args, gitWriteFlags...) || namesFlag(args, gitFetchUnsafeFlags...) {
+		return false
+	}
+	for _, a := range args {
+		if strings.HasPrefix(a, "-") && !strings.HasPrefix(a, "--") {
+			if strings.ContainsAny(a[1:], "cfpPu") {
+				return false
+			}
+			continue
+		}
+		if strings.HasPrefix(a, "ext::") || strings.HasPrefix(a, "fd::") {
+			return false
+		}
+		if !strings.HasPrefix(a, "-") && strings.Contains(a, ":") &&
+			!strings.Contains(a, "://") && !strings.Contains(a, "@") {
+			return false
+		}
+	}
+	return true
+}
+
+func findReadArgs(argv []string) bool {
+	return findPlainForm(argv[1:]) && !namesFlag(argv[1:], findUnsafePrimaries...)
+}
+
+func fileReadArgs(argv []string) bool {
+	norm, _ := normalizeBinaryPath(argv)
+	return readFamily(norm) == FamilyFileRead
+}
 
 func ghReadArgs(argv []string) bool {
 	return len(argv) >= 3 && ghReadSubcommands[argv[1]][argv[2]] && !namesFlag(argv[3:], ghBrowserFlags...)

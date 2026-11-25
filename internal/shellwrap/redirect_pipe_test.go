@@ -64,8 +64,11 @@ func TestHandle_RedirectsAndGrepPipes(t *testing.T) {
 	if r := Handle("claude-code", ruledShell{command: "go test ./... | sort -u", rules: []string{"Bash(sort -u)"}}, ""); r.Rewrite != nil || r.Skip != execwrap.SkipDenied {
 		t.Fatalf("Bash(sort -u) must deny pipe: %+v", r)
 	}
-	if r := Handle("claude-code", ruledShell{command: `go test ./... | rg "FAIL"`, rules: []string{`Bash(git commit -m "wip")`}}, ""); r.Rewrite != nil || r.Skip != ReasonQuotedRule {
+	if r := Handle("claude-code", ruledShell{command: `go test ./... | rg "FAIL"`, rules: []string{`Bash(rg 'FAIL')`}}, ""); r.Rewrite != nil || r.Skip != ReasonQuotedRule {
 		t.Fatalf("quoted rule must stop quoted pipe pattern: %+v", r)
+	}
+	if r := Handle("claude-code", ruledShell{command: `go test ./... | rg "FAIL"`, rules: []string{`Bash(git commit -m "wip")`}}, ""); r.Rewrite == nil {
+		t.Fatalf("unrelated quoted rule must not block quoted pipe pattern: %+v", r)
 	}
 	if r := Handle("claude-code", ruledShell{command: `git log --oneline | cut -d ' ' -f1`, rules: []string{`Bash(git commit -m "wip")`}}, ""); r.Rewrite != nil || r.Skip != ReasonQuotedRule {
 		t.Fatalf("quoted rule must stop quoted text pipe: %+v", r)

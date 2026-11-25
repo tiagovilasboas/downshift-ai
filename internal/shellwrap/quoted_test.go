@@ -77,9 +77,10 @@ func (f ruledShell) ShellBlocked(command string) bool {
 	return false
 }
 
-// A deny or ask rule holding a quote can name the same argv in forms no
-// string comparison sees, so it keeps every quoted command unwrapped; a
-// quote-free rule set still lets the quoted path wrap.
+// A deny or ask rule holding a quote blocks only when it can plausibly apply
+// to the command being rewritten (same binary, unscoped rule, wildcard binary,
+// or unreadable rule set). A quoted rule scoped to a different specific binary
+// does not block unrelated quoted commands.
 func TestQuotedRuleKeepsQuotedPathOff(t *testing.T) {
 	quotedRule := []string{`Bash(git commit -m "wip")`}
 	for _, command := range []string{`git commit -m 'wip'`, `git commit -m w"i"p`, `git commit -m wip 2>/dev/null`, `git status || true`} {
@@ -97,5 +98,119 @@ func TestQuotedRuleKeepsQuotedPathOff(t *testing.T) {
 	withEnv(t, true, nil, true)
 	if r := Handle("claude-code", ruledShell{command: "go test ./...", rules: quotedRule}, ""); r.Rewrite == nil {
 		t.Errorf("a command off the quoted path is not affected: skip %q", r.Skip)
+	}
+}
+
+func TestQuotedRuleTargetedScoping(t *testing.T) {
+	cases := []struct {
+		name        string
+		command     string
+		rules       []string
+		wantRewrite bool
+		wantSkip    string
+	}{
+		{
+			name:        "unrelated git quoted rule allows grep",
+			command:     `grep -rn "foo bar" .`,
+			rules:       []string{`Bash(git commit -m "wip")`},
+			wantRewrite: true,
+		},
+		{
+			name:        "unrelated git quoted rule allows go test",
+			command:     `go test -run "TestA|TestB" ./...`,
+			rules:       []string{`Bash(git commit -m "wip")`},
+			wantRewrite: true,
+		},
+		{
+			name:        "unrelated curl quoted rule allows find",
+			command:     `find . -name "*.go"`,
+			rules:       []string{`Bash(curl -d "secret" *)`},
+			wantRewrite: true,
+		},
+		{
+			name:        "matching binary path normalized",
+			command:     `/usr/bin/git commit -m 'wip'`,
+			rules:       []string{`Bash(git commit -m "wip")`},
+			wantRewrite: false,
+			wantSkip:    ReasonQuotedRule,
+		},
+		{
+			name:        "rule with path matches bare binary",
+			command:     `git commit -m 'wip'`,
+			rules:       []string{`Bash(/usr/bin/git commit -m "wip")`},
+			wantRewrite: false,
+			wantSkip:    ReasonQuotedRule,
+		},
+		{
+			name:        "wildcard quoted rule fails closed",
+			command:     `grep -rn "foo" .`,
+			rules:       []string{`Bash(* "secret")`},
+			wantRewrite: false,
+			wantSkip:    ReasonQuotedRule,
+		},
+		{
+			name:        "globbed binary quoted rule fails closed",
+			command:     `grep -rn "foo" .`,
+			rules:       []string{`Bash(gr* "secret")`},
+			wantRewrite: false,
+			wantSkip:    ReasonQuotedRule,
+		},
+		{
+			name:        "non-Bash quoted rule fails closed",
+			command:     `grep -rn "foo" .`,
+			rules:       []string{`Shell(git "wip")`},
+			wantRewrite: false,
+			wantSkip:    ReasonQuotedRule,
+		},
+		{
+			name:        "chain containing matching binary blocks",
+			command:     `go test ./... && git commit -m 'wip'`,
+			rules:       []string{`Bash(git commit -m "wip")`},
+			wantRewrite: false,
+			wantSkip:    ReasonQuotedRule,
+		},
+		{
+			name:        "chain without matching binary allows",
+			command:     `go vet ./... && go test -run "A && B"`,
+			rules:       []string{`Bash(git commit -m "wip")`},
+			wantRewrite: true,
+		},
+		{
+			name:        "compound pipe to matching binary blocks",
+			command:     `go test ./... | grep "FAIL"`,
+			rules:       []string{`Bash(grep "secret" *)`},
+			wantRewrite: false,
+			wantSkip:    ReasonQuotedRule,
+		},
+		{
+			name:        "env-prefixed rule scoped to other binary allows",
+			command:     `grep -rn "foo" .`,
+			rules:       []string{`Bash(FOO="1" git commit -m "wip")`},
+			wantRewrite: true,
+		},
+		{
+			name:        "env-prefixed rule matching binary blocks",
+			command:     `git commit -m 'wip'`,
+			rules:       []string{`Bash(FOO="1" git commit -m "wip")`},
+			wantRewrite: false,
+			wantSkip:    ReasonQuotedRule,
+		},
+		{
+			name:        "unclosed quote in rule fails closed",
+			command:     `grep -rn "foo" .`,
+			rules:       []string{`Bash(git commit -m "wip)`},
+			wantRewrite: false,
+			wantSkip:    ReasonQuotedRule,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			withEnv(t, true, nil, true)
+			r := Handle("claude-code", ruledShell{command: tc.command, rules: tc.rules}, "")
+			if (r.Rewrite != nil) != tc.wantRewrite || r.Skip != tc.wantSkip {
+				t.Fatalf("Handle(%q, %v) = rewrite=%v skip=%q, want rewrite=%v skip=%q",
+					tc.command, tc.rules, r.Rewrite != nil, r.Skip, tc.wantRewrite, tc.wantSkip)
+			}
+		})
 	}
 }

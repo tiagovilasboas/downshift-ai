@@ -17,8 +17,10 @@ import "strings"
 // so `;` still returns the last segment's code and `&&` still short-circuits.
 //
 // A wrapped segment may hold quoted words (decideQuotedPart); a segment kept
-// as written may not. A `;` or `&&` inside a quote still splits, but the
-// segment before it then holds an unclosed quote, which the lexer refuses.
+// as written may not. splitChain respects single and double quotes (including
+// backslash escapes inside double quotes), so `;` and `&&` inside quotes stay
+// part of their segment instead of splitting it. An unclosed quote fails open
+// (returns ok=false / unsafe_character).
 //
 // One segment the policy cannot prove safe (a quote outside a wrapped
 // command, `||`, a lone `&`, a redirect, an expansion, a pipe that is not
@@ -32,7 +34,7 @@ const ReasonAllowlistedChain = "allowlisted_chain"
 
 // maxChainSegments bounds how many commands one chain may hold; a longer
 // chain passes raw.
-const maxChainSegments = 8
+const maxChainSegments = 32
 
 // ReasonGuardedSegment is the reason for a chain refused because a segment
 // kept as written names a guarded program.
@@ -123,17 +125,40 @@ func decideSegment(seg, exe string) (d Decision, keep bool) {
 	return d, d.Rewrite || d.Reason == ReasonNotAllowlisted
 }
 
-// splitChain cuts a command at each `;` and `&&`. seps[i] is the exact text
-// between segs[i] and segs[i+1], spaces included. ok is false with fewer than
-// two segments or an empty one.
+// splitChain cuts a command at each unquoted `;` and `&&`. seps[i] is the exact
+// text between segs[i] and segs[i+1], spaces included. ok is false with fewer
+// than two segments, an empty segment, or an unclosed quote.
 func splitChain(command string) (segs, seps []string, ok bool) {
 	start := 0
+	var quote byte
 	for i := 0; i < len(command); i++ {
+		c := command[i]
+		if quote != 0 {
+			switch {
+			case quote == '"' && c == '\\':
+				if i+1 < len(command) {
+					i++
+				}
+			case c == quote:
+				quote = 0
+			}
+			continue
+		}
+		if c == '\\' {
+			if i+1 < len(command) {
+				i++
+			}
+			continue
+		}
+		if c == '\'' || c == '"' {
+			quote = c
+			continue
+		}
 		n := 0
 		switch {
-		case command[i] == ';':
+		case c == ';':
 			n = 1
-		case command[i] == '&' && i+1 < len(command) && command[i+1] == '&':
+		case c == '&' && i+1 < len(command) && command[i+1] == '&':
 			n = 2
 		default:
 			continue
@@ -150,6 +175,9 @@ func splitChain(command string) (segs, seps []string, ok bool) {
 		seps = append(seps, command[start+len(seg):next])
 		start = next
 		i = next - 1
+	}
+	if quote != 0 {
+		return nil, nil, false
 	}
 	last := command[start:]
 	if len(segs) == 0 || strings.TrimSpace(last) == "" {
