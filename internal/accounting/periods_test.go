@@ -189,3 +189,29 @@ func TestBuildPeriods_CountsRunsAndCompacted(t *testing.T) {
 		t.Errorf("cell = %+v, want 2 runs, 1 compacted, 200 tokens", h)
 	}
 }
+
+func TestBuildPeriodsWithRetrievals_FiltersRetrievalTSByDaysWindow(t *testing.T) {
+	now := time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC)
+	oldEv := execwrap.Event{
+		TS: "2026-11-01T10:00:00Z", Harness: "claude-code",
+		RawBytes: 1000, EmittedBytes: 200, Compacted: true, Kept: "aaaaaaaaaaaa",
+	}
+	inEv := execwrap.Event{
+		TS: "2026-11-19T10:00:00Z", Harness: "claude-code",
+		RawBytes: 1000, EmittedBytes: 200, Compacted: true, Kept: "aaaaaaaaaaaa",
+	}
+	retrievals := []execwrap.Retrieval{
+		{TS: "2026-11-01T11:00:00Z", Kept: "aaaaaaaaaaaa", Bytes: 400},
+		{TS: "2026-11-19T11:00:00Z", Kept: "aaaaaaaaaaaa", Bytes: 200},
+	}
+	rows := BuildPeriodsWithRetrievals(nil, []execwrap.Event{oldEv, inEv}, retrievals, PeriodOptions{
+		Per: PerDay, Days: 7, Now: now, Loc: time.UTC,
+	})
+	if len(rows) != 1 || rows[0].Period != "2026-11-19" {
+		t.Fatalf("rows = %+v, want single row for 2026-11-19", rows)
+	}
+	// Gross cut is 800 bytes; only the 200-byte in-window retrieval applies -> 600 net bytes = 150 tokens.
+	if got := rows[0].Harnesses[0].CompactionTokens; got != 150 {
+		t.Fatalf("CompactionTokens = %d, want 150", got)
+	}
+}

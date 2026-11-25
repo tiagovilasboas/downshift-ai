@@ -107,11 +107,23 @@ type Display struct {
 // session id count in Routing but not in the spawn counts, because
 // readout.BuildPanel reads one session at a time.
 func Compute(events []telemetry.Event, execEvents []execwrap.Event, scope Scope) Numbers {
+	return computeAt(events, execEvents, nil, scope, time.Now())
+}
+
+// ComputeWithRetrievals is Compute with explicit retrieval entries, so callers
+// and tests can window Retrieval.TS in memory without reading from disk.
+func ComputeWithRetrievals(events []telemetry.Event, execEvents []execwrap.Event, retrievals []execwrap.Retrieval, scope Scope) Numbers {
+	return computeAt(events, execEvents, retrievals, scope, time.Now())
+}
+
+func computeAt(events []telemetry.Event, execEvents []execwrap.Event, retrievals []execwrap.Retrieval, scope Scope, now time.Time) Numbers {
 	scoped := scopeTelemetry(events, scope)
 	n := Numbers{Scope: scope}
 	n.Routing = routingForScope(scoped, events, scope)
 	n.ModelSwitched, n.EffortChanged, n.Held, n.HeldGuardrail, n.UpshiftNotApplied = countSpawns(scoped)
-	n.Compactor = compactorTotals(scopeExec(execEvents, scope, time.Now()))
+	scopedExec := scopeExec(execEvents, scope, now)
+	scopedExec = applyWindowedRetrievals(scopedExec, retrievals, scope, now)
+	n.Compactor = compactorTotals(scopedExec)
 	n.TokensSavedEstimate = readout.TokensSavedEstimate(n.Compactor.Tokens)
 	n.workers = workerTokensOf(scoped)
 	n.Ledger = ledgerOf(n)
@@ -172,21 +184,6 @@ func scopeExec(execEvents []execwrap.Event, scope Scope, now time.Time) []execwr
 	return out
 }
 
-// compactorTotals sums the scoped exec events with execwrap's own aggregation,
-// so the savings arithmetic exists once.
-func compactorTotals(evs []execwrap.Event) Compactor {
-	sum := execwrap.SummarizeEvents(evs)
-	return Compactor{
-		Commands:       sum.Commands,
-		Compacted:      sum.Compacted,
-		RawBytes:       sum.RawBytes,
-		SavedBytes:     sum.SavedBytes,
-		Tokens:         sum.EstimatedTokensSaved,
-		RetrievedBytes: sum.RetrievedBytes,
-		RetrievedPct:   sum.RetrievedPct,
-	}
-}
-
 func displayOf(n Numbers) Display {
 	return Display{
 		TokensSaved:      readout.TokensSavedEstimateLine(n.TokensSavedEstimate) + " (" + n.Scope.Label() + ": compactor)",
@@ -208,19 +205,4 @@ func routingText(v readout.RoutingView) string {
 		}
 	}
 	return strings.Join(parts, "; ")
-}
-
-// compactorText is the Commands line. When the agent read output back with
-// `downshift retrieve`, it adds the bytes read back, so a saving that was
-// taken back is visible beside the net figure.
-func compactorText(c Compactor) string {
-	text := fmt.Sprintf("Commands: %d · Compacted: %d", c.Commands, c.Compacted)
-	if c.RetrievedBytes > 0 {
-		if c.RetrievedPct > 0 {
-			text += fmt.Sprintf(" · Read back with retrieve: %d bytes (%.1f%% of cut)", c.RetrievedBytes, c.RetrievedPct)
-		} else {
-			text += fmt.Sprintf(" · Read back with retrieve: %d bytes", c.RetrievedBytes)
-		}
-	}
-	return text
 }

@@ -269,3 +269,34 @@ func TestCompute_DaysWindowKeepsCrossBoundaryDecision(t *testing.T) {
 		t.Fatalf("TokensByHarness = %+v, want 1 observed row with %+v", rows, want)
 	}
 }
+
+func TestComputeWithRetrievals_FiltersRetrievalTSByDaysWindow(t *testing.T) {
+	now := time.Now().UTC()
+	execEvents := []execwrap.Event{
+		{
+			TS:           now.Add(-2 * 24 * time.Hour).Format(time.RFC3339),
+			Family:       "go-test",
+			RawBytes:     1000,
+			EmittedBytes: 100,
+			Compacted:    true,
+			Kept:         "aaaaaaaaaaaa",
+		},
+	}
+	retrievals := []execwrap.Retrieval{
+		{TS: now.Add(-20 * 24 * time.Hour).Format(time.RFC3339), Kept: "aaaaaaaaaaaa", Bytes: 500, Tool: "mcp"},
+		{TS: now.Add(-1 * 24 * time.Hour).Format(time.RFC3339), Kept: "aaaaaaaaaaaa", Bytes: 300, Tool: "cli"},
+	}
+
+	got7 := ComputeWithRetrievals(nil, execEvents, retrievals, Scope{Kind: ScopeDays, Days: 7})
+	if got7.Compactor.RetrievedBytes != 300 || got7.Compactor.SavedBytes != 600 {
+		t.Fatalf("7-day window compactor = %+v, want RetrievedBytes=300 SavedBytes=600", got7.Compactor)
+	}
+	if got7.Compactor.RetrievedPct < 33.2 || got7.Compactor.RetrievedPct > 33.4 {
+		t.Fatalf("7-day window RetrievedPct = %.2f, want ~33.3", got7.Compactor.RetrievedPct)
+	}
+
+	gotAll := ComputeWithRetrievals(nil, execEvents, retrievals, Scope{Kind: ScopeAll})
+	if gotAll.Compactor.RetrievedBytes != 800 || gotAll.Compactor.SavedBytes != 100 {
+		t.Fatalf("all-time compactor = %+v, want RetrievedBytes=800 SavedBytes=100", gotAll.Compactor)
+	}
+}

@@ -181,17 +181,29 @@ func parseSubagentStop(payload map[string]any) (hookport.ChildEnd, bool) {
 	if inline := telemetry.TokenUsageFromPayload(payload); inline != (telemetry.TokenUsage{}) {
 		usage := inline
 		model := stringFieldAny(payload, "model", "model_id")
-		if nested, ok := payload["usage"].(map[string]any); ok && model == "" {
-			model = stringFieldAny(nested, "model")
+		effort := stringFieldAny(payload, "effort", "reasoning_effort")
+		verification := stringFieldAny(payload, "verification")
+		if nested, ok := payload["usage"].(map[string]any); ok {
+			if model == "" {
+				model = stringFieldAny(nested, "model")
+			}
+			if effort == "" {
+				effort = stringFieldAny(nested, "effort", "reasoning_effort")
+			}
+			if verification == "" {
+				verification = stringFieldAny(nested, "verification")
+			}
 		}
 		return hookport.ChildEnd{
-			Harness:   harnessID,
-			AgentKey:  agent,
-			SessionID: session,
-			Model:     model,
-			Usage:     &usage,
-			Source:    hookport.SourceTranscript,
-			IsChild:   true,
+			Harness:      harnessID,
+			AgentKey:     agent,
+			SessionID:    session,
+			Model:        model,
+			Usage:        &usage,
+			Source:       hookport.SourceTranscript,
+			IsChild:      true,
+			Verification: verification,
+			Effort:       effort,
 		}, true
 	}
 

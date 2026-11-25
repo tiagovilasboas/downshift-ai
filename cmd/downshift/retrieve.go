@@ -83,7 +83,7 @@ func retrieveRun(id, session string, q ccr.Query, stdout, stderr io.Writer) int 
 		return retrieveUsage(stderr, err.Error())
 	}
 	_, _ = stdout.Write(out)
-	execwrap.RecordRetrieval(id, session, len(out), time.Now())
+	execwrap.RecordRetrievalMeta(id, session, len(out), execwrap.RetrievalMeta{Tool: "cli"}, time.Now())
 	return 0
 }
 

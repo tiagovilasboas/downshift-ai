@@ -332,3 +332,21 @@ func TestSessionRef(t *testing.T) {
 		}
 	}
 }
+
+func TestRecordRetrievalMeta_ToolAndFamily(t *testing.T) {
+	events := setState(t)
+	now := time.Now().UTC()
+	RecordRetrievalMeta(idA, hashS1, 250, RetrievalMeta{Tool: "cli", Family: "go-test"}, now)
+	RecordRetrievalMeta(idB, "", 120, RetrievalMeta{Tool: "mcp"}, now)
+
+	entries := ReadRetrievalEntries(events)
+	if len(entries) != 2 {
+		t.Fatalf("ReadRetrievalEntries len = %d, want 2", len(entries))
+	}
+	if entries[0].Tool != "cli" || entries[0].Family != "go-test" || entries[0].Session != "111111111111" {
+		t.Fatalf("entry 0 = %+v, want tool=cli family=go-test session=111111111111", entries[0])
+	}
+	if entries[1].Tool != "mcp" || entries[1].Family != "" || entries[1].Session != "" {
+		t.Fatalf("entry 1 = %+v, want tool=mcp family='' session=''", entries[1])
+	}
+}

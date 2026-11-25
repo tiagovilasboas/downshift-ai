@@ -30,6 +30,14 @@ type Retrieval struct {
 	Kept    string `json:"kept"`
 	Bytes   int64  `json:"bytes"`
 	Session string `json:"session,omitempty"`
+	Tool    string `json:"tool,omitempty"`
+	Family  string `json:"family,omitempty"`
+}
+
+// RetrievalMeta carries optional provenance for RecordRetrievalMeta.
+type RetrievalMeta struct {
+	Tool   string
+	Family string
 }
 
 // sessionRefLen is the length of a session reference: the first 12 hex
@@ -59,6 +67,12 @@ func SessionRef(h string) string {
 // that is not 12 lowercase hex characters or a read of zero bytes records
 // nothing.
 func RecordRetrieval(id, session string, returned int, now time.Time) {
+	RecordRetrievalMeta(id, session, returned, RetrievalMeta{}, now)
+}
+
+// RecordRetrievalMeta appends one retrieval with optional provenance metadata
+// (tool and family). See RecordRetrieval for validation and error handling.
+func RecordRetrievalMeta(id, session string, returned int, meta RetrievalMeta, now time.Time) {
 	if returned <= 0 || !validKeptID(id) {
 		return
 	}
@@ -66,7 +80,14 @@ func RecordRetrieval(id, session string, returned int, now time.Time) {
 	if err != nil {
 		return
 	}
-	line, err := json.Marshal(Retrieval{TS: now.UTC().Format(time.RFC3339), Kept: id, Bytes: int64(returned), Session: SessionRef(session)})
+	line, err := json.Marshal(Retrieval{
+		TS:      now.UTC().Format(time.RFC3339),
+		Kept:    id,
+		Bytes:   int64(returned),
+		Session: SessionRef(session),
+		Tool:    meta.Tool,
+		Family:  meta.Family,
+	})
 	if err != nil {
 		return
 	}
@@ -79,107 +100,28 @@ func retrievalsPath(eventsPath string) string {
 	return filepath.Join(filepath.Dir(eventsPath), RetrievalsFileName)
 }
 
-// ReadRetrievals totals the bytes read back per CCR id from the retrievals log
-// beside the exec log at eventsPath (rotated generation included), for the
-// reads that carry no session. A missing file is an empty map; malformed lines
-// are skipped.
-func ReadRetrievals(eventsPath string) map[string]int64 {
-	byID, _ := readRetrievalLog(eventsPath)
-	return byID
-}
-
-// readRetrievalLog splits the log into reads without a session (per id) and
-// reads of one session (per session reference and id, see scopedKey).
-func readRetrievalLog(eventsPath string) (byID, scoped map[string]int64) {
-	byID, scoped = map[string]int64{}, map[string]int64{}
+// ReadRetrievalEntries reads all valid Retrieval records from the retrievals
+// log beside eventsPath (rotated generation included). Malformed lines and
+// non-positive or invalid-id rows are skipped.
+func ReadRetrievalEntries(eventsPath string) []Retrieval {
+	var out []Retrieval
 	_ = scanLog(retrievalsPath(eventsPath), func(line []byte) {
 		var r Retrieval
 		if json.Unmarshal(line, &r) != nil || r.Bytes <= 0 || !validKeptID(r.Kept) {
 			return
 		}
-		if ref := SessionRef(r.Session); ref != "" {
-			scoped[scopedKey(ref, r.Kept)] += r.Bytes
-			return
-		}
-		byID[r.Kept] += r.Bytes
+		out = append(out, r)
 	})
-	return byID, scoped
+	return out
 }
 
-// scopedKey joins a session reference and a CCR id.
-func scopedKey(ref, id string) string { return ref + "/" + id }
-
-// applyLogged sets RetrievedBytes on evs from the retrievals log beside
-// eventsPath: first the reads of one session against the runs of that session,
-// then the reads without a session against any run that kept the id.
-func applyLogged(evs []Event, eventsPath string) []Event {
-	byID, scoped := readRetrievalLog(eventsPath)
-	evs = applyKeyed(evs, scoped, func(ev Event) []string {
-		ref := SessionRef(ev.Session)
-		if ref == "" {
-			return nil
-		}
-		ids := eventKeptIDs(ev)
-		if len(ids) == 0 {
-			return nil
-		}
-		keys := make([]string, len(ids))
-		for i, id := range ids {
-			keys[i] = scopedKey(ref, id)
-		}
-		return keys
-	})
-	return ApplyRetrievals(evs, byID)
-}
-
-// ApplyRetrievals matches the bytes read back per id (reads without a session)
-// to the runs that kept that id (in Kept or KeptIDs) and sets their
-// RetrievedBytes. Content addressing gives two runs with the same output the
-// same id; the bytes go to the runs in log order, each up to what it saved,
-// and any remainder to the last of them, so the total shown is what was read
-// back. A run whose id was never read back, and an id no run in evs kept,
-// change nothing. evs is modified in place and returned.
-func ApplyRetrievals(evs []Event, byID map[string]int64) []Event {
-	return applyKeyed(evs, byID, eventKeptIDs)
-}
-
-// applyKeyed is the one arithmetic of ApplyRetrievals over any grouping of
-// runs: keysOf names the groups of a run (nil for none) and totals holds the
-// bytes read back per group. Bytes already on a run (RetrievedBytes) count
-// against what it can still take.
-func applyKeyed(evs []Event, totals map[string]int64, keysOf func(Event) []string) []Event {
-	if len(totals) == 0 {
-		return evs
-	}
-	last := map[string]int{}
-	for i, ev := range evs {
-		for _, k := range keysOf(ev) {
-			if k != "" && totals[k] > 0 {
-				last[k] = i
-			}
-		}
-	}
-	left := map[string]int64{}
-	for k, n := range totals {
-		left[k] = n
-	}
-	for i := range evs {
-		for _, k := range keysOf(evs[i]) {
-			if k == "" || left[k] <= 0 {
-				continue
-			}
-			take := evs[i].RawBytes - evs[i].EmittedBytes - evs[i].RetrievedBytes
-			if take < 0 {
-				take = 0
-			}
-			if take > left[k] || i == last[k] {
-				take = left[k]
-			}
-			evs[i].RetrievedBytes += take
-			left[k] -= take
-		}
-	}
-	return evs
+// ReadRetrievals totals the bytes read back per CCR id from the retrievals log
+// beside the exec log at eventsPath (rotated generation included), for the
+// reads that carry no session. A missing file is an empty map; malformed lines
+// are skipped.
+func ReadRetrievals(eventsPath string) map[string]int64 {
+	byID, _ := splitRetrievals(ReadRetrievalEntries(eventsPath))
+	return byID
 }
 
 // validKeptID reports whether id looks like a CCR id: 12 lowercase hex

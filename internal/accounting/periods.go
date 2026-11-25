@@ -91,8 +91,36 @@ func parseStamp(s string) (time.Time, bool) {
 // and harness. Pure; reads only counts. A timestamp that does not parse is
 // outside every window.
 func BuildPeriods(events []telemetry.Event, execEvents []execwrap.Event, o PeriodOptions) []PeriodRow {
+	return BuildPeriodsWithRetrievals(events, execEvents, nil, o)
+}
+
+// BuildPeriodsWithRetrievals is BuildPeriods with explicit retrieval entries,
+// filtering Retrieval.TS by the same window as execEvents.
+func BuildPeriodsWithRetrievals(events []telemetry.Event, execEvents []execwrap.Event, retrievals []execwrap.Retrieval, o PeriodOptions) []PeriodRow {
 	start := o.windowStart()
 	in := func(t time.Time) bool { return start.IsZero() || !t.Before(start) }
+
+	if retrievals == nil && o.Days > 0 {
+		if p, err := execwrap.EventsPath(); err == nil {
+			retrievals = execwrap.ReadRetrievalEntries(p)
+		}
+	}
+	if len(retrievals) > 0 {
+		var filtered []execwrap.Retrieval
+		for _, r := range retrievals {
+			if t, ok := parseStamp(r.TS); ok && in(t) {
+				filtered = append(filtered, r)
+			}
+		}
+		var inWindow []execwrap.Event
+		for _, ev := range execEvents {
+			if t, ok := parseStamp(ev.TS); ok && in(t) {
+				ev.RetrievedBytes = 0
+				inWindow = append(inWindow, ev)
+			}
+		}
+		execEvents = execwrap.ApplyRetrievalEntries(inWindow, filtered)
+	}
 
 	byPeriod := map[string][]telemetry.Event{}
 	var decisions []telemetry.Event
