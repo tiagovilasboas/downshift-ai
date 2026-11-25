@@ -51,8 +51,15 @@ var wrappedRe = lazyre.New(`(^|[\s/'"])downshift'?\s+(compact|compactor|exec)(\s
 // binaryRe bounds what a report may print as a binary name.
 var binaryRe = lazyre.New(`^[A-Za-z0-9._+-]{1,32}$`)
 
+// reasonBackground matches shellwrap.ReasonBackground without importing shellwrap.
+const reasonBackground = "background"
+
 // Classify asks the shipped execwrap policy what it does with command.
 func Classify(command string) Class {
+	return classifyCall(command, false)
+}
+
+func classifyCall(command string, background bool) Class {
 	if wrappedRe.MatchString(command) {
 		return Class{Kind: KindWrapped}
 	}
@@ -61,6 +68,9 @@ func Classify(command string) Class {
 	case d.Reason == execwrap.ReasonAlreadyWrapped:
 		return Class{Kind: KindWrapped}
 	case d.Rewrite:
+		if background {
+			return Class{Kind: KindSkipped, Reason: reasonBackground}
+		}
 		return Class{Kind: KindBare, Family: string(d.Family), Binary: binaryOf(d.Argv)}
 	}
 	c := Class{Kind: KindSkipped, Reason: execwrap.SkipReason(d, command)}

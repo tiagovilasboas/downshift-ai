@@ -5,6 +5,8 @@ package missedsavings
 
 import (
 	"bufio"
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -122,6 +124,23 @@ func Scan(o Options) (Report, error) {
 	return merge(o.Label, files, o.Dedup, tallies, o.Top), nil
 }
 
+var tsField = []byte(`"timestamp"`)
+
+// lineTime reads the top-level timestamp of a transcript line that did not
+// produce a tool event, so lastTS advances across text and system entries too.
+func lineTime(line []byte) time.Time {
+	if !bytes.Contains(line, tsField) {
+		return time.Time{}
+	}
+	var head struct {
+		Timestamp string `json:"timestamp"`
+	}
+	if json.Unmarshal(line, &head) != nil {
+		return time.Time{}
+	}
+	return parseTime(head.Timestamp)
+}
+
 // scanFile streams one transcript. Open and read errors end that file
 // quietly: a transcript being written or removed must not fail the report.
 func scanFile(path string, parse parser, cutoff time.Time, t *tally, dd *dedupState) {
@@ -134,16 +153,56 @@ func scanFile(path string, parse parser, cutoff time.Time, t *tally, dd *dedupSt
 	nonBash := map[string]struct{}{}
 	r := bufio.NewReaderSize(f, 64<<10)
 	var buf []byte
+	var lastTS time.Time
+	var preTS []event
 	for {
 		line, over, err := readLine(r, buf, maxLineBytes)
 		buf = line[:0]
 		if !over && len(line) > 0 {
-			if ev, ok := parse(line); ok && !(ev.at.Before(cutoff) && !ev.at.IsZero()) {
-				apply(ev, pending, nonBash, t, dd)
+			ev, ok := parse(line)
+			ts := ev.at
+			if !ok {
+				ts = lineTime(line)
+			}
+			if !ts.IsZero() && (lastTS.IsZero() || ts.After(lastTS)) {
+				lastTS = ts
+			}
+			if lastTS.IsZero() {
+				if ok {
+					if len(preTS) >= maxPending {
+						for _, p := range preTS {
+							apply(p, pending, nonBash, t, dd)
+						}
+						preTS = preTS[:0]
+					}
+					preTS = append(preTS, ev)
+				}
+			} else {
+				if len(preTS) > 0 {
+					if !lastTS.Before(cutoff) {
+						for _, p := range preTS {
+							apply(p, pending, nonBash, t, dd)
+						}
+					}
+					preTS = nil
+				}
+				if ok {
+					if ev.at.IsZero() {
+						ev.at = lastTS
+					}
+					if !ev.at.Before(cutoff) {
+						apply(ev, pending, nonBash, t, dd)
+					}
+				}
 			}
 		}
 		if err != nil {
 			break
+		}
+	}
+	if lastTS.IsZero() {
+		for _, p := range preTS {
+			apply(p, pending, nonBash, t, dd)
 		}
 	}
 	for _, cs := range pending {
@@ -179,7 +238,7 @@ func apply(ev event, pending map[string][]Class, nonBash map[string]struct{}, t 
 				delete(pending, id)
 			}
 		}
-		pending[c.id] = append(pending[c.id], Classify(c.command))
+		pending[c.id] = append(pending[c.id], classifyCall(c.command, c.background))
 	}
 	for _, id := range batchIDs {
 		dd.seenCalls[id] = struct{}{}
