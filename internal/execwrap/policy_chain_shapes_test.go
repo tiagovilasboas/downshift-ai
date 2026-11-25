@@ -26,8 +26,8 @@ func TestDecide_ChainShapes(t *testing.T) {
 		{"gofmt then vet", "gofmt -l . ; go vet ./...", "gofmt -l . ; " + w + "go vet ./...", ReasonAllowlistedChain},
 		{"export kept", "export A=1 && go test ./...", "export A=1 && " + w + "go test ./...", ReasonAllowlistedChain},
 		{"cd and echo kept", "cd d && go test ./... && echo ok", "cd d && " + w + "go test ./... && echo ok", ReasonAllowlistedChain},
-		{"eight segments", strings.TrimSuffix(strings.Repeat("go test; ", 8), "; "),
-			strings.TrimSuffix(strings.Repeat(w+"go test; ", 8), "; "), ReasonAllowlistedChain},
+		{"thirty-two segments", strings.TrimSuffix(strings.Repeat("go test; ", 32), "; "),
+			strings.TrimSuffix(strings.Repeat(w+"go test; ", 32), "; "), ReasonAllowlistedChain},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -48,7 +48,7 @@ func TestDecide_ChainShapesRefused(t *testing.T) {
 		{"redirect", "cd d && go test ./... > out.txt", ReasonUnsafeChar},
 		{"or list", "cd d && go test ./... || echo fail", ReasonUnsafeChar},
 		{"only builtins and unknown programs", "cd d && export A=1 && foo --bar", ReasonNotAllowlisted},
-		{"nine segments", strings.TrimSuffix(strings.Repeat("go test; ", 9), "; "), ReasonTooLong},
+		{"thirty-three segments", strings.TrimSuffix(strings.Repeat("go test; ", 33), "; "), ReasonTooLong},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

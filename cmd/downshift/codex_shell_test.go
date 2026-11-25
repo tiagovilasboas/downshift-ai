@@ -77,7 +77,7 @@ func TestCodexShellRewrite_ThroughSharedRunner(t *testing.T) {
 
 func TestCodexShellUnchanged(t *testing.T) {
 	for name, payload := range map[string]string{
-		"not allowlisted": codexBashPayload(t, "Bash", "cat go.mod"),
+		"not allowlisted": codexBashPayload(t, "Bash", "echo hi"),
 		"metacharacter":   codexBashPayload(t, "Bash", "go test ./... | grep FAIL"),
 		"other tool":      codexBashPayload(t, "apply_patch", "go test ./..."),
 		// Codex's allow approves the command, so only a single read-only
