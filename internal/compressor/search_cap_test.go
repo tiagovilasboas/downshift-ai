@@ -199,3 +199,81 @@ func TestCapSearchRows_ReviewShapes(t *testing.T) {
 		t.Errorf("context with a timestamp or CRLF separator grouped wrong:\n%s", s)
 	}
 }
+
+func TestCapSearchRows_Unnumbered(t *testing.T) {
+	t.Run("groups and caps unnumbered grep rows", func(t *testing.T) {
+		var b strings.Builder
+		for f := 0; f < 2; f++ {
+			for i := 1; i <= 30; i++ {
+				fmt.Fprintf(&b, "internal/pkg%d/file.go:match_%02d %s\n", f, i, strings.Repeat("x", 90))
+			}
+		}
+		out, ok := CapSearchRows([]byte(b.String()))
+		if !ok {
+			t.Fatal("expected unnumbered grep output to be cut")
+		}
+		got := string(out)
+		for f := 0; f < 2; f++ {
+			p := fmt.Sprintf("internal/pkg%d/file.go:", f)
+			if n := strings.Count(got, p); n != 25 {
+				t.Errorf("file %d: %d rows kept, want 25", f, n)
+			}
+			if !strings.Contains(got, fmt.Sprintf("  … 5 more in internal/pkg%d/file.go\n", f)) {
+				t.Errorf("file %d: missing count line:\n%s", f, got)
+			}
+		}
+		if strings.Contains(got, "match_26") {
+			t.Errorf("row 26 was not dropped:\n%s", got)
+		}
+	})
+
+	t.Run("supports unnumbered context and Windows drive paths", func(t *testing.T) {
+		var rows []string
+		for i := 1; i <= 30; i++ {
+			rows = append(rows, "C:\\repo\\a.go-ctx before", fmt.Sprintf("C:\\repo\\a.go:match %d", i), "--")
+		}
+		out, ok := CapSearchRows([]byte(joinRows(rows...)))
+		if !ok {
+			t.Fatal("expected unnumbered Windows/context output to be cut")
+		}
+		got := string(out)
+		if !strings.Contains(got, "  … 35 more in C:\\repo\\a.go\n") {
+			t.Errorf("missing Windows drive count line:\n%s", got)
+		}
+	})
+}
+
+func TestCapSearchRows_UnnumberedFalsePositives(t *testing.T) {
+	repeat := func(line string, n int) string {
+		return strings.Repeat(line+"\n", n)
+	}
+	cases := []struct {
+		name  string
+		input string
+	}{
+		{name: "timestamps HH:MM:SS", input: repeat("12:34:56 INFO request completed", 50)},
+		{name: "timestamps with millis", input: repeat("12:34:56.789 WARN slow query", 50)},
+		{name: "ISO timestamps", input: repeat("2026-11-25T12:34:56Z: event processed", 50)},
+		{name: "numeric dotted prefix", input: repeat("12.34:56 metric sample", 50)},
+		{name: "IP address and port", input: repeat("127.0.0.1:8080 listening on port", 50)},
+		{name: "https URLs", input: repeat("https://example.com/api/v1/resource:8080", 50)},
+		{name: "http URLs", input: repeat("http://localhost:8080/healthz", 50)},
+		{name: "grep -c count rows", input: func() string {
+			var b strings.Builder
+			for i := 0; i < 250; i++ {
+				fmt.Fprintf(&b, "internal/pkg%d/file.go:%d\n", i, i+1)
+			}
+			return b.String()
+		}()},
+		{name: "Go stack trace", input: repeat("goroutine 1 [running]:\n\t/app/internal/handler.go:42 +0x1a\nmain.main()\n\t/app/cmd/main.go:10 +0x25", 15)},
+		{name: "JS stack trace", input: repeat("Error: boom\n    at process (src/worker.ts:10:5)\nat src/index.ts:22:3", 20)},
+		{name: "Java stack trace", input: repeat("java.lang.NullPointerException: missing body\n\tat com.acme.Service.run(Service.java:42)\n\tat com.acme.Main.main(Main.java:10)", 15)},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if out, ok := CapSearchRows([]byte(tc.input)); ok || string(out) != tc.input {
+				t.Errorf("%s: unexpectedly cut to:\n%s", tc.name, out)
+			}
+		})
+	}
+}
