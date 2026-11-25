@@ -15,7 +15,33 @@ import (
 // These checks read shared historical state. Doctor does not receive the host's
 // current session identifier and cannot correlate a recorded hook event with it.
 
-const lastEventStale = 7 * 24 * time.Hour
+const (
+	lastEventStale        = 7 * 24 * time.Hour
+	inactiveHarnessWindow = 30 * 24 * time.Hour
+)
+
+// activeHarnesses returns the set of harnesses with at least one event within
+// inactiveHarnessWindow or a currently active session in live.json.
+func activeHarnesses(env doctorEnv, events []telemetry.Event) map[string]bool {
+	active := map[string]bool{}
+	now := env.Now()
+	for _, ev := range events {
+		if ev.Harness == "" {
+			continue
+		}
+		t, err := time.Parse(time.RFC3339Nano, ev.Timestamp)
+		if err != nil {
+			continue
+		}
+		if now.Sub(t) <= inactiveHarnessWindow {
+			active[ev.Harness] = true
+		}
+	}
+	if live, err := telemetry.ReadLive(); err == nil && live.Active(now) && live.Last.Harness != "" {
+		active[live.Last.Harness] = true
+	}
+	return active
+}
 
 // checkLastEvent reports when the hook last logged and what it decided, so a
 // wired hook that never fires is told apart from one that fired and held.
@@ -104,7 +130,7 @@ func staleQuotaEffect(env doctorEnv, h string) string {
 // information: a missing source never fails, it only means the quota gate has
 // no reading to act on.
 func checkQuotaSource(add func(id, status, detail, fix string), env doctorEnv, h string) {
-	snap, found := quota.Load(h)
+	snap, state := quota.LoadDetailed(h)
 	switch {
 	case snap != nil:
 		src := quota.SourceName(snap.Source)
@@ -123,8 +149,8 @@ func checkQuotaSource(add func(id, status, detail, fix string), env doctorEnv, h
 			break
 		}
 		add("quota source", doctorOK, fmt.Sprintf("%s, observed %s ago", src, age), "")
-	case found:
-		add("quota source", doctorWarn, "quota.json exists but holds no readable snapshot for "+h,
+	case state == quota.CacheMalformed:
+		add("quota source", doctorWarn, "quota.json exists but is malformed or unreadable",
 			fmt.Sprintf("downshift quota status --harness %s", h))
 	case h == "claude-code" && claudeDesktopInstalled():
 		// The desktop app never runs the statusline, the only Claude quota

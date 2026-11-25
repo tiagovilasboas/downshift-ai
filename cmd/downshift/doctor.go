@@ -149,6 +149,7 @@ type doctorReport struct {
 	Failed              int           `json:"failed"`
 	Warnings            int           `json:"warnings"`
 	Checks              []doctorCheck `json:"checks"`
+	Inactive            []string      `json:"inactive,omitempty"`
 	NotDetected         []string      `json:"not_detected,omitempty"`
 	EffortUnknownCount  int           `json:"effort_unknown_count"`
 	EffortUnknownModels []string      `json:"effort_unknown_models,omitempty"` // --verbose only
@@ -235,13 +236,23 @@ func buildDoctorReport(env doctorEnv) *doctorReport {
 		rep.add(doctorCheck{ID: "model override", Status: doctorWarn, Detail: note, Fix: "unset " + name})
 	}
 
+	active := activeHarnesses(env, events)
 	for _, nc := range core.AllHarnessCaps() {
 		if env.Harness != "" && nc.Harness != env.Harness {
 			continue
 		}
+		collapseInactive := env.Harness == "" && len(active) > 0 && !active[nc.Harness]
 		wiring, ok := doctorWiringFor(nc.Harness)
 		if !ok || !fileExists(filepath.Join(env.Home, wiring.File)) {
 			harness := nc.Harness
+			if collapseInactive {
+				if t, hasBridge := generatedFilesTarget(harness); hasBridge && fileExists(filepath.Join(env.Home, filepath.FromSlash(t.ConfigDir))) {
+					rep.Inactive = append(rep.Inactive, harness)
+				} else {
+					rep.NotDetected = append(rep.NotDetected, harness)
+				}
+				continue
+			}
 			add := func(id, status, detail, fix string) {
 				rep.add(doctorCheck{ID: id, Harness: harness, Status: status, Detail: detail, Fix: fix})
 			}
@@ -250,6 +261,10 @@ func buildDoctorReport(env doctorEnv) *doctorReport {
 			} else {
 				bridgeEvidence(rep, env, nc, pathBin, events)
 			}
+			continue
+		}
+		if collapseInactive {
+			rep.Inactive = append(rep.Inactive, nc.Harness)
 			continue
 		}
 		checkHarness(rep, env, nc, wiring, pathBin, events)
