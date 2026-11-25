@@ -52,6 +52,7 @@ func TestProvidersPayloadSlim(t *testing.T) {
 		`"by_tier"`,
 		`"by_agent_type"`,
 		`"above_agent_default"`,
+		`"agent_default_tiers"`,
 	} {
 		if strings.Contains(raw, omitted) {
 			t.Errorf("providers payload should omit %s, got: %s", omitted, raw)
@@ -65,7 +66,6 @@ func TestProvidersPayloadSlim(t *testing.T) {
 		`"source":"catalog"`,
 		`"id":"m2"`,
 		`"untiered":true`,
-		`"agent_default_tiers":[`,
 	} {
 		if !strings.Contains(raw, kept) {
 			t.Errorf("providers payload missing %s, got: %s", kept, raw)
@@ -78,4 +78,28 @@ func TestProvidersPayloadSlim(t *testing.T) {
 	if len(got.Models) != 2 || got.Models[0].ID != "m1" || !got.Models[1].Untiered || got.Session == nil || got.Session.Note != "no session id" {
 		t.Fatalf("unmarshaled providersData = %+v", got)
 	}
+}
+
+func TestProvidersIncludeAgentTiers(t *testing.T) {
+	d := fullDeps()
+	slimEnv, err := call(t, d, "providers", `{"harness":"claude-code","include_agent_tiers":false}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(slimEnv["data"]), `"agent_default_tiers"`) {
+		t.Fatalf("include_agent_tiers=false should omit agent_default_tiers: %s", slimEnv["data"])
+	}
+	fullEnv, err := call(t, d, "providers", `{"harness":"claude-code","include_agent_tiers":true}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(fullEnv["data"]), `"agent_default_tiers":[`) {
+		t.Fatalf("include_agent_tiers=true should include agent_default_tiers: %s", fullEnv["data"])
+	}
+	saved := len(fullEnv["data"]) - len(slimEnv["data"])
+	t.Logf("providers data JSON bytes: before(include_agent_tiers=true)=%d, after(default/slim)=%d, saved=%d", len(fullEnv["data"]), len(slimEnv["data"]), saved)
+	if saved < 800 {
+		t.Fatalf("expected >= 800 bytes saved by omitting agent_default_tiers, got %d (slim=%d, full=%d)", saved, len(slimEnv["data"]), len(fullEnv["data"]))
+	}
+	mustFail(t, d, "providers", `{"harness":"claude-code","include_agent_tiers":"yes"}`, "must be a boolean")
 }

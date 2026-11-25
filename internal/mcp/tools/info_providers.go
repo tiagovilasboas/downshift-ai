@@ -4,16 +4,18 @@
 package tools
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/core"
 	"github.com/tiagovilasboas/downshift-ai/internal/routing/agenttier"
 )
 
-const providersSchema = `{"type":"object","properties":{"harness":{"type":"string","description":"Harness id, for example the one running you."},"models":{"type":"array","items":{"type":"string","maxLength":128},"maxItems":64,"description":"Optional: the model ids your own harness shows. Stored only as a hint; detection wins."}},"required":["harness"],"additionalProperties":false}`
+const providersSchema = `{"type":"object","properties":{"harness":{"type":"string","description":"Harness id, for example the one running you."},"models":{"type":"array","items":{"type":"string","maxLength":128},"maxItems":64,"description":"Optional: the model ids your own harness shows. Stored only as a hint; detection wins."},"include_agent_tiers":{"type":"boolean","description":"Optional: include the static agent_default_tiers table (also available from playbook)."}},"required":["harness"],"additionalProperties":false}`
 
 const providersDesc = "Lists the models detected for the given harness right now, each with its tier, reasoning efforts, where Downshift learned it and an untiered flag. Call it before every subagent spawn (the Agent or Task tool), not once per session: it is the only step that shows the live models before you choose one. Fallback is true when only the catalog stand-in is known. session summarizes your spawns so far in this session (counts by tier and agent type, and how many ran above their agent's default tier); known is false when the harness gives this server no session id. You MAY pass the model ids your own harness shows in models: they are stored only as a hint and never override detection."
 
@@ -39,8 +41,9 @@ type providersData struct {
 	AgentPrefix string `json:"agent_prefix,omitempty"`
 	// AgentDefaultTiers is the tier each squad agent declares: a spawn of that
 	// agent with no model runs on it, and a harness that sends no agent type can
-	// choose by it. Names and tiers only.
-	AgentDefaultTiers []agenttier.Entry `json:"agent_default_tiers"`
+	// choose by it. Omitted by default to keep routine spawn calls compact;
+	// pass include_agent_tiers=true (or call playbook) to read it.
+	AgentDefaultTiers []agenttier.Entry `json:"agent_default_tiers,omitempty"`
 	// Session is this session's spawn pattern (counts only), so the
 	// orchestrator can see its own habit before the next spawn.
 	Session *SessionSummary `json:"session,omitempty"`
@@ -50,10 +53,14 @@ type providersData struct {
 const providersNext = "For mechanical work, start the spawn's prompt with [tier=small]; hints only move down, pinned/policy wins. Call apply to check a choice first."
 
 func (d Deps) providersTool() Tool {
-	fields := []string{"harness", "models"}
+	fields := []string{"harness", "models", "include_agent_tiers"}
 	t := d.build("providers", providersDesc, providersSchema, []string{"harness"}, nil)
 	t.Handler = func(ctx context.Context, raw json.RawMessage) (Result, error) {
 		rest, ids, err := splitModels(raw, fields)
+		if err != nil {
+			return Result{}, err
+		}
+		rest, includeTiers, err := splitBoolArg(rest, "include_agent_tiers", fields)
 		if err != nil {
 			return Result{}, err
 		}
@@ -61,7 +68,7 @@ func (d Deps) providersTool() Tool {
 		if err != nil {
 			return Result{}, err
 		}
-		out, err := d.providers(ctx, args["harness"], ids)
+		out, err := d.providers(ctx, args["harness"], ids, includeTiers)
 		if err != nil {
 			return Result{}, err
 		}
@@ -70,7 +77,7 @@ func (d Deps) providersTool() Tool {
 	return t
 }
 
-func (d Deps) providers(ctx context.Context, harness string, ids []string) (outcome, error) {
+func (d Deps) providers(ctx context.Context, harness string, ids []string, includeTiers bool) (outcome, error) {
 	if err := d.checkHarness(harness); err != nil {
 		return outcome{}, err
 	}
@@ -85,7 +92,46 @@ func (d Deps) providers(ctx context.Context, harness string, ids []string) (outc
 	if err != nil {
 		return outcome{}, errors.New("could not read the models for this harness")
 	}
-	return outcome{data: providersData{ModelList: slimModelList(list), Reported: reported, AgentPrefix: squadPrefix(harness), AgentDefaultTiers: agenttier.List(), Session: d.sessionSummary(ctx, harness)}, harnesses: []string{harness}, shrink: shrinkModels, next: providersNext}, nil
+	data := providersData{
+		ModelList:   slimModelList(list),
+		Reported:    reported,
+		AgentPrefix: squadPrefix(harness),
+		Session:     d.sessionSummary(ctx, harness),
+	}
+	if includeTiers {
+		data.AgentDefaultTiers = agenttier.List()
+	}
+	return outcome{data: data, harnesses: []string{harness}, shrink: shrinkModels, next: providersNext}, nil
+}
+
+// splitBoolArg extracts an optional boolean field from raw so parseArgs only
+// sees string arguments.
+func splitBoolArg(raw json.RawMessage, name string, allowed []string) (json.RawMessage, bool, error) {
+	trimmed := bytes.TrimSpace(raw)
+	if len(trimmed) == 0 || string(trimmed) == "null" {
+		return raw, false, nil
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(trimmed, &fields); err != nil {
+		return raw, false, nil // parseArgs reports the malformed object
+	}
+	v, ok := fields[name]
+	if !ok {
+		return raw, false, nil
+	}
+	delete(fields, name)
+	rest, err := json.Marshal(fields)
+	if err != nil {
+		return nil, false, errors.New("arguments could not be read")
+	}
+	if string(bytes.TrimSpace(v)) == "null" {
+		return rest, false, nil
+	}
+	var b bool
+	if err := json.Unmarshal(v, &b); err != nil {
+		return nil, false, fmt.Errorf("field %q must be a boolean; allowed fields: %s", name, fieldList(allowed))
+	}
+	return rest, b, nil
 }
 
 // slimModelList strips the discovery cache timestamp that a spawner does not
