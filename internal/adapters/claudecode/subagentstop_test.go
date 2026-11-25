@@ -338,3 +338,26 @@ func TestSubagentStop_HeldSpawnLinksByToolUseID(t *testing.T) {
 		t.Fatalf("usage = %+v, want linked to held-1 on %s", usage, frontier)
 	}
 }
+
+func TestSubagentStop_InlineUsagePreservesEffortAndVerification(t *testing.T) {
+	log, small, frontier, res := stopSetup(t)
+	seedLaunch(t, log, small, frontier, res)
+
+	raw, _ := json.Marshal(map[string]any{
+		"hook_event_name": "SubagentStop",
+		"session_id":      "sess-stop",
+		"agent_id":        stopAgent,
+		"model":           small,
+		"effort":          "low",
+		"verification":    "passed",
+		"usage":           map[string]any{"input_tokens": 12, "output_tokens": 4},
+	})
+	claudecode.HandleSubagentStop(raw, "test", res)
+	got := usageEvents(t)
+	if len(got) != 1 {
+		t.Fatalf("usage events = %d, want 1", len(got))
+	}
+	if got[0].FinalEffort != "low" || got[0].Verification != "passed" {
+		t.Fatalf("inline usage FinalEffort=%q Verification=%q, want low and passed", got[0].FinalEffort, got[0].Verification)
+	}
+}

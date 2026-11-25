@@ -57,7 +57,13 @@ func runRetrieve(raw json.RawMessage) Result {
 			return failure("arguments must be an object with id, grep, head, tail and lines")
 		}
 	}
+	var session string
 	if f := strings.Fields(a.ID); len(f) > 1 {
+		for _, tok := range f[:len(f)-1] {
+			if ref, ok := strings.CutPrefix(tok, "--session="); ok {
+				session = ref
+			}
+		}
 		a.ID = f[len(f)-1] // a pasted "--session=<ref> <id>": the id is the last token
 	}
 	if !ccr.ValidID(a.ID) {
@@ -91,7 +97,7 @@ func runRetrieve(raw json.RawMessage) Result {
 		out = append(out[:maxResultBytes:maxResultBytes],
 			fmt.Sprintf("\n[downshift: cut at %d bytes; narrow with grep, head, tail or lines]\n", maxResultBytes)...)
 	}
-	execwrap.RecordRetrieval(a.ID, "", len(out), time.Now())
+	execwrap.RecordRetrievalMeta(a.ID, session, len(out), execwrap.RetrievalMeta{Tool: "mcp"}, time.Now())
 	return Result{Text: string(out)}
 }
 

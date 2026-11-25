@@ -31,20 +31,22 @@ func recordResolved(ce hookport.ChildEnd, sessionHash, callHash, agentHash, bina
 	}
 	applied := telemetry.IsAppliedShift(*target)
 	ev := telemetry.Event{
-		CorrelationID:  telemetry.NewCorrelationID(),
-		Timestamp:      now.UTC().Format(time.RFC3339Nano),
-		Source:         "hook",
-		Agent:          "subagent",
-		Harness:        target.Harness,
-		Outcome:        telemetry.OutcomeResolved,
-		PolicyVersion:  telemetry.PolicyVersion,
-		BinaryVersion:  binaryVersion,
-		Verdict:        "UNKNOWN",
-		FromModel:      ranModel(*target),
-		ToModel:        telemetry.ModelOrUnknown(ce.ResolvedModel),
-		SessionID:      target.SessionID,
-		LinkedDecision: decisionKey(*target),
-		AgentHash:      agentHash,
+		CorrelationID:   telemetry.NewCorrelationID(),
+		Timestamp:       now.UTC().Format(time.RFC3339Nano),
+		Source:          "hook",
+		Agent:           "subagent",
+		Harness:         target.Harness,
+		Outcome:         telemetry.OutcomeResolved,
+		PolicyVersion:   telemetry.PolicyVersion,
+		BinaryVersion:   binaryVersion,
+		Complexity:      target.Complexity,
+		RequestedEffort: target.RequestedEffort,
+		Verdict:         "UNKNOWN",
+		FromModel:       ranModel(*target),
+		ToModel:         telemetry.ModelOrUnknown(ce.ResolvedModel),
+		SessionID:       target.SessionID,
+		LinkedDecision:  decisionKey(*target),
+		AgentHash:       agentHash,
 	}
 	if r != nil && applied {
 		got, okGot := r.LookupByID(ce.Harness, ce.ResolvedModel)
@@ -119,21 +121,26 @@ func recordChildEnd(ce hookport.ChildEnd, sessionHash, callHash, agentHash, bina
 // childEndEvent is the child_ended observation for a child that ended with
 // ce.Status, linked to the decision target.
 func childEndEvent(ce hookport.ChildEnd, target *telemetry.Event, agentHash, binaryVersion string, now time.Time) telemetry.Event {
-	return telemetry.Event{
-		CorrelationID:  telemetry.NewCorrelationID(),
-		Timestamp:      now.UTC().Format(time.RFC3339Nano),
-		Source:         "hook",
-		Agent:          "subagent",
-		Harness:        target.Harness,
-		Outcome:        telemetry.OutcomeChildEnded,
-		PolicyVersion:  telemetry.PolicyVersion,
-		BinaryVersion:  binaryVersion,
-		Verdict:        "UNKNOWN",
-		FromModel:      ranModel(*target),
-		ToModel:        childEndModel(ce),
-		SessionID:      target.SessionID,
-		LinkedDecision: decisionKey(*target),
-		AgentHash:      agentHash,
-		ChildStatus:    ce.Status,
+	ev := telemetry.Event{
+		CorrelationID: telemetry.NewCorrelationID(),
+		Timestamp:     now.UTC().Format(time.RFC3339Nano),
+		Source:        "hook",
+		Agent:         "subagent",
+		Outcome:       telemetry.OutcomeChildEnded,
+		PolicyVersion: telemetry.PolicyVersion,
+		BinaryVersion: binaryVersion,
+		Verdict:       "UNKNOWN",
+		ToModel:       childEndModel(ce),
+		AgentHash:     agentHash,
+		ChildStatus:   ce.Status,
 	}
+	if target != nil {
+		ev.Harness = target.Harness
+		ev.Complexity = target.Complexity
+		ev.RequestedEffort = target.RequestedEffort
+		ev.FromModel = ranModel(*target)
+		ev.SessionID = target.SessionID
+		ev.LinkedDecision = decisionKey(*target)
+	}
+	return ev
 }

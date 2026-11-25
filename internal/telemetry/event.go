@@ -22,19 +22,19 @@ package telemetry
 // transcript format (e.g. Claude Code JSON lines with {"type":"assistant",...})
 // is a distinct schema and is never the downshift events.jsonl schema.
 type Event struct {
-	CorrelationID   string `json:"correlation_id"`             // opaque ID generated per hook invocation
-	Timestamp       string `json:"timestamp"`                  // RFC3339Nano
-	Source          string `json:"source"`                     // hook|mcp|git
-	Agent           string `json:"agent"`                      // subagent, never task text
-	Harness         string `json:"harness"`                    // e.g. "claude-code"
-	SessionID       string `json:"session_id,omitempty"`       // Codex session identifier, when provided
-	Complexity      string `json:"complexity"`                 // TRIVIAL|SIMPLE|MEDIUM|COMPLEX
-	FromModel       string `json:"requested_model"`            // model supplied by the harness
-	ToModel         string `json:"final_model"`                // selected model after policy
-	RequestedEffort string `json:"requested_reasoning_effort"` // level, "inherit" or "unobserved"
-	FinalEffort     string `json:"final_reasoning_effort"`     // policy recommendation
-	Verdict         string `json:"verdict"`                    // DOWNSHIFT|UPSHIFT|OK|UNKNOWN
-	Tier            string `json:"tier"`                       // SMALL|MID|FRONTIER
+	CorrelationID   string `json:"correlation_id"`                       // opaque ID generated per hook invocation
+	Timestamp       string `json:"timestamp"`                            // RFC3339Nano
+	Source          string `json:"source"`                               // hook|mcp|git
+	Agent           string `json:"agent"`                                // subagent, never task text
+	Harness         string `json:"harness"`                              // e.g. "claude-code"
+	SessionID       string `json:"session_id,omitempty"`                 // Codex session identifier, when provided
+	Complexity      string `json:"complexity,omitempty"`                 // TRIVIAL|SIMPLE|MEDIUM|COMPLEX
+	FromModel       string `json:"requested_model"`                      // model supplied by the harness
+	ToModel         string `json:"final_model"`                          // selected model after policy
+	RequestedEffort string `json:"requested_reasoning_effort,omitempty"` // level, "inherit" or "unobserved"
+	FinalEffort     string `json:"final_reasoning_effort"`               // policy recommendation
+	Verdict         string `json:"verdict"`                              // DOWNSHIFT|UPSHIFT|OK|UNKNOWN
+	Tier            string `json:"tier"`                                 // SMALL|MID|FRONTIER
 	PolicyVersion   string `json:"policy_version"`
 	BinaryVersion   string `json:"binary_version"`
 	Outcome         string `json:"outcome"` // rewrite_emitted|allow|blocked|error|usage|baseline|skill_used

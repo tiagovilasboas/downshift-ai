@@ -35,6 +35,7 @@ func buildUsageEvent(harness string, usage telemetry.TokenUsage, payloadModel, s
 	if target != nil {
 		ev.Harness = target.Harness
 		ev.Complexity = target.Complexity
+		ev.RequestedEffort = target.RequestedEffort
 		ev.FromModel = target.FromModel
 		ev.ToModel = ranModel(*target)
 		ev.Verdict = target.Verdict
