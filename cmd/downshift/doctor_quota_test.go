@@ -116,3 +116,24 @@ func TestDoctor_QuotaSnapshotHolding(t *testing.T) {
 		t.Errorf("required mode detail: %q", c.Detail)
 	}
 }
+
+func TestCheckQuotaSource_MissingHarnessKeyDoesNotWarn(t *testing.T) {
+	f := newDoctorFixture(t)
+	f.storeQuota(t, -time.Minute) // writes valid quota.json with claude-code only
+
+	for _, h := range []string{"codex", "kiro", "antigravity"} {
+		var status, detail string
+		checkQuotaSource(func(_, s, d, _ string) { status, detail = s, d }, f.env, h)
+		if status != doctorOK {
+			t.Errorf("%s: got status %q (%s), want ok when harness key is absent in valid quota.json", h, status, detail)
+		}
+	}
+
+	// Malformed quota.json must still warn.
+	writeFile(t, os.Getenv("DOWNSHIFT_QUOTA_FILE"), "{invalid")
+	var status, detail string
+	checkQuotaSource(func(_, s, d, _ string) { status, detail = s, d }, f.env, "codex")
+	if status != doctorWarn || !strings.Contains(detail, "malformed") {
+		t.Errorf("malformed quota.json: got (%q, %q), want warn mentioning malformed", status, detail)
+	}
+}

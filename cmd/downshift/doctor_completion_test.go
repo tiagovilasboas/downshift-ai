@@ -20,7 +20,8 @@ func TestDoctor_CompletionMeasurablePerHarness(t *testing.T) {
 		fmt.Sprintf(`{"hooks":{"PreToolUse":[{"matcher":"x","hooks":[{"type":"command","command":"%s codex"}]}]}}`, f.bin))
 	ts := f.started.Add(-time.Hour).Format(time.RFC3339Nano)
 	writeFile(t, filepath.Join(f.home, ".downshift", "events.jsonl"),
-		fmt.Sprintf(`{"correlation_id":"u1","timestamp":%q,"harness":"claude-code","outcome":"usage","final_model":"sonnet","input_tokens":10}`, ts)+"\n")
+		fmt.Sprintf(`{"correlation_id":"u1","timestamp":%q,"harness":"claude-code","outcome":"usage","final_model":"sonnet","input_tokens":10}`, ts)+"\n"+
+			fmt.Sprintf(`{"correlation_id":"c1","timestamp":%q,"harness":"codex","source":"hook","outcome":"allow","verdict":"OK"}`, ts)+"\n")
 
 	rep := buildDoctorReport(f.env)
 	claude := f.check(t, rep, "claude-code", "completion")

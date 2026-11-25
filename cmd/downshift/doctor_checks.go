@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"time"
 
 	"github.com/tiagovilasboas/downshift-ai/internal/paths"
 	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
@@ -90,6 +91,7 @@ func checkState(rep *doctorReport, env doctorEnv) []telemetry.Event {
 		return nil
 	}
 	rep.add(doctorCheck{ID: "state dir", Status: doctorOK, Detail: fmt.Sprintf("%s (%s)", dir, src)})
+	checkOrphanedScores(rep, env, dir)
 	events, _ := telemetry.ReadEventsTail(telemetry.DefaultTailBytes)
 
 	if src == paths.SourceEnv {
@@ -123,4 +125,23 @@ func eventsDiverge(a, b []telemetry.Event) bool {
 		return true
 	}
 	return a[len(a)-1].CorrelationID != b[len(b)-1].CorrelationID
+}
+
+const orphanedScoresAge = 7 * 24 * time.Hour
+
+func checkOrphanedScores(rep *doctorReport, env doctorEnv, stateDir string) {
+	p := filepath.Join(stateDir, "scores.json")
+	info, err := os.Stat(p)
+	if err != nil || info.IsDir() {
+		return
+	}
+	age := env.Now().Sub(info.ModTime())
+	if age <= orphanedScoresAge {
+		return
+	}
+	rep.add(doctorCheck{
+		ID:     "orphaned scores",
+		Status: doctorOK,
+		Detail: fmt.Sprintf("%s is retired (%s old); safe to remove: rm %s", p, humanAge(age), p),
+	})
 }

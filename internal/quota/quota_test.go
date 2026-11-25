@@ -187,3 +187,33 @@ func TestCodexCollectOriginalTimeAndLatestInvalidCloses(t *testing.T) {
 		}
 	}
 }
+
+func TestLoadDetailedDistinguishesMissingHarnessFromMalformed(t *testing.T) {
+	now := time.Now().UTC()
+	path := filepath.Join(t.TempDir(), "quota.json")
+	t.Setenv("DOWNSHIFT_QUOTA_FILE", path)
+
+	if snap, state := LoadDetailed("codex"); snap != nil || state != CacheMissing {
+		t.Fatalf("missing file: got (%+v, %v), want (nil, CacheMissing)", snap, state)
+	}
+
+	if err := Store(path, fixture(now)); err != nil {
+		t.Fatal(err)
+	}
+	if snap, state := LoadDetailed("codex"); snap == nil || state != CachePresent {
+		t.Fatalf("present harness: got (%+v, %v), want (non-nil, CachePresent)", snap, state)
+	}
+	if snap, state := LoadDetailed("kiro"); snap != nil || state != CacheHarnessAbsent {
+		t.Fatalf("absent harness: got (%+v, %v), want (nil, CacheHarnessAbsent)", snap, state)
+	}
+	if _, present := Load("kiro"); !present {
+		t.Fatal("Load must still report present=true when quota.json exists to keep legacy closed")
+	}
+
+	if err := os.WriteFile(path, []byte(`{"version":1,"harnesses":null}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if snap, state := LoadDetailed("kiro"); snap != nil || state != CacheMalformed {
+		t.Fatalf("malformed file: got (%+v, %v), want (nil, CacheMalformed)", snap, state)
+	}
+}

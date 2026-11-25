@@ -47,9 +47,12 @@ func (r *doctorReport) writeText(w io.Writer, verbose, quiet bool) {
 			}
 		}
 	}
+	if !quiet && len(r.Inactive) > 0 {
+		fmt.Fprintf(w, "\nwired, inactive (no events in 30d; --harness NAME to check): %s\n", strings.Join(r.Inactive, ", "))
+	}
 	if !quiet && len(r.NotDetected) > 0 {
 		fmt.Fprintf(w, "\nnot detected (no hook file, skipped): %s\n", strings.Join(r.NotDetected, ", "))
-		if !r.anyHarnessChecked() {
+		if !r.anyHarnessChecked() && len(r.Inactive) == 0 {
 			fmt.Fprintf(w, "next: downshift setup%s\n", pluginInstallHint())
 		}
 	}
