@@ -61,29 +61,49 @@ type File struct {
 	Harnesses map[string]Snapshot `json:"harnesses"`
 }
 
-// Load distinguishes missing evidence from malformed evidence; neither
-// case permits a quota claim. No network or credential access occurs here.
-func Load(harness string) (*Snapshot, bool) {
+// CacheState describes the state of quota.json for a specific harness.
+type CacheState int
+
+const (
+	CacheMissing       CacheState = iota // quota.json does not exist
+	CacheHarnessAbsent                   // quota.json is valid, but has no snapshot for this harness
+	CacheMalformed                       // quota.json cannot be read or fails schema/version validation
+	CachePresent                         // snapshot for this harness was loaded
+)
+
+// LoadDetailed reads quota.json for harness and distinguishes missing file,
+// missing harness key, malformed file, and present snapshot.
+func LoadDetailed(harness string) (*Snapshot, CacheState) {
 	p, err := Path()
 	if err != nil {
-		return nil, false
+		return nil, CacheMissing
 	}
 	data, err := os.ReadFile(p)
 	if os.IsNotExist(err) {
-		return nil, false
+		return nil, CacheMissing
 	}
 	if err != nil {
-		return nil, true
+		return nil, CacheMalformed
 	}
 	var f File
 	if json.Unmarshal(data, &f) != nil || f.Version != 1 || f.Harnesses == nil {
-		return nil, true
+		return nil, CacheMalformed
 	}
 	s, ok := f.Harnesses[harness]
 	if !ok {
-		return nil, true
+		return nil, CacheHarnessAbsent
 	}
-	return &s, true
+	return &s, CachePresent
+}
+
+// Load distinguishes missing evidence from malformed evidence; neither
+// case permits a quota claim. No network or credential access occurs here.
+func Load(harness string) (*Snapshot, bool) {
+	s, state := LoadDetailed(harness)
+	if state == CacheMissing {
+		return nil, false
+	}
+	return s, true
 }
 
 // Store atomically replaces one harness's snapshot, preserving the others.

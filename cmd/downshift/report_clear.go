@@ -19,7 +19,7 @@ import (
 // reportClearFiles are the measurement logs `downshift report clear` moves
 // out: routing and child-end events, compaction and context records, and the
 // compressor learning store. Configuration and caches that change behaviour
-// (config, policy, session models, model discovery, quota, scores) stay.
+// (config, policy, session models, model discovery, quota) stay.
 var reportClearFiles = []string{
 	"events.jsonl",
 	"agents.jsonl",

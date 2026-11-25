@@ -106,14 +106,25 @@ func TestDoctorHookHarnessUnchangedByBridgeEvidence(t *testing.T) {
 	installBridge(t, f.home)
 	f.writeOpenCodeEvents(t, time.Minute)
 	rep := buildDoctorReport(f.env)
+	// claude-code has no events while opencode is active, so it collapses into Inactive.
+	foundInactive := false
+	for _, h := range rep.Inactive {
+		foundInactive = foundInactive || h == "claude-code"
+	}
+	if !foundInactive {
+		t.Errorf("inactive wired claude-code should collapse into Inactive: %v", rep.Inactive)
+	}
+	// When explicitly targeted via --harness, claude-code keeps its single last-event row.
+	f.env.Harness = "claude-code"
+	rep = buildDoctorReport(f.env)
 	count := map[string]int{}
 	for _, c := range rep.Checks {
 		if c.ID == "last hook event" {
 			count[c.Harness]++
 		}
 	}
-	if count["claude-code"] != 1 || count["opencode"] != 1 {
-		t.Errorf("last hook event rows = %v, want one each", count)
+	if count["claude-code"] != 1 || count["opencode"] != 0 {
+		t.Errorf("last hook event rows = %v, want only claude-code:1", count)
 	}
 	c := f.check(t, rep, "claude-code", "last hook event")
 	wantStatus(t, c, doctorWarn) // the opencode events are not claude-code's

@@ -62,7 +62,7 @@ Copied from beta-exit (2026-10-15), still open after the 2026-10-17 cleanup:
 **Later**
 
 - Cursor honor evidence (P1.6) and any harness usage API the vendor actually exposes (P3.8).
-- Promoting shadow paths (NB, scores, adapt memory) only after an independent eval.
+- Promoting shadow paths (NB, adapt memory) only after an independent eval.
 
 ## Proposed issues (not opened)
 

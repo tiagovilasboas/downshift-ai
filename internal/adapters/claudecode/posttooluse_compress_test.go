@@ -135,9 +135,101 @@ func assertToolEvidenceKept(t *testing.T, out claudecode.Output) {
 
 type compactionLine struct {
 	Harness      string `json:"harness"`
+	Tool         string `json:"tool"`
 	OutputBytes  int64  `json:"output_bytes"`
 	ReducedBytes int64  `json:"reduced_bytes"`
 	Applied      bool   `json:"applied"`
+	Error        bool   `json:"error"`
+}
+
+func TestPostToolUse_SensorInfersCleanExitAndMCPSavings(t *testing.T) {
+	genericText := strings.Repeat("INFO service started successfully on port 8080\n", 12)
+
+	t.Run("bash without exit_code infers exit 0 and records generic savings", func(t *testing.T) {
+		dir := isolateDownshiftState(t)
+		writeContextConfig(t, dir, true)
+		payload, err := json.Marshal(map[string]any{
+			"session_id": "sess-bash-no-exit",
+			"tool_name":  "Bash",
+			"tool_response": map[string]any{
+				"stdout":      genericText,
+				"stderr":      "",
+				"interrupted": false,
+				"isImage":     false,
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		claudecode.HandlePostToolUse(payload, "test", cat)
+		rec := readCompaction(t, dir)
+		if rec.Tool != "Bash" || !rec.Applied || rec.ReducedBytes <= 0 || rec.Error || rec.OutputBytes != int64(len(genericText)) {
+			t.Fatalf("record = %+v, want applied=true reduced_bytes>0 error=false", rec)
+		}
+	})
+
+	t.Run("bash interrupted without exit_code preserves bytes as error", func(t *testing.T) {
+		dir := isolateDownshiftState(t)
+		writeContextConfig(t, dir, true)
+		payload, err := json.Marshal(map[string]any{
+			"session_id": "sess-bash-interrupted",
+			"tool_name":  "Bash",
+			"tool_response": map[string]any{
+				"stdout":      genericText,
+				"stderr":      "",
+				"interrupted": true,
+				"isImage":     false,
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		claudecode.HandlePostToolUse(payload, "test", cat)
+		rec := readCompaction(t, dir)
+		if rec.Applied || rec.ReducedBytes != 0 || !rec.Error {
+			t.Fatalf("record = %+v, want applied=false reduced_bytes=0 error=true", rec)
+		}
+	})
+
+	t.Run("mcp array response and long tool name record output and savings", func(t *testing.T) {
+		dir := isolateDownshiftState(t)
+		writeContextConfig(t, dir, true)
+		const longTool = "mcp__plugin_playwright_playwright__browser_take_screenshot"
+		payload, err := json.Marshal(map[string]any{
+			"session_id": "sess-mcp-array",
+			"tool_name":  longTool,
+			"tool_response": []any{
+				map[string]any{"type": "text", "text": genericText},
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		claudecode.HandlePostToolUse(payload, "test", cat)
+		rec := readCompaction(t, dir)
+		if rec.Tool != longTool || rec.OutputBytes != int64(len(genericText)) || !rec.Applied || rec.ReducedBytes <= 0 {
+			t.Fatalf("record = %+v, want tool=%q output=%d applied=true reduced>0", rec, longTool, len(genericText))
+		}
+	})
+
+	t.Run("mcp string response records output_bytes", func(t *testing.T) {
+		dir := isolateDownshiftState(t)
+		writeContextConfig(t, dir, true)
+		const tool = "mcp__datadog__list_datadog_skills"
+		payload, err := json.Marshal(map[string]any{
+			"session_id":    "sess-mcp-string",
+			"tool_name":     tool,
+			"tool_response": genericText,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		claudecode.HandlePostToolUse(payload, "test", cat)
+		rec := readCompaction(t, dir)
+		if rec.Tool != tool || rec.OutputBytes != int64(len(genericText)) || !rec.Applied || rec.ReducedBytes <= 0 {
+			t.Fatalf("record = %+v, want tool=%q output=%d applied=true reduced>0", rec, tool, len(genericText))
+		}
+	})
 }
 
 func readCompaction(t *testing.T, dir string) compactionLine {

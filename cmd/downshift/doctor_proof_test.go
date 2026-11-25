@@ -4,7 +4,9 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -154,5 +156,61 @@ func TestDoctor_LastEventCountsOnlyHookSource(t *testing.T) {
 				t.Fatalf("status %q detail %q fix %q; want %q containing %q / %q", status, detail, gotFix, tc.want, tc.detail, tc.fixHas)
 			}
 		})
+	}
+}
+
+func TestDoctor_InactiveWiredHarnessesCollapsedWithoutWarnings(t *testing.T) {
+	f := newDoctorFixture(t)
+	useSessionList(t, "claude-code", "claude-haiku-4-5", "claude-sonnet-4-5", "claude-opus-4-5")
+	writeFile(t, filepath.Join(f.home, ".claude", "settings.json"), claudeSettings(f.bin))
+	writeFile(t, filepath.Join(f.home, ".codex", "hooks.json"),
+		fmt.Sprintf(`{"hooks":{"PreToolUse":[{"matcher":"x","hooks":[{"type":"command","command":"%s codex"}]}]}}`, f.bin))
+	f.writeEvents(t, filepath.Join(f.home, ".downshift"), time.Hour, true)
+
+	rep := buildDoctorReport(f.env)
+	if rep.Warnings != 0 || rep.Failed != 0 {
+		t.Fatalf("inactive wired harness emitted warnings/failures: failed=%d warnings=%d checks=%+v", rep.Failed, rep.Warnings, rep.Checks)
+	}
+	if len(rep.Inactive) != 1 || rep.Inactive[0] != "codex" {
+		t.Fatalf("Inactive = %v, want [codex]", rep.Inactive)
+	}
+	var out bytes.Buffer
+	rep.writeText(&out, false, false)
+	if !strings.Contains(out.String(), "wired, inactive (no events in 30d; --harness NAME to check): codex") {
+		t.Errorf("text output missing inactive summary:\n%s", out.String())
+	}
+
+	// Explicit --harness still runs full checks on the inactive harness.
+	f.env.Harness = "codex"
+	repCodex := buildDoctorReport(f.env)
+	wantStatus(t, f.check(t, repCodex, "codex", "last hook event"), doctorWarn)
+}
+
+func TestDoctor_OrphanedScoresNotice(t *testing.T) {
+	f := newDoctorFixture(t)
+	scoresPath := filepath.Join(f.home, ".downshift", "scores.json")
+	writeFile(t, scoresPath, `{}`)
+	old := f.started.Add(-8 * 24 * time.Hour)
+	if err := os.Chtimes(scoresPath, old, old); err != nil {
+		t.Fatal(err)
+	}
+
+	rep := buildDoctorReport(f.env)
+	c := f.check(t, rep, "", "orphaned scores")
+	wantStatus(t, c, doctorOK)
+	if !strings.Contains(c.Detail, "retired") || !strings.Contains(c.Detail, "safe to remove") {
+		t.Errorf("unexpected orphaned scores detail: %q", c.Detail)
+	}
+
+	// Fresh scores.json (<= 7d) stays quiet.
+	recent := f.started.Add(-2 * 24 * time.Hour)
+	if err := os.Chtimes(scoresPath, recent, recent); err != nil {
+		t.Fatal(err)
+	}
+	rep = buildDoctorReport(f.env)
+	for _, c := range rep.Checks {
+		if c.ID == "orphaned scores" {
+			t.Errorf("recent scores.json should not trigger notice: %+v", c)
+		}
 	}
 }
