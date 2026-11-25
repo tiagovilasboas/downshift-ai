@@ -31,10 +31,14 @@ func TestStats_HeadlineIsTheTokenLedger(t *testing.T) {
 	if rc != 0 {
 		t.Fatalf("rc=%d", rc)
 	}
-	first := strings.SplitN(out, "\n", 2)[0]
+	lines := strings.Split(out, "\n")
+	first := lines[0]
 	want := "Token ledger (last 7 days): 1.0k cut by the compactor (estimate: saved bytes / 4)"
 	if first != want {
 		t.Fatalf("headline = %q, want %q", first, want)
+	}
+	if !strings.Contains(out, "Compactor (last 7 days, all harnesses): 98% (3.9 KB of 4.0 KB) net cut") {
+		t.Fatalf("stats output missing byte-basis net cut and scope:\n%s", out)
 	}
 
 	out = captureStdout(func() { rc = runStats([]string{"--days=7", "--export"}) })

@@ -157,8 +157,12 @@ func firstFamilies(fs []accounting.FamilyCompaction) []accounting.FamilyCompacti
 }
 
 // cutPct is the share of a family's output the Compactor kept out, or "-"
-// when no output was measured.
+// when no output was measured. Uses the same byte basis as report_summary.go
+// so /4 token truncation does not skew small families.
 func cutPct(f accounting.FamilyCompaction) string {
+	if f.RawBytes > 0 {
+		return fmt.Sprintf("%.0f%%", 100*float64(f.SavedBytes)/float64(f.RawBytes))
+	}
 	if f.RawTokens <= 0 {
 		return "-"
 	}

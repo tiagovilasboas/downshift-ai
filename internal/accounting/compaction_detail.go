@@ -47,6 +47,8 @@ type FamilyCompaction struct {
 	Compacted     int64  `json:"compacted"`
 	RawTokens     int64  `json:"raw_tokens"`
 	AvoidedTokens int64  `json:"avoided_tokens"`
+	RawBytes      int64  `json:"-"`
+	SavedBytes    int64  `json:"-"`
 }
 
 // ReasonCount is a fixed reason code and how many rows carry it.
@@ -145,8 +147,10 @@ func (a *detailAcc) addRun(ev execwrap.Event) {
 func (a *detailAcc) row(h string) HarnessCompaction {
 	r := HarnessCompaction{Harness: h, Commands: a.commands, Compacted: a.compacted, Families: []FamilyCompaction{}}
 	for name, f := range a.families {
-		f.RawTokens = a.rawBytes[name] / execwrap.BytesPerToken
-		f.AvoidedTokens = a.savedBytes[name] / execwrap.BytesPerToken
+		f.RawBytes = a.rawBytes[name]
+		f.SavedBytes = a.savedBytes[name]
+		f.RawTokens = f.RawBytes / execwrap.BytesPerToken
+		f.AvoidedTokens = f.SavedBytes / execwrap.BytesPerToken
 		r.Families = append(r.Families, *f)
 	}
 	sort.Slice(r.Families, func(i, j int) bool {
