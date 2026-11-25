@@ -158,6 +158,47 @@ func TestRecordToolOutput_AppendsCompactionHistory(t *testing.T) {
 	}
 }
 
+func TestRecordToolResult_LongMCPToolNamesPreserved(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv(paths.EnvStateDir, tmp)
+
+	store, err := sensor.DefaultStore()
+	if err != nil {
+		t.Fatalf("default store: %v", err)
+	}
+	longMCP := "mcp__plugin_playwright_playwright__browser_take_screenshot"
+	tooLong := strings.Repeat("a", 150)
+
+	if err := store.RecordToolResult("sess-long", "claude-code", longMCP, []byte("ok\n"), 0, false); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.RecordToolResult("sess-cap", "claude-code", tooLong, []byte("ok\n"), 0, false); err != nil {
+		t.Fatal(err)
+	}
+
+	raw, err := os.ReadFile(filepath.Join(tmp, "context-compactions.jsonl"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines := strings.Split(strings.TrimSpace(string(raw)), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("lines = %d, want 2", len(lines))
+	}
+	var first, second sensor.CompactionRecord
+	if err := json.Unmarshal([]byte(lines[0]), &first); err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal([]byte(lines[1]), &second); err != nil {
+		t.Fatal(err)
+	}
+	if first.Tool != longMCP {
+		t.Errorf("first.Tool = %q, want %q", first.Tool, longMCP)
+	}
+	if len(second.Tool) != 128 {
+		t.Errorf("len(second.Tool) = %d, want 128", len(second.Tool))
+	}
+}
+
 func TestRecordToolOutput_FileModeAndLock(t *testing.T) {
 	tmp := t.TempDir()
 	t.Setenv(paths.EnvStateDir, tmp)

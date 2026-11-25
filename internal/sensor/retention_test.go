@@ -70,4 +70,11 @@ func TestRetainCompaction_DropsAgedAndExcess(t *testing.T) {
 	if strings.Contains(text, `"output_bytes":1`) || !strings.Contains(text, `"output_bytes":2`) || !strings.Contains(text, `"output_bytes":3`) {
 		t.Fatalf("retention kept the wrong tail: %s", text)
 	}
+	rotated, err := os.ReadFile(path + ".1")
+	if err != nil {
+		t.Fatalf("expected rotated archive %s.1: %v", path, err)
+	}
+	if !strings.Contains(string(rotated), `"output_bytes":1`) {
+		t.Fatalf("rotated archive missing overflow record: %s", rotated)
+	}
 }
