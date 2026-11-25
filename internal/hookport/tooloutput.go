@@ -19,6 +19,9 @@ type ToolOutput struct {
 	// Category is the tool's category from the harness capabilities
 	// (core.HarnessCapabilities.CategoryOf).
 	Category core.ToolCategory
+	// ToolName is the harness's tool name when the adapter knows it (for
+	// example "mcp__downshift__retrieve").
+	ToolName string
 	// VerboseKind names a non-shell/non-search/non-read verbose tool kind
 	// ("mcp" or "fetch") when Category is CategoryOther. Empty for tools
 	// whose output must not be compacted.

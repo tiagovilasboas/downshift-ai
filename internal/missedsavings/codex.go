@@ -68,7 +68,8 @@ func parseCodex(line []byte) (event, bool) {
 			ev.calls = []call{{id: p.CallID, nonBash: true}}
 		}
 	case "custom_tool_call_output", "function_call_output":
-		ev.results = []result{{id: p.CallID, bytes: textBytes(p.Output)}}
+		n, compacted := textStats(p.Output)
+		ev.results = []result{{id: p.CallID, bytes: n, compacted: compacted}}
 	}
 	return ev, len(ev.calls)+len(ev.results) > 0
 }

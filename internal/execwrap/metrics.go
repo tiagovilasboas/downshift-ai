@@ -46,6 +46,10 @@ const (
 	// PassthroughHoldTimeout: the output was held longer than HoldBound and
 	// streamed raw.
 	PassthroughHoldTimeout = "hold_timeout"
+	// PassthroughRetrieve: the call retrieved already-stored CCR output
+	// (`downshift retrieve` or `mcp__downshift__retrieve`), which must never
+	// be re-compacted or re-stored.
+	PassthroughRetrieve = "retrieve"
 )
 
 // Event is one `downshift exec` run. It carries the family, byte counts, the
