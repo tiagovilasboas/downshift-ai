@@ -57,7 +57,7 @@ func compactVerboseText(in hookport.ToolOutput, o Options) Result {
 	if o.Keep == nil {
 		return settle(res, in)
 	}
-	cut, applied := compactVerboseBody(in.VerboseKind, []byte(in.Content), balanceThreshold(o), o.Balanced)
+	cut, applied := compactVerboseBody(in.VerboseKind, in.ToolName, []byte(in.Content), balanceThreshold(o), o.Balanced)
 	if !applied {
 		return settle(res, in)
 	}
@@ -82,12 +82,16 @@ func compactVerboseText(in hookport.ToolOutput, o Options) Result {
 	return settle(res, in)
 }
 
-func compactVerboseBody(kind string, raw []byte, threshold int, balanced bool) ([]byte, bool) {
+func compactVerboseBody(kind, toolName string, raw []byte, threshold int, balanced bool) ([]byte, bool) {
 	cur := raw
 	changed := false
 	if kind == VerboseKindMCP {
 		if u, ok := compressor.UnwrapJSONResult(cur); ok {
 			cur = u
+			changed = true
+		}
+		if p, ok := compressor.PruneMCP(toolName, cur); ok {
+			cur = p
 			changed = true
 		}
 	}

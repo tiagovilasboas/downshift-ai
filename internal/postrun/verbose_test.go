@@ -275,4 +275,51 @@ func TestCompact_MCPJSONPruningAndFallback(t *testing.T) {
 			t.Error("CCR Keep must not be called when JSON stays raw")
 		}
 	})
+
+	t.Run("sentry and datadog MCP outputs under 4KB are pruned and stored in CCR", func(t *testing.T) {
+		fixtures := []struct {
+			toolName string
+			raw      string
+			preserve string
+		}{
+			{
+				toolName: "mcp__sentry__search_issues",
+				raw:      `{"result": "{\"issues\":[{\"id\":\"9812345\",\"shortId\":\"PAY-412\",\"title\":\"NullPointerException\",\"culprit\":\"ChargeService.capture\",\"level\":\"error\",\"status\":\"unresolved\",\"count\":\"148\",\"userCount\":42,\"firstSeen\":\"2026-11-20T09:15:00Z\",\"lastSeen\":\"2026-11-25T08:40:00Z\",\"permalink\":\"https://sentry.io/organizations/acme-corp/issues/9812345/?referrer=mcp\",\"assignedTo\":null,\"annotations\":[],\"activity\":[]}]}"}`,
+				preserve: "PAY-412",
+			},
+			{
+				toolName: "mcp__sentry__search_events",
+				raw:      `{"events":[{"eventID":"ev_01abcdef","title":"TypeError","culprit":"confirm.ts","level":"error","status":"unresolved","timestamp":"2026-11-25T08:12:33Z","trace_id":"4bf92f3577b34da6","span_id":"00f067aa","permalink":"https://sentry.io/organizations/acme/issues/1/events/ev_01abcdef/?referrer=mcp","sdk":{"name":"sentry.node","version":"8.12.0"},"breadcrumbs":[],"cookies":{}}]}`,
+				preserve: "4bf92f3577b34da6",
+			},
+			{
+				toolName: "mcp__datadog__execute_code",
+				raw:      `{"stdout": "{\n  \"status\": \"error\",\n  \"level\": \"error\",\n  \"timestamp\": \"2026-11-25T08:30:05Z\",\n  \"trace_id\": \"dd-trace-778899\",\n  \"span_id\": \"dd-span-3344\",\n  \"error\": \"Upstream 502\",\n  \"permalink\": \"https://app.datadoghq.com/logs?query=service%3Apayment-api&event=AgAAAZN123456\",\n  \"tags\": []\n}", "stderr": ""}`,
+				preserve: "dd-trace-778899",
+			},
+		}
+		for _, fx := range fixtures {
+			if len(fx.raw) >= PostRunBalanceThreshold {
+				t.Fatalf("%s fixture %d >= 4 KiB", fx.toolName, len(fx.raw))
+			}
+			var stored string
+			keep := func(b []byte) (string, bool) {
+				stored = string(b)
+				return "ccrmcpprune1", true
+			}
+			res := Compact(caps, hookport.ToolOutput{
+				Category: core.CategoryOther, VerboseKind: VerboseKindMCP, ToolName: fx.toolName,
+				Content: fx.raw, HasContent: true, ExitCode: -1,
+			}, Options{Keep: keep, Balanced: true})
+			if !res.Replaced || !res.Compacted || res.KeptID != "ccrmcpprune1" || stored != fx.raw {
+				t.Fatalf("%s: expected pruned+CCR, got replaced=%v compacted=%v id=%q", fx.toolName, res.Replaced, res.Compacted, res.KeptID)
+			}
+			if res.EmittedBytes >= res.RawBytes {
+				t.Errorf("%s: did not shrink (%d >= %d)", fx.toolName, res.EmittedBytes, res.RawBytes)
+			}
+			if !strings.Contains(res.Output.Content, fx.preserve) {
+				t.Errorf("%s: missing %q in:\n%s", fx.toolName, fx.preserve, res.Output.Content)
+			}
+		}
+	})
 }
