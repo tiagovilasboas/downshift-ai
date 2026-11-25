@@ -166,7 +166,7 @@ downshift/
 │                    COMPACTION PIPELINE                          │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  $ downshift compactor -- go test ./...                        │
+│  $ downshift compact -- go test ./...                          │
 │       │                                                         │
 │       ▼                                                         │
 │  ┌─────────────┐                                               │

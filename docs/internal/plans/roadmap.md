@@ -73,7 +73,7 @@ Downshift takes the highest-value onboarding and orchestration paradigms and kee
    - `research.md`: Strict read-only exploration and symbol mapping with exact line citations.
    - `implementation.md`: Clean code, SRP, KISS, files under 300 lines, no premature abstractions.
    - `review.md`: AppSec and architectural fitness reviews (OWASP ASVS standards) without editing source.
-   - `tdd-verification.md`: Test-driven discipline, wrapping commands with `downshift compactor -- <test-cmd>`.
+   - `tdd-verification.md`: Test-driven discipline, wrapping commands with `downshift compact -- <test-cmd>`.
    - `docs.md`: Technical documentation hygiene and author privacy preservation.
    - `incident-rescue.md`: Emergency debugging, root-cause isolation, and surgical bugfixes.
 

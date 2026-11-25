@@ -89,7 +89,7 @@ a slice. If a slice does not fit its contract, send it back to its `coder`.
 
 `tester` runs the full gate on the assembled result: the repository's test
 command, then the end-to-end or browser suite when the project has one
-(for example `downshift compactor -- playwright test`). For a visual
+(for example `downshift compact -- playwright test`). For a visual
 feature, also render the page and compare it with the plan's `done` lines.
 
 ## Handoff
