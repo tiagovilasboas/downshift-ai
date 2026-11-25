@@ -168,22 +168,45 @@ func digitsEnd(s string, i int) int {
 	return j
 }
 
-// matchRowKey returns the file of a "path:N:text" row.
+// matchRowKey returns the file of a "path:N:text" row, or an unnumbered
+// "path:text" row when path has '/', '\', or '.' without spaces, contains a
+// letter, and is neither a URL scheme nor a bare "path:DIGITS" count line.
 func matchRowKey(l string) (string, bool) {
 	drive, rest := splitDrive(l)
 	i := strings.IndexByte(rest, ':')
 	if i <= 0 {
 		return "", false
 	}
-	j := digitsEnd(rest, i+1)
-	if j == i+1 || j >= len(rest) || rest[j] != ':' || strings.ContainsAny(rest[:i], " \t") {
+	path := rest[:i]
+	if strings.ContainsAny(path, " \t") {
 		return "", false
 	}
-	return drive + rest[:i], true
+	hasLetter := false
+	for k := 0; k < len(path); k++ {
+		if c := path[k] | 0x20; c >= 'a' && c <= 'z' {
+			hasLetter = true
+			break
+		}
+	}
+	if !hasLetter {
+		return "", false // rejects HH:MM:SS timestamps and IP:port
+	}
+	if len(path) == 13 && path[4] == '-' && path[7] == '-' && (path[10] == 'T' || path[10] == 't') && digitsEnd(path, 11) == 13 {
+		return "", false // rejects ISO-8601 YYYY-MM-DDTHH:MM:SS timestamps
+	}
+	j := digitsEnd(rest, i+1)
+	if j > i+1 && j < len(rest) && rest[j] == ':' {
+		return drive + path, true
+	}
+	text := rest[i+1:]
+	if strings.HasPrefix(text, "//") || !strings.ContainsAny(path, "/\\.") || (j > i+1 && j == len(rest)) {
+		return "", false
+	}
+	return drive + path, true
 }
 
-// contextOrMatchKey returns the file of a match row or of a "path-N-text"
-// context line whose path is in known.
+// contextOrMatchKey returns the file of a match row or of a "path-N-text" /
+// "path-text" context line whose path is in known.
 func contextOrMatchKey(l string, known map[string]bool) (string, bool) {
 	drive, rest := splitDrive(l)
 	for i := 1; i < len(rest); i++ {
@@ -194,7 +217,15 @@ func contextOrMatchKey(l string, known map[string]bool) (string, bool) {
 			return drive + rest[:i], true
 		}
 	}
-	return matchRowKey(l)
+	if k, ok := matchRowKey(l); ok {
+		return k, true
+	}
+	for i := 1; i < len(rest); i++ {
+		if rest[i] == '-' && known[drive+rest[:i]] {
+			return drive + rest[:i], true
+		}
+	}
+	return "", false
 }
 
 // groupName names a group in its count line.

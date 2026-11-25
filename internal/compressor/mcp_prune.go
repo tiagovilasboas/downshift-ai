@@ -21,21 +21,19 @@ const (
 var mcpEnvelopeKeys = []string{"result", "stdout", "data", "payload", "text", "content"}
 
 var mcpProtectedKeys = map[string]bool{
-	"id": true, "shortid": true, "short_id": true, "eventid": true, "event_id": true,
-	"title": true, "culprit": true, "level": true, "status": true, "count": true,
-	"usercount": true, "user_count": true, "firstseen": true, "first_seen": true,
-	"lastseen": true, "last_seen": true, "timestamp": true, "timestamps": true,
-	"datecreated": true, "date_created": true, "trace": true, "traceid": true,
-	"trace_id": true, "span": true, "spanid": true, "span_id": true,
-	"message": true, "error": true, "err": true, "value": true, "type": true,
+	"id": true, "shortid": true, "short_id": true, "eventid": true, "event_id": true, "title": true,
+	"culprit": true, "level": true, "status": true, "count": true, "usercount": true, "user_count": true,
+	"firstseen": true, "first_seen": true, "lastseen": true, "last_seen": true, "timestamp": true,
+	"timestamps": true, "datecreated": true, "date_created": true, "trace": true, "traceid": true,
+	"trace_id": true, "span": true, "spanid": true, "span_id": true, "message": true, "error": true,
+	"err": true, "value": true, "type": true,
 }
 
 var mcpBoilerplateKeys = map[string]bool{
-	"permalink": true, "weburl": true, "shareid": true, "node_id": true, "_links": true,
-	"links": true, "sdk": true, "breadcrumbs": true, "annotations": true, "activity": true,
-	"pluginactions": true, "plugincontexts": true, "pluginissues": true, "ispublic": true,
-	"isbookmarked": true, "issubscribed": true, "hasseen": true, "vars": true,
-	"pre_context": true, "post_context": true,
+	"permalink": true, "weburl": true, "shareid": true, "node_id": true, "_links": true, "links": true,
+	"sdk": true, "breadcrumbs": true, "annotations": true, "activity": true, "pluginactions": true,
+	"plugincontexts": true, "pluginissues": true, "ispublic": true, "isbookmarked": true,
+	"issubscribed": true, "hasseen": true, "vars": true, "pre_context": true, "post_context": true,
 }
 
 var mcpRegexes = sync.OnceValue(func() struct {
@@ -51,12 +49,15 @@ var mcpRegexes = sync.OnceValue(func() struct {
 	}
 })
 
-// PruneMCP prunes verbose Sentry (search_issues, search_events) and Datadog
-// (execute_code) MCP payloads in both JSON and Markdown/text formats.
+// PruneMCP prunes verbose Sentry (search_issues, search_events), Datadog
+// (execute_code), and generic mcp__* payloads in JSON and Markdown/text formats.
 func PruneMCP(toolName string, input []byte) ([]byte, bool) {
-	target := detectMCPTarget(toolName)
-	if target == "" || len(bytes.TrimSpace(input)) == 0 {
+	if len(bytes.TrimSpace(input)) == 0 {
 		return nil, false
+	}
+	target := detectMCPTarget(toolName)
+	if target == "" {
+		return pruneGenericMCP(toolName, input)
 	}
 	cur, unwrapped := unwrapMCPEnvelope(input)
 	trim := bytes.TrimSpace(cur)
@@ -97,25 +98,26 @@ func unwrapMCPEnvelope(input []byte) ([]byte, bool) {
 		var next string
 		if len(obj) == 1 {
 			for _, v := range obj {
-				next, _ = v.(string)
-			}
-		} else {
-			for _, k := range mcpEnvelopeKeys {
-				v, ok := obj[k]
-				if !ok {
-					continue
-				}
 				if s, ok := v.(string); ok {
-					if ts := strings.TrimSpace(s); ts != "" && (k == "stdout" || k == "result" || ts[0] == '{' || ts[0] == '[') {
-						next = ts
-						break
-					}
+					next = s
 				}
-				if blocks, ok := v.([]any); ok && k == "content" && len(blocks) == 1 {
-					if m, ok := blocks[0].(map[string]any); ok {
-						next, _ = m["text"].(string)
-						break
-					}
+			}
+		}
+		for _, k := range mcpEnvelopeKeys {
+			if next != "" {
+				break
+			}
+			v, ok := obj[k]
+			if !ok {
+				continue
+			}
+			if s, ok := v.(string); ok {
+				if ts := strings.TrimSpace(s); ts != "" && (k == "stdout" || k == "result" || ts[0] == '{' || ts[0] == '[') {
+					next = ts
+				}
+			} else if blocks, ok := v.([]any); ok && k == "content" && len(blocks) == 1 {
+				if m, ok := blocks[0].(map[string]any); ok {
+					next, _ = m["text"].(string)
 				}
 			}
 		}
@@ -204,25 +206,8 @@ func pruneMCPArray(target string, arr []any, parentKey string) ([]any, bool) {
 	if !fromEnd && truncated > 0 {
 		out = append(out, fmt.Sprintf("... (%d more frames)", truncated))
 	}
-	if len(out) >= 2 {
-		if first, ok := out[0].(map[string]any); ok {
-			for k, fv := range first {
-				fb, err := json.Marshal(fv)
-				if mcpProtectedKeys[strings.ToLower(k)] || err != nil {
-					continue
-				}
-				sameAll := true
-				for i := 1; i < len(out) && sameAll; i++ {
-					m, ok := out[i].(map[string]any)
-					mb, err := json.Marshal(m[k])
-					sameAll = ok && m[k] != nil && err == nil && bytes.Equal(fb, mb)
-				}
-				for i := 1; sameAll && i < len(out); i++ {
-					delete(out[i].(map[string]any), k)
-					changed = true
-				}
-			}
-		}
+	if collapseRepeatedArrayKeys(out, 2, func(l string) bool { return mcpProtectedKeys[l] }) {
+		changed = true
 	}
 	return out, changed
 }
