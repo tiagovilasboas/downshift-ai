@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-11-25
+
+Release notes: [docs/releases/v0.23.0.md](docs/releases/v0.23.0.md).
+
+### Added
+
+- **Sentry & Datadog MCP payload pruners (`#226`).** Added semantic JSON pruners in `internal/compressor` for `mcp__sentry__search_issues`, `mcp__sentry__search_events`, and `mcp__datadog__execute_code`, cutting fixture payloads from `4,682 -> 2,497` bytes (`-46.7%`).
+- **Idempotent MCP doc deduplication (`#230`).** Deduplicates identical idempotent MCP doc/skill reads within the same session into a short CCR pointer.
+
+### Changed
+
+- **Slimmer `providers` MCP response (`#222`).** Omits static `agent_default_tiers` unless `include_agent_tiers: true` is passed, cutting the default payload from `1,089 -> 176` bytes (`-83.8%`).
+- **Docs standardized on `downshift compact` (`#221`).** Updated `skills/downshift-orchestrator/SKILL.md` and 13 documentation files to use `downshift compact`.
+
+### Fixed
+
+- **Discover postrun coverage (`#223`).** `downshift discover` now counts postrun compaction (`exec-events` and `[downshift compact: X to Y bytes]`) separately for bash and MCP tools.
+- **No re-compaction on `retrieve` (`#224`).** Exempted CLI and MCP `retrieve` outputs from postrun compaction (`PassthroughRetrieve`).
+- **Sensor & telemetry accuracy (`#225`, `#229`).** Recorded real `applied` and `reduced_bytes` with rotation in `context-compactions.jsonl`, added tool/family + windowing to `exec-retrievals.jsonl`, and propagated `childend` effort/complexity/verification fields into `events.jsonl`.
+- **Unified reporting & doctor hygiene (`#227`, `#228`).** Unified `report`/`stats` compaction windows, classified inner families of compound shell commands (`cd &&`, `for`, shell functions), collapsed inactive harness warnings (>30d), and flagged stale `scores.json` (>7d) in `doctor`.
+
 ## [0.22.0] - 2026-11-23
 
 Release notes: [docs/releases/v0.22.0.md](docs/releases/v0.22.0.md).
