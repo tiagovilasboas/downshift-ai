@@ -80,6 +80,9 @@ func runStats(args []string) int {
 	if line := accounting.WorkersLine(nums.Ledger.Workers); line != "" {
 		fmt.Fprintln(os.Stdout, line)
 	}
+	if line := accounting.CompactorScopeLine(nums.Compactor, nums.Scope); line != "" {
+		fmt.Fprintln(os.Stdout, line)
+	}
 	fmt.Fprintln(os.Stdout, accounting.AdoptionLine(accounting.BuildAdoption(events, accounting.Scope{Kind: accounting.ScopeDays, Days: opts.Days})))
 	if len(events) > 0 {
 		readout.PrintStats(events, opts, os.Stdout)

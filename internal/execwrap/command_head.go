@@ -56,7 +56,7 @@ var headWrappers = map[string]bool{
 func CommandHead(command string) string {
 	first := ""
 	for _, seg := range splitSegments(command) {
-		code, base := segmentHead(strings.Fields(seg))
+		code, base := segmentHead(strings.Fields(stripFuncHeader(seg)))
 		if base == "" {
 			continue
 		}
@@ -73,10 +73,67 @@ func CommandHead(command string) string {
 	return first
 }
 
-// trivialHeads are shell setup programs that never name what a compound runs.
+// trivialHeads are shell setup or condition programs that never name what a compound runs.
 var trivialHeads = map[string]bool{
 	"cd": true, "pushd": true, "popd": true, "export": true, "set": true,
 	"source": true, ".": true, "unset": true, "true": true, "alias": true,
+	"test": true, "[": true, "[[": true, "read": true,
+}
+
+// shellControlKeywords are shell syntax keywords skipped when finding the
+// inner command of a control-flow construct.
+var shellControlKeywords = map[string]bool{
+	"do": true, "done": true, "then": true, "else": true, "elif": true,
+	"fi": true, "if": true, "while": true, "until": true, "in": true,
+	"case": true, "esac": true, "function": true,
+}
+
+// stripFuncHeader removes a leading shell function definition header such as
+// `k(){`, `k() {`, `k () {`, `function k {`, or `function k() {`.
+func stripFuncHeader(seg string) string {
+	s := strings.TrimSpace(seg)
+	hasFuncKW := false
+	if rest, ok := cutKeyword(s, "function"); ok {
+		hasFuncKW = true
+		s = strings.TrimSpace(rest)
+	}
+	n := 0
+	for n < len(s) {
+		c := s[n]
+		isAlpha := c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_'
+		isRest := isAlpha || (n > 0 && (c >= '0' && c <= '9' || c == '-'))
+		if (n == 0 && !isAlpha) || (n > 0 && !isRest) {
+			break
+		}
+		n++
+	}
+	if n == 0 {
+		return seg
+	}
+	rest := strings.TrimSpace(s[n:])
+	if strings.HasPrefix(rest, "()") {
+		rest = strings.TrimSpace(rest[2:])
+		return strings.TrimPrefix(rest, "{")
+	}
+	if hasFuncKW {
+		if strings.HasPrefix(rest, "{") {
+			return rest[1:]
+		}
+		if rest == "" {
+			return ""
+		}
+	}
+	return seg
+}
+
+func cutKeyword(s, kw string) (string, bool) {
+	if !strings.HasPrefix(s, kw) || len(s) <= len(kw) {
+		return "", false
+	}
+	if s[len(kw)] != ' ' && s[len(kw)] != '\t' {
+		return "", false
+	}
+	return s[len(kw)+1:], true
 }
 
 // splitSegments splits command at top-level &&, ||, ;, | and newlines,
@@ -107,6 +164,12 @@ func segmentHead(fields []string) (code, base string) {
 	for i := 0; i < len(fields); i++ {
 		tok := strings.Trim(fields[i], `"'`+"`(){}")
 		if tok == "" || tok == "!" || isAssignment(tok) {
+			continue
+		}
+		if tok == "for" {
+			return HeadUnknown, ""
+		}
+		if shellControlKeywords[tok] {
 			continue
 		}
 		base := filepath.Base(strings.ReplaceAll(tok, `\`, "/"))

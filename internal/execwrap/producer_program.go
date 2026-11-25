@@ -160,7 +160,7 @@ func pipelineProducer(cmd string) (code, base string) {
 	}
 	stages = append(stages, cmd[start:])
 	for _, st := range stages {
-		c, b := segmentHead(strings.Fields(st))
+		c, b := segmentHead(strings.Fields(stripFuncHeader(st)))
 		if b == "" {
 			continue
 		}
