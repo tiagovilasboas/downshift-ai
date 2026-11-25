@@ -28,7 +28,18 @@ func TestAgentDefaultTiersInProvidersForEveryHarness(t *testing.T) {
 	}
 	for _, n := range core.AllHarnessCaps() {
 		t.Run(n.Harness, func(t *testing.T) {
-			env, err := call(t, d, "providers", `{"harness":"`+n.Harness+`"}`)
+			slimEnv, err := call(t, d, "providers", `{"harness":"`+n.Harness+`"}`)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var slim providersData
+			if err := json.Unmarshal(slimEnv["data"], &slim); err != nil {
+				t.Fatal(err)
+			}
+			if len(slim.AgentDefaultTiers) != 0 || slim.AgentPrefix != n.Caps.SquadAgentPrefix {
+				t.Fatalf("default call: tiers=%d prefix=%q, want 0 / %q", len(slim.AgentDefaultTiers), slim.AgentPrefix, n.Caps.SquadAgentPrefix)
+			}
+			env, err := call(t, d, "providers", `{"harness":"`+n.Harness+`","include_agent_tiers":true}`)
 			if err != nil {
 				t.Fatal(err)
 			}
