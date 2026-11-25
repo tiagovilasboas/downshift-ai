@@ -49,6 +49,13 @@ func compactVerboseText(in hookport.ToolOutput, o Options) Result {
 		EmittedBytes: int64(raw),
 		Passthrough:  execwrap.PassthroughSmallOutput,
 	}
+	if isRetrieveTool(in.ToolName) {
+		if in.ExitCode > 0 {
+			res.ExitCode = in.ExitCode
+		}
+		res.Passthrough = execwrap.PassthroughRetrieve
+		return settle(res, in)
+	}
 	if in.ExitCode > 0 {
 		res.ExitCode = in.ExitCode
 		res.Passthrough = execwrap.PassthroughUnrecognized

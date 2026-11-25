@@ -148,7 +148,7 @@ func scanFile(path string, parse parser, cutoff time.Time, t *tally, dd *dedupSt
 	}
 	for _, cs := range pending {
 		for _, c := range cs {
-			t.add(c, 0)
+			t.add(c, 0, false)
 		}
 	}
 }
@@ -174,7 +174,7 @@ func apply(ev event, pending map[string][]Class, nonBash map[string]struct{}, t 
 		if len(pending) >= maxPending {
 			for id, cs := range pending {
 				for _, k := range cs {
-					t.add(k, 0)
+					t.add(k, 0, false)
 				}
 				delete(pending, id)
 			}
@@ -195,13 +195,13 @@ func apply(ev event, pending map[string][]Class, nonBash map[string]struct{}, t 
 		if cs := pending[r.id]; len(cs) > 0 {
 			delete(pending, r.id)
 			for _, c := range cs {
-				t.add(c, r.bytes/int64(len(cs)))
+				t.add(c, r.bytes/int64(len(cs)), r.compacted)
 			}
 			continue
 		}
 		if _, ok := nonBash[r.id]; ok {
 			delete(nonBash, r.id)
-			t.addNonBash(r.bytes)
+			t.addNonBash(r.bytes, r.compacted)
 		}
 	}
 }
