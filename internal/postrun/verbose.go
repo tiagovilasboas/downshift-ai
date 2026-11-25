@@ -121,6 +121,9 @@ func compactVerboseBody(kind, toolName string, raw []byte, threshold int, balanc
 		if cut, ok := compressor.Balance(compressor.BalanceLog, cur); ok {
 			cur = cut
 			changed = true
+		} else if cut, ok := compressor.BalanceBytesScaled(cur); ok {
+			cur = cut
+			changed = true
 		}
 	}
 	return cur, changed

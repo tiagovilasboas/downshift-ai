@@ -15,7 +15,7 @@ import (
 
 const (
 	readSeenSubdir   = "read-seen"
-	readSeenMinBytes = 2 << 10
+	readSeenMinBytes = 512
 )
 
 // fileReadHeads are the shell programs whose output is a file's text. Only

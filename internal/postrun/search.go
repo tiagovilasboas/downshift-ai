@@ -65,7 +65,7 @@ func compactSearch(in hookport.ToolOutput, o Options) Result {
 
 func searchThresholds(o Options) (byteThresh, lineThresh int) {
 	if o.BalanceThreshold > 0 && o.BalanceThreshold != PostRunBalanceThreshold {
-		return o.BalanceThreshold, 0
+		return o.BalanceThreshold, SearchThresholdLines
 	}
 	return SearchThresholdBytes, SearchThresholdLines
 }

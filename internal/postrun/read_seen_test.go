@@ -69,7 +69,7 @@ func TestSeenRead_SmallOrNonReadOrNoKeepPasses(t *testing.T) {
 	t.Setenv(paths.EnvStateDir, t.TempDir())
 	keep, n := seenKeep(t)
 	o := Options{Keep: keep, Session: sessA}
-	small := strings.Repeat("x\n", 500) // under 2 KiB
+	small := strings.Repeat("x\n", 200) // under 512 B
 	for i := 0; i < 2; i++ {
 		if res := Compact(allCaps, shellRead("cat a.go", small), o); res.Replaced {
 			t.Fatalf("small output must pass: %+v", res)
@@ -103,5 +103,24 @@ func TestSeenRead_ReadToolRepeatIsDeduped(t *testing.T) {
 	res := Compact(allCaps, in, o)
 	if !res.Replaced || !strings.Contains(res.Output.Content, "unchanged") || res.KeptID != "seenid123456" {
 		t.Fatalf("second read must be deduped: %+v", res)
+	}
+}
+
+func TestSeenRead_MidBand512To2KBDeduped(t *testing.T) {
+	t.Setenv(paths.EnvStateDir, t.TempDir())
+	keep, _ := seenKeep(t)
+	o := Options{Keep: keep, Session: sessA}
+	body := strings.Repeat("1\tline of file\n", 50) // 750 B: in [512, 2048)
+	if len(body) < 512 || len(body) >= 2<<10 {
+		t.Fatalf("fixture len = %d, want in [512, 2048)", len(body))
+	}
+	in := hookport.ToolOutput{Category: core.CategoryRead, Content: body, HasContent: true}
+	first := Compact(allCaps, in, o)
+	if first.Replaced || first.Output.Content != body {
+		t.Fatalf("first mid-band Read must stay verbatim: %+v", first)
+	}
+	second := Compact(allCaps, in, o)
+	if !second.Replaced || !strings.Contains(second.Output.Content, "unchanged") || second.KeptID != "seenid123456" || second.EmittedBytes >= second.RawBytes {
+		t.Fatalf("second mid-band Read not deduped: %+v", second)
 	}
 }

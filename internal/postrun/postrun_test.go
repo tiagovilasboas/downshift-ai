@@ -405,3 +405,130 @@ func TestCompact_GlabAndSmallDiffPassthrough(t *testing.T) {
 		}
 	})
 }
+
+func TestCompact_GitRemoteStderrCompaction(t *testing.T) {
+	progressNoise := "remote: Enumerating objects: 142, done.\n" +
+		"remote: Counting objects: 100% (142/142), done.\n" +
+		"remote: Compressing objects: 100% (89/89), done.\n" +
+		"Receiving objects: 100% (142/142), 58.12 KiB | 1.20 MiB/s, done.\n" +
+		"Resolving deltas: 100% (64/64), done.\n" +
+		"Total 142 (delta 64), reused 120 (delta 48), pack-reused 0\n"
+
+	t.Run("git fetch exit 0 compacts stderr progress and keeps refs", func(t *testing.T) {
+		stderr := progressNoise + "From github.com:org/repo\n * branch            main       -> FETCH_HEAD\n   abc1234..def5678  main       -> origin/main\n"
+		var stored []byte
+		keep := func(b []byte) (string, bool) { stored = append([]byte(nil), b...); return "ccrfetch0001", true }
+		res := Compact(allCaps, hookport.ToolOutput{
+			Category:  core.CategoryShell,
+			Command:   "git fetch origin",
+			Stderr:    stderr,
+			HasStdout: true,
+			HasStderr: true,
+			ExitCode:  0,
+		}, Options{Keep: keep, Balanced: true})
+		if !res.Replaced || !res.Compacted || res.Family != execwrap.FamilyGitFetch {
+			t.Fatalf("expected git fetch stderr compacted: %+v", res)
+		}
+		if res.KeptID != "ccrfetch0001" || string(stored) != stderr {
+			t.Errorf("CCR mismatch: id=%q stored=%d stderr=%d", res.KeptID, len(stored), len(stderr))
+		}
+		if strings.Contains(res.Output.Stderr, "Receiving objects") || strings.Contains(res.Output.Stderr, "Resolving deltas") || !strings.Contains(res.Output.Stderr, "origin/main") {
+			t.Errorf("unexpected stderr:\n%s", res.Output.Stderr)
+		}
+	})
+
+	t.Run("git pull with stdout also compacts stderr progress", func(t *testing.T) {
+		stderr := progressNoise + "From github.com:org/repo\n * branch            main       -> FETCH_HEAD\n"
+		stdout := "Updating abc1234..def5678\nFast-forward\n 1 file changed, 2 insertions(+)\n"
+		var stored []byte
+		keep := func(b []byte) (string, bool) { stored = append([]byte(nil), b...); return "ccrpull00001", true }
+		res := Compact(allCaps, hookport.ToolOutput{
+			Category:  core.CategoryShell,
+			Command:   "git pull",
+			Stdout:    stdout,
+			Stderr:    stderr,
+			HasStdout: true,
+			HasStderr: true,
+			ExitCode:  0,
+		}, Options{Keep: keep, Balanced: true})
+		if !res.Replaced || res.Family != execwrap.FamilyGitPull || res.KeptID != "ccrpull00001" || string(stored) != stderr {
+			t.Fatalf("expected git pull stderr compacted: %+v", res)
+		}
+		if res.Output.Stdout != stdout || strings.Contains(res.Output.Stderr, "Receiving objects") {
+			t.Errorf("stdout=%q\nstderr=%q", res.Output.Stdout, res.Output.Stderr)
+		}
+	})
+
+	t.Run("git push exit 1 preserves error fatal rejected lines verbatim", func(t *testing.T) {
+		stderr := "Enumerating objects: 20, done.\n" +
+			"Counting objects: 100% (20/20), done.\n" +
+			"Delta compression using up to 8 threads\n" +
+			"Compressing objects: 100% (12/12), done.\n" +
+			"Writing objects: 100% (12/12), 2.10 KiB | 2.10 MiB/s, done.\n" +
+			"Total 12 (delta 8), reused 0 (delta 0), pack-reused 0\n" +
+			"remote: error: GH006: Protected branch update failed.\n" +
+			"To github.com:org/repo.git\n" +
+			" ! [rejected]        main -> main (protected branch hook declined)\n" +
+			"fatal: failed to push some refs to 'github.com:org/repo.git'\n"
+		var stored []byte
+		keep := func(b []byte) (string, bool) { stored = append([]byte(nil), b...); return "ccrpush00001", true }
+		res := Compact(allCaps, hookport.ToolOutput{
+			Category:  core.CategoryShell,
+			Command:   "git push origin main",
+			Stderr:    stderr,
+			HasStderr: true,
+			ExitCode:  1,
+		}, Options{Keep: keep, Balanced: true})
+		if !res.Replaced || res.ExitCode != 1 || res.Family != execwrap.FamilyGitPush {
+			t.Fatalf("expected failed git push stderr compacted: %+v", res)
+		}
+		if res.KeptID != "ccrpush00001" || string(stored) != stderr {
+			t.Errorf("CCR mismatch: id=%q stored=%d stderr=%d", res.KeptID, len(stored), len(stderr))
+		}
+		for _, want := range []string{"remote: error: GH006", "! [rejected]", "fatal: failed to push"} {
+			if !strings.Contains(res.Output.Stderr, want) {
+				t.Errorf("missing %q in:\n%s", want, res.Output.Stderr)
+			}
+		}
+	})
+
+	t.Run("git push exit 1 large stderr falls back to BalanceFailed with CCR", func(t *testing.T) {
+		var b strings.Builder
+		for i := 0; i < 80; i++ {
+			fmt.Fprintf(&b, "remote: hook check line %03d: %s\n", i, strings.Repeat("x", 45))
+		}
+		b.WriteString("error: hook rejected commit\nfatal: push aborted\n")
+		stderr := b.String()
+		var stored []byte
+		keep := func(data []byte) (string, bool) { stored = append([]byte(nil), data...); return "ccrpushbig01", true }
+		res := Compact(allCaps, hookport.ToolOutput{
+			Category:  core.CategoryShell,
+			Command:   "git push origin main",
+			Stderr:    stderr,
+			HasStdout: true,
+			HasStderr: true,
+			ExitCode:  1,
+		}, Options{Keep: keep, Balanced: true})
+		if !res.Replaced || res.KeptID != "ccrpushbig01" || string(stored) != stderr {
+			t.Fatalf("expected large failed push fallback cut with CCR: %+v", res)
+		}
+		if !strings.Contains(res.Output.Stderr, "error: hook rejected commit") || !strings.Contains(res.Output.Stderr, "fatal: push aborted") {
+			t.Errorf("lost error/fatal lines:\n%s", res.Output.Stderr)
+		}
+	})
+
+	t.Run("git fetch short fatal stderr stays raw", func(t *testing.T) {
+		stderr := "fatal: could not read Username for 'https://github.com': terminal prompts disabled\n"
+		res := Compact(allCaps, hookport.ToolOutput{
+			Category:  core.CategoryShell,
+			Command:   "git fetch origin",
+			Stderr:    stderr,
+			HasStdout: true,
+			HasStderr: true,
+			ExitCode:  128,
+		}, Options{Keep: keepOK, Balanced: true})
+		if res.Replaced || res.Output.Stderr != stderr || res.ExitCode != 128 {
+			t.Fatalf("short fatal stderr altered: %+v", res)
+		}
+	})
+}

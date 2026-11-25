@@ -220,7 +220,7 @@ func TestDedupRead_FailOpenGuards(t *testing.T) {
 		t.Fatal("expected dedup once ccrID is provided")
 	}
 
-	// Tiny read (< 1024 bytes) never dedups.
+	// Tiny read (< 512 bytes) never dedups.
 	tinyPath := filepath.Join(t.TempDir(), "tiny.go")
 	tiny := "package main\nfunc main() {}\n"
 	if err := os.WriteFile(tinyPath, []byte(tiny), 0o600); err != nil {
@@ -327,5 +327,28 @@ func TestDedupRead_PrunesExpiredAndBoundsCount(t *testing.T) {
 	}
 	if len(entries) > readDedupMaxFiles {
 		t.Errorf("dir has %d entries, want <= %d", len(entries), readDedupMaxFiles)
+	}
+}
+
+func TestDedupRead_MidBand512To1024(t *testing.T) {
+	t.Setenv(paths.EnvStateDir, t.TempDir())
+	filePath := filepath.Join(t.TempDir(), "mid.go")
+	content := makeFileContent(12) // ~700 B: in [512, 1024)
+	if len(content) < 512 || len(content) >= 1024 {
+		t.Fatalf("fixture len = %d, want in [512, 1024)", len(content))
+	}
+	if err := os.WriteFile(filePath, []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	input := readInputJSON(t, map[string]any{"file_path": filePath})
+	sess := strings.Repeat("ab", 32)
+
+	got1, changed1 := DedupRead(sess, input, content, "ccrmid000001")
+	if changed1 || got1 != content {
+		t.Fatalf("first read must stay verbatim for Edit: changed=%v", changed1)
+	}
+	got2, changed2 := DedupRead(sess, input, content, "ccrmid000001")
+	if !changed2 || !strings.Contains(got2, "unchanged mid.go") || len(got2) >= len(content) {
+		t.Fatalf("repeat mid-band read not deduped to shorter pointer: changed=%v got=%q", changed2, got2)
 	}
 }

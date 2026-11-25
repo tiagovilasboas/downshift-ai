@@ -254,3 +254,30 @@ func TestCompact_SearchMediumBandAndLineThreshold(t *testing.T) {
 		}
 	})
 }
+
+func TestCompact_SearchCustomBalanceThresholdPreservesLineThreshold(t *testing.T) {
+	opts := Options{Keep: keepOK, Balanced: true, BalanceThreshold: 16 << 10}
+
+	var grep strings.Builder
+	for i := 1; i <= 50; i++ {
+		fmt.Fprintf(&grep, "pkg/a.go:%d:item%02d := %d\n", i, i, i)
+	}
+	res := Compact(allCaps, hookport.ToolOutput{Category: core.CategorySearch, Content: grep.String(), HasContent: true}, opts)
+	if !res.Replaced || res.KeptID != "0123456789ab" {
+		t.Fatalf("custom BalanceThreshold broke 50-line Grep compaction: %+v", res)
+	}
+
+	paths := make([]string, 50)
+	for i := range paths {
+		paths[i] = fmt.Sprintf("internal/pkg/component_%02d.go", i)
+	}
+	pathRes := Compact(allCaps, hookport.ToolOutput{Category: core.CategorySearch, Paths: paths, HasPaths: true}, opts)
+	if !pathRes.Replaced || pathRes.KeptID != "0123456789ab" {
+		t.Fatalf("custom BalanceThreshold broke 50-path Glob compaction: %+v", pathRes)
+	}
+
+	smallGrep := strings.Repeat("pkg/a.go:1:val := 1\n", 20)
+	if smallRes := Compact(allCaps, hookport.ToolOutput{Category: core.CategorySearch, Content: smallGrep, HasContent: true}, opts); smallRes.Replaced {
+		t.Errorf("under 40 lines and under custom threshold should stay raw: %+v", smallRes)
+	}
+}

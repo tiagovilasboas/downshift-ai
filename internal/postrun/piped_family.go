@@ -10,19 +10,25 @@ import (
 )
 
 // A piped family command is one family producer plus harmless trailing
-// stages: `2>&1`, `| cat`, `| head -N`, `| tail -N`, and, only when the
-// family prints one record per line, `| grep [-v -i -E] pat`, `| sort`,
-// `| uniq`. Anything else (xargs, tee, awk, a redirect, a substitution)
-// keeps the command unclassified. A command led by a search program stays
-// with execwrap.CutSearch, which already honours the agent's head/tail limit.
+// stages: `2>&1`, `| cat [-u|-]`, `| head -N`, `| tail -N`, and, only when the
+// family prints one record per line, `| grep [-v|-i|-E|-F|-n|-w|-c] pat`,
+// `| sort [-r|-u|-n|-f|-h|-V|-b|-s]`, `| uniq [-c|-d|-u|-i]`. Anything else
+// (xargs, tee, awk, a redirect, a substitution) keeps the command unclassified.
+// A command led by a search program stays with execwrap.CutSearch, which
+// already honours the agent's head/tail limit.
 
 // lineRecordFamilies print one record per line, so grep/sort/uniq keep the
-// shape the family compressor reads.
+// shape the family compressor reads (or formatAccepted guards the detector).
 var lineRecordFamilies = map[execwrap.Family]bool{
-	execwrap.FamilyLs:         true,
-	execwrap.FamilyFind:       true,
-	execwrap.FamilyGitBranch:  true,
-	execwrap.FamilyGitLsFiles: true,
+	execwrap.FamilyLs:           true,
+	execwrap.FamilyFind:         true,
+	execwrap.FamilyGitBranch:    true,
+	execwrap.FamilyGitLsFiles:   true,
+	execwrap.FamilyGitRemote:    true,
+	execwrap.FamilyGitStash:     true,
+	execwrap.FamilyDockerPS:     true,
+	execwrap.FamilyDockerImages: true,
+	execwrap.FamilyKubectlGet:   true,
 }
 
 // extractPipedPostRunFamily is extractPostRunFamily that also accepts one
@@ -85,15 +91,19 @@ func pipeStagesHarmless(stages []string, family execwrap.Family) bool {
 		}
 		switch words[0] {
 		case "cat":
-			if len(words) != 1 {
+			if !shortFlagsOnly(words[1:], "u", true) {
 				return false
 			}
 		case "head", "tail":
 			if !execwrap.IsLineFilter(words) {
 				return false
 			}
-		case "sort", "uniq":
-			if len(words) != 1 || !lineRecordFamilies[family] {
+		case "sort":
+			if !lineRecordFamilies[family] || !shortFlagsOnly(words[1:], "runfVhVsb", false) {
+				return false
+			}
+		case "uniq":
+			if !lineRecordFamilies[family] || !shortFlagsOnly(words[1:], "cdui", false) {
 				return false
 			}
 		case "grep":
@@ -107,14 +117,35 @@ func pipeStagesHarmless(stages []string, family execwrap.Family) bool {
 	return true
 }
 
-// simpleGrepStage accepts `[-v|-i|-E ...] pattern`: short flags from vEi only
-// and exactly one pattern word.
+// shortFlagsOnly reports whether every arg is a cluster of short flags from
+// allowed (plus optional bare "-" when allowDash is true), with no operands.
+func shortFlagsOnly(args []string, allowed string, allowDash bool) bool {
+	for _, a := range args {
+		if allowDash && a == "-" {
+			continue
+		}
+		if len(a) < 2 || a[0] != '-' {
+			return false
+		}
+		for _, f := range a[1:] {
+			if !strings.ContainsRune(allowed, f) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// simpleGrepStage accepts `[-v|-i|-E|-F|-n|-w|-c ...] pattern`: short flags
+// from viEFnwc only (no flag arguments) and exactly one pattern word.
 func simpleGrepStage(args []string) bool {
 	pattern := false
 	for _, a := range args {
 		if !pattern && len(a) > 1 && a[0] == '-' {
 			for _, f := range a[1:] {
-				if f != 'v' && f != 'i' && f != 'E' {
+				switch f {
+				case 'v', 'i', 'E', 'F', 'n', 'w', 'c':
+				default:
 					return false
 				}
 			}
