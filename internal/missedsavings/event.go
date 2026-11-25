@@ -20,9 +20,10 @@ type event struct {
 }
 
 type call struct {
-	id      string
-	command string
-	nonBash bool
+	id         string
+	command    string
+	nonBash    bool
+	background bool
 }
 
 type result struct {

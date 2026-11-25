@@ -27,7 +27,8 @@ type claudeBlock struct {
 	Name      string `json:"name"`
 	ToolUseID string `json:"tool_use_id"`
 	Input     struct {
-		Command string `json:"command"`
+		Command         string `json:"command"`
+		RunInBackground bool   `json:"run_in_background"`
 	} `json:"input"`
 	Content json.RawMessage `json:"content"`
 }
@@ -50,7 +51,7 @@ func parseClaude(line []byte) (event, bool) {
 	for _, b := range blocks {
 		switch {
 		case b.Type == "tool_use" && b.Name == "Bash" && b.Input.Command != "":
-			ev.calls = append(ev.calls, call{id: b.ID, command: b.Input.Command})
+			ev.calls = append(ev.calls, call{id: b.ID, command: b.Input.Command, background: b.Input.RunInBackground})
 		case b.Type == "tool_use" && b.Name != "" && b.Name != "Bash" && b.ID != "":
 			ev.calls = append(ev.calls, call{id: b.ID, nonBash: true})
 		case b.Type == "tool_result" && b.ToolUseID != "":

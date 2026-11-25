@@ -348,3 +348,95 @@ func TestScanCoveragePostRunCompaction(t *testing.T) {
 		t.Fatalf("total coverage = %+v", cov)
 	}
 }
+
+func claudeUseZeroTS(id, cmd string) string {
+	in, _ := json.Marshal(cmd)
+	return fmt.Sprintf(`{"type":"assistant","timestamp":"","message":{"content":[{"type":"tool_use","id":%q,"name":"Bash","input":{"command":%s}}]}}`, id, in)
+}
+
+func claudeResultZeroTS(id, text string) string {
+	return fmt.Sprintf(`{"type":"user","timestamp":"","message":{"content":[{"type":"tool_result","tool_use_id":%q,"content":%q}]}}`, id, text)
+}
+
+func claudeUserText(ago time.Duration, text string) string {
+	return fmt.Sprintf(`{"type":"user","timestamp":%q,"message":{"content":%q}}`, stamp(ago), text)
+}
+
+func claudeUseBackground(ago time.Duration, id, cmd string, bg bool) string {
+	in, _ := json.Marshal(cmd)
+	return fmt.Sprintf(`{"type":"assistant","timestamp":%q,"message":{"content":[{"type":"tool_use","id":%q,"name":"Bash","input":{"command":%s,"run_in_background":%t}}]}}`, stamp(ago), id, in, bg)
+}
+
+func TestScanTimestampLeakZeroTS(t *testing.T) {
+	home := t.TempDir()
+	d := 24 * time.Hour
+
+	// Session with old pre-cutoff lines (including a non-tool user prompt) followed
+	// by empty-timestamp tool_use entries, then recent in-window entries.
+	writeLines(t, filepath.Join(home, ".claude", "projects", "p1", "mixed.jsonl"),
+		claudeUserText(10*d, "old prompt"),
+		claudeUseZeroTS("old_zero_paired", "go test ./..."),
+		claudeResult(10*d, "old_zero_paired", strings.Repeat("o", 900)),
+		claudeUseZeroTS("old_zero_unmatched", "npm test"),
+		claudeUserText(time.Hour, "recent prompt"),
+		claudeUseZeroTS("new_zero_1", "go test ./..."),
+		claudeResult(time.Hour, "new_zero_1", strings.Repeat("n", 300)),
+		claudeUseZeroTS("new_zero_2", "npm test"),
+		claudeResultZeroTS("new_zero_2", strings.Repeat("m", 200)),
+	)
+
+	// Leading empty-timestamp tool_use before any timestamped line, followed by a
+	// pre-cutoff result: must be dropped and not pollute dedup state.
+	writeLines(t, filepath.Join(home, ".claude", "projects", "p1", "leading_old.jsonl"),
+		claudeUseZeroTS("shared_id", "go test ./..."),
+		claudeResult(10*d, "shared_id", strings.Repeat("x", 400)),
+	)
+	writeLines(t, filepath.Join(home, ".claude", "projects", "p1", "leading_new.jsonl"),
+		claudeUseZeroTS("shared_id", "go test ./..."),
+		claudeResult(time.Hour, "shared_id", strings.Repeat("y", 100)),
+	)
+
+	r, err := Scan(Options{Home: home, Harness: HarnessClaudeCode, Since: 7 * d, Label: "7d", Top: 10, Dedup: true, Now: testNow})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r.Total.Commands != 3 || r.Total.Bare != 3 || r.Total.BareBytes != 600 {
+		t.Fatalf("total = %+v, want 3 commands / 3 bare / 600 bytes", r.Total)
+	}
+	if r.Total.DuplicatesSkipped != 0 {
+		t.Fatalf("DuplicatesSkipped = %d, want 0", r.Total.DuplicatesSkipped)
+	}
+
+	// Synthetic fixture with zero timestamps anywhere and recent file mtime still counts.
+	synHome := t.TempDir()
+	writeLines(t, filepath.Join(synHome, ".claude", "projects", "p1", "notimestamp.jsonl"),
+		claudeUseZeroTS("s1", "go test ./..."),
+		claudeResultZeroTS("s1", strings.Repeat("z", 150)),
+	)
+	synRep := scan(t, synHome, HarnessClaudeCode, 7*d)
+	if synRep.Total.Commands != 1 || synRep.Total.Bare != 1 || synRep.Total.BareBytes != 150 {
+		t.Fatalf("synthetic no-ts total = %+v, want 1 command / 150 bytes", synRep.Total)
+	}
+}
+
+func TestScanBackgroundBashSkipped(t *testing.T) {
+	home := t.TempDir()
+	h := time.Hour
+	writeLines(t, filepath.Join(home, ".claude", "projects", "p1", "s.jsonl"),
+		claudeUseBackground(h, "bg1", "go test ./...", true),
+		claudeResult(h, "bg1", strings.Repeat("a", 500)),
+		claudeUseBackground(h, "bg2", "git status", true),
+		claudeResult(h, "bg2", strings.Repeat("b", 200)),
+		claudeUseBackground(h, "bg_unallow", "vim x", true),
+		claudeResult(h, "bg_unallow", "ok"),
+		claudeUseBackground(h, "fg1", "go test ./...", false),
+		claudeResult(h, "fg1", strings.Repeat("c", 300)),
+	)
+	r := scan(t, home, HarnessClaudeCode, 24*h)
+	if r.Total.Commands != 4 || r.Total.Bare != 1 || r.Total.BareBytes != 300 || r.Total.Skipped != 3 {
+		t.Fatalf("total = %+v, want 4 commands / 1 bare (300B) / 3 skipped", r.Total)
+	}
+	if r.Total.SkipReason[reasonBackground] != 2 || r.Total.SkipReason["not_allowlisted"] != 1 {
+		t.Fatalf("SkipReason = %+v, want background:2 not_allowlisted:1", r.Total.SkipReason)
+	}
+}
