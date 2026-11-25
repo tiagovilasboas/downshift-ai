@@ -52,6 +52,14 @@ downshift update
 
 [![O assistente interativo detecta harnesses, permite escolher componentes e revisar alterações, grava após a confirmação e depois o usuário verifica a configuração](../brand/readme-media/setup-flow.svg)](../brand/readme-media/setup-flow.png)
 
+## Novo na v0.23.0
+
+- **Poda MCP, dedup e `providers` enxuto (`#222`, `#226`, `#230`)**: podadores semânticos para Sentry (`search_issues`, `search_events`) e Datadog (`execute_code`) reduzem fixtures de `4.682 -> 2.497` bytes (`-46,7%`), leituras repetidas de docs MCP na mesma sessão viram ponteiro curto do CCR e `providers` cai de `1.089 -> 176` bytes (`-83,8%`) por padrão.
+- **Sem recompactar `retrieve` e `discover` fiel (`#223`, `#224`)**: `downshift retrieve` (CLI e MCP) nunca é recompactado, e `downshift discover` contabiliza a compactação pós-execução de bash e MCP.
+- **Telemetria, `report`, `stats` e `doctor` unificados (`#225`, `#227`, `#228`, `#229`)**: economia real + rotação em `context-compactions`, `exec-retrievals` na mesma janela com tool/família, propagação de effort/complexity no `childend`, classificação de comandos compostos e checagem de `scores.json` parado e harnesses inativos no `doctor`.
+
+[Notas da v0.23.0](../releases/v0.23.0.md)
+
 ## Novo na v0.22.0
 
 - **Guardas contra travamento e prompt interativo (`#219`)**: `DOWNSHIFT_EXEC_TIMEOUT` limita a execução no `downshift compact` (saindo com `124` no timeout) e chamadas sem TTY injetam `GIT_TERMINAL_PROMPT=0` e `GH_PROMPT_DISABLED=1` para `git`/`gh` em background falharem rápido em vez de pendurarem.

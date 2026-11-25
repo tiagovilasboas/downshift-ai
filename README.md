@@ -52,6 +52,14 @@ downshift update
 
 [![Interactive setup detects harnesses, lets you choose components and review changes, writes after confirmation, then the user verifies the setup](docs/brand/readme-media/setup-flow.svg)](docs/brand/readme-media/setup-flow.png)
 
+## New in v0.23.0
+
+- **MCP pruning, dedup & slimmer `providers` (`#222`, `#226`, `#230`)**: semantic pruners for Sentry (`search_issues`, `search_events`) and Datadog (`execute_code`) cut fixture payloads `4,682 -> 2,497` bytes (`-46.7%`), repeated MCP doc reads in the same session emit short CCR pointers, and `providers` drops from `1,089 -> 176` bytes (`-83.8%`) by default.
+- **No `retrieve` re-compaction & accurate `discover` (`#223`, `#224`)**: `downshift retrieve` (CLI and MCP) is never re-compacted, and `downshift discover` counts postrun bash + MCP compaction.
+- **Unified telemetry, `report`, `stats` & `doctor` (`#225`, `#227`, `#228`, `#229`)**: real `context-compactions` savings + rotation, windowed `exec-retrievals` with tool/family, `childend` effort/complexity propagation, compound shell family classification, and stale `scores.json` / inactive-harness checks in `doctor`.
+
+[v0.23.0 release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.23.0.md)
+
 ## New in v0.22.0
 
 - **Subprocess hang & prompt guards (`#219`)**: `DOWNSHIFT_EXEC_TIMEOUT` bounds `downshift compact` child runs (exiting `124` on timeout), and non-TTY invocations inject `GIT_TERMINAL_PROMPT=0` and `GH_PROMPT_DISABLED=1` so background `git`/`gh` commands fail fast instead of hanging.
