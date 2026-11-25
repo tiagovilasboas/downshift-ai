@@ -104,7 +104,7 @@ func TestPassthroughReasonsHaveLabels(t *testing.T) {
 	for _, r := range []string{
 		execwrap.PassthroughSmallOutput, execwrap.PassthroughNonZeroExit, execwrap.PassthroughUnrecognized,
 		execwrap.PassthroughRefused, execwrap.PassthroughTooLarge, execwrap.PassthroughStderr,
-		execwrap.PassthroughHoldTimeout, execwrap.PassthroughNotRecorded,
+		execwrap.PassthroughHoldTimeout, execwrap.PassthroughNotRecorded, execwrap.PassthroughRetrieve,
 	} {
 		if notCompactedLabel[r] == "" {
 			t.Errorf("reason %q has no label", r)

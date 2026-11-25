@@ -24,6 +24,7 @@ var notCompactedLabel = map[string]string{
 	"stderr_output":       "stderr with a terminal on stdin, streamed",
 	"hold_timeout":        "held past the hold bound, streamed",
 	"not_recorded":        "reason not recorded",
+	"retrieve":            "kept output retrieved, never re-compacted",
 }
 
 // skippedLabel words a skip reason code for people.
