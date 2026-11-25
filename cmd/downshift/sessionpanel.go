@@ -29,13 +29,14 @@ type panelOptions struct {
 func writePanel(events []telemetry.Event, hash string, opt panelOptions, stdout, stderr io.Writer) int {
 	view := readout.BuildPanel(events, hash)
 	why := accounting.BuildSpawnWhy(events, hash)
-	var out any = panelNoReport{PanelView: view, Why: why}
+	var out any = panelNoReport{PanelView: view, Why: why, Version: telemetryVersion()}
 	if !opt.NoReport {
 		// The report's window reads the whole logs; the per-session view is from the tail.
 		allEvents, _ := telemetry.ReadEvents()
 		execEvents, _ := accounting.ReadExecEvents()
 		full := panelWithReport(view, hash, allEvents, execEvents)
 		full.Why = why
+		full.Version = telemetryVersion()
 		out = full
 		if opt.Brief {
 			out = briefWithTokens(view, full.TokensSavedEstimate, full.WorkingMemoryLine)
@@ -57,6 +58,8 @@ func writePanel(events []telemetry.Event, hash string, opt panelOptions, stdout,
 type panelNoReport struct {
 	readout.PanelView
 	Why []accounting.SpawnWhy `json:"routing_why"`
+	// Version is the running binary's version, for the band's brand text.
+	Version string `json:"version,omitempty"`
 }
 
 // compactorTokenEstimate names how Compactor tokens are estimated; it is the
@@ -120,6 +123,8 @@ type panelOut struct {
 	WorkingMemoryLine string                `json:"working_memory_line,omitempty"`
 	Skills            map[string]int        `json:"skills,omitempty"`
 	AdoptionLine      string                `json:"adoption_line,omitempty"`
+	// Version is the running binary's version, for the band's brand text.
+	Version string `json:"version,omitempty"`
 }
 
 // panelWithReport builds the panel from the session view and the full logs.

@@ -213,6 +213,8 @@ export type DownshiftSnapshot =
       efficiency: EfficiencyRow[]
       skills?: Record<string, number>
       adoptionLine?: string
+      /** The running Downshift binary's version, e.g. "v0.23.0"; the band's brand text shows it. */
+      version?: string
     }
 
 /** Where a gliding figure started and when (ms): the views ease from `from` to the live value. */

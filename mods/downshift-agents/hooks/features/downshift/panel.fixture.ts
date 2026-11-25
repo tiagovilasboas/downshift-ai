@@ -7,6 +7,7 @@
 export const PANEL_JSON = JSON.stringify({
   session: '034c74fd',
   summary: 'Downshift · 1 model',
+  version: 'v0.23.0',
   switched: 1,
   model_switched: 1,
   effort_changed: 0,

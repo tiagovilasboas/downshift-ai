@@ -30,6 +30,7 @@ export function parsePanel(stdout: string, now: number): DownshiftSnapshot {
   }
   const skills = skillsOf(raw.skills)
   const adoptionLine = str(raw, 'adoption_line')
+  const version = str(raw, 'version')
   return {
     status: 'ok',
     at: now,
@@ -40,6 +41,7 @@ export function parsePanel(stdout: string, now: number): DownshiftSnapshot {
     efficiency: efficiencyOf(raw.efficiency),
     ...(skills !== undefined ? { skills } : {}),
     ...(adoptionLine !== undefined ? { adoptionLine } : {}),
+    ...(version !== undefined ? { version } : {}),
   }
 }
 

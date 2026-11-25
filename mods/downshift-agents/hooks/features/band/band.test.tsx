@@ -85,7 +85,7 @@ test('the desktop band draws a logo and a task bar as Svg beside the same figure
   expect(meter?.props.width).toBe(64)
   expect(meter?.props.height).toBe(12)
 
-  for (const text of [/Downshift Agents/, /Tasks 1\/2/, /50%/, /Agents 0 active/, /Compact ~14\.4k\*/]) {
+  for (const text of [/Downshift - v0\.23\.0/, /Tasks 1\/2/, /50%/, /Agents 0 active/, /Compact ~14\.4k\*/]) {
     expect(await ui.find({ type: 'Text', text })).toBeDefined()
   }
   expect(await ui.find({ type: 'Text', text: /━/ })).toBeUndefined()
@@ -101,7 +101,7 @@ test('the desktop band never draws a frame, at any size', async ($, on) => {
 
   let ui = await $.ui.mount(band('desktop', 120, 3))
   expect(await framedBoxes(ui)).toHaveLength(0)
-  expect(await ui.find({ type: 'Text', text: /Downshift Agents/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /Downshift - v0\.23\.0/ })).toBeDefined()
   await ui.unmount()
 
   ui = await $.ui.mount(band('desktop', 50, 10))
@@ -127,7 +127,7 @@ test('the terminal band keeps its glyph meter and draws no Svg', async ($, on) =
 
   const ui = await $.ui.mount(band('terminal', 120, 10))
   expect(await ui.findAll({ type: 'Svg' })).toHaveLength(0)
-  expect(await ui.find({ type: 'Text', text: /◆ Downshift Agents/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /◆ Downshift - v0\.23\.0/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /Tasks 1\/2 ━+╸?━* 50%/ })).toBeDefined()
   await ui.unmount()
 })
