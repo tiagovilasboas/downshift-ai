@@ -54,7 +54,8 @@ func parseClaude(line []byte) (event, bool) {
 		case b.Type == "tool_use" && b.Name != "" && b.Name != "Bash" && b.ID != "":
 			ev.calls = append(ev.calls, call{id: b.ID, nonBash: true})
 		case b.Type == "tool_result" && b.ToolUseID != "":
-			ev.results = append(ev.results, result{id: b.ToolUseID, bytes: textBytes(b.Content)})
+			n, compacted := textStats(b.Content)
+			ev.results = append(ev.results, result{id: b.ToolUseID, bytes: n, compacted: compacted})
 		}
 	}
 	return ev, len(ev.calls)+len(ev.results) > 0
