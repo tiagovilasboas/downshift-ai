@@ -108,7 +108,7 @@ test('the band never takes a frame, so every column goes to its figures', async 
 
   ui = await $.ui.mount(band(120, 3))
   expect(await framedBoxes(ui)).toHaveLength(0)
-  expect(await ui.find({ type: 'Text', text: /Downshift Agents/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /Downshift - v0\.23\.0/ })).toBeDefined()
   await ui.unmount()
 
   ui = await $.ui.mount(band(50, 10))

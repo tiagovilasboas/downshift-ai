@@ -155,12 +155,12 @@ test('the band yields to a survey and keeps what another mod draws beneath', asy
 
   await $.agent.spawn(spawnInput('toolu_b'))
   let ui = await $.ui.mount(band(120))
-  expect(await ui.find({ type: 'Text', text: /Downshift Agents/ })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: /◆ Downshift/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /other mod band/ })).toBeDefined()
   await ui.unmount()
 
   ui = await $.ui.mount(band(120, true))
-  expect(await ui.find({ type: 'Text', text: /Downshift Agents/ })).toBeUndefined()
+  expect(await ui.find({ type: 'Text', text: /◆ Downshift/ })).toBeUndefined()
   expect(await ui.find({ type: 'Text', text: /other mod band/ })).toBeDefined()
   await ui.unmount()
 })
@@ -171,7 +171,7 @@ test('with zero agents and no data the band draws nothing of its own', async ($,
     return <Text>engine</Text>
   })
   const ui = await $.ui.mount(band(120))
-  expect(await ui.find({ type: 'Text', text: /Downshift Agents/ })).toBeUndefined()
+  expect(await ui.find({ type: 'Text', text: /◆ Downshift/ })).toBeUndefined()
   await ui.unmount()
 })
 
@@ -238,7 +238,7 @@ test('a stored view from an earlier load is kept: a hidden band stays hidden', a
 
   await $.agent.spawn(spawnInput('toolu_h'))
   const ui = await $.ui.mount(band(120))
-  expect(await ui.find({ type: 'Text', text: /Downshift Agents/ })).toBeUndefined()
+  expect(await ui.find({ type: 'Text', text: /◆ Downshift/ })).toBeUndefined()
   await ui.unmount()
 })
 

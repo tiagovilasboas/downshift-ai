@@ -35,6 +35,15 @@ const segment = (key: string, min: number, parts: Part[]): Segment => ({
   text: parts.map(p => p.text).join(''),
 })
 
+/** "Downshift - v0.23.0"; just "Downshift" until the panel reports a version. */
+export function brandText(version?: string): string {
+  const v = version?.trim()
+  if (!v || v === 'dev') {
+    return 'Downshift'
+  }
+  return `Downshift - ${/^\d/.test(v) ? `v${v}` : v}`
+}
+
 export function bandSegments(
   input: {
     tasks: ReturnType<typeof progressOf>
@@ -43,13 +52,15 @@ export function bandSegments(
     /** The session's run counts, for the honest zero: copied from Downshift, never computed. */
     runs?: { commands: number; compacted: number }
     isDownshiftOk: boolean
+    /** The Downshift binary's version, when the panel reported one. */
+    version?: string
     working?: ReturnType<typeof workingNow>
   },
   columns: number,
 ): Segment[] {
   const { tasks, agents } = input
   const segments: Segment[] = [
-    segment('brand', 0, [{ text: '◆ ', color: ACCENT }, { text: 'Downshift Agents', bold: true }]),
+    segment('brand', 0, [{ text: '◆ ', color: ACCENT }, { text: brandText(input.version), bold: true }]),
     segment('tasks', 40, tasksParts(tasks, columns >= 90 ? 8 : 5)),
     segment('agents', 60, [
       { text: 'Agents ' },
@@ -123,6 +134,7 @@ export function drawBand(on: On): void {
         compact: snapshot.status === 'ok' ? snapshot.compactor?.estimatedTokens : undefined,
         runs: snapshot.status === 'ok' && snapshot.compactor ? { commands: snapshot.compactor.commands, compacted: snapshot.compactor.compacted } : undefined,
         isDownshiftOk: snapshot.status === 'ok',
+        version: snapshot.status === 'ok' ? snapshot.version : undefined,
         working: workingNow(agents),
       },
       e.props.bodyColumns,
