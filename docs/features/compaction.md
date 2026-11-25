@@ -7,10 +7,10 @@ preserving exit codes and failure details while dramatically cutting token usage
 
 ## How It Works
 
-When you wrap a command with `downshift compactor`:
+When you wrap a command with `downshift compact`:
 
 ```bash
-downshift compactor -- go test ./...
+downshift compact -- go test ./...
 ```
 
 Downshift:
@@ -429,7 +429,7 @@ The compactor refuses non-allowlisted commands, so you can always run directly:
 
 ```bash
 # This runs through compactor
-downshift compactor -- go test ./...
+downshift compact -- go test ./...
 
 # This runs directly (no compaction)
 go test ./...

@@ -278,7 +278,7 @@ You implement features and fix bugs with clean, tested code.
 
 ## Verification
 
-Run `downshift compactor -- <test command>` before reporting done.
+Run `downshift compact -- <test command>` before reporting done.
 
 ## Output Format
 

@@ -63,23 +63,23 @@ Sempre invoque comandos verbosos através do compactor:
 
 ```bash
 # Test runners
-downshift compactor -- go test ./...
-downshift compactor -- pytest
-downshift compactor -- npm test
-downshift compactor -- cargo test
+downshift compact -- go test ./...
+downshift compact -- pytest
+downshift compact -- npm test
+downshift compact -- cargo test
 
 # GitHub CLI
-downshift compactor -- gh pr list
-downshift compactor -- gh run view 12345 --log
+downshift compact -- gh pr list
+downshift compact -- gh run view 12345 --log
 
 # Build tools
-downshift compactor -- go build -v ./...
-downshift compactor -- cargo build --release
-downshift compactor -- make build
+downshift compact -- go build -v ./...
+downshift compact -- cargo build --release
+downshift compact -- make build
 
 # Git
-downshift compactor -- git status
-downshift compactor -- git log --oneline -20
+downshift compact -- git status
+downshift compact -- git log --oneline -20
 ```
 
 ### Diagnóstico
@@ -162,7 +162,7 @@ go install github.com/tiagovilasboas/downshift-ai/cmd/downshift@latest
 
 ```bash
 # Verificar se comando é suportado
-downshift compactor --list-families
+downshift compact --list-families
 
 # Comando não suportado = passthrough (comportamento correto)
 # Apenas famílias conhecidas são compactadas
@@ -177,7 +177,7 @@ downshift compactor --list-families
 go test ./...
 
 # ✅ Correto - output compactado
-downshift compactor -- go test ./...
+downshift compact -- go test ./...
 ```
 
 ### 2. Verifique o doctor após atualizações

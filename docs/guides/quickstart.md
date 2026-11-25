@@ -36,7 +36,7 @@ Check that everything is working.
 Run a command through the compactor:
 
 ```bash
-downshift compactor -- go test ./...
+downshift compact -- go test ./...
 ```
 
 Or see which models your harness offers:

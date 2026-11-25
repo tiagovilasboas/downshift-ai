@@ -181,7 +181,7 @@ flowchart LR
 ```
 
 - **Where retries belong:** In the orchestration skill ([`skills/downshift-orchestrator/SKILL.md`](../../skills/downshift-orchestrator/SKILL.md)).
-  The orchestrator checks verification commands (`downshift compactor -- <cmd>`). If the worker fails, the orchestrator
+  The orchestrator checks verification commands (`downshift compact -- <cmd>`). If the worker fails, the orchestrator
   evaluates the diff, decides whether to reuse the worker context (`send`), correct course (`steer`), escalate tier, or
   take over the task inline.
 - **Where Downshift acts:** Downshift deterministically enforces declared policies (e.g. `policy_floor`, `profiles`,

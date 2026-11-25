@@ -55,7 +55,7 @@ Every subagent delegation must provide a structured envelope:
     "path/to/target_file.go",
     "path/to/target_file_test.go"
   ],
-  "verification_gate": "downshift compactor -- go test ./internal/target/...",
+  "verification_gate": "downshift compact -- go test ./internal/target/...",
   "instructions": "Specific, mechanical steps to perform without architectural changes."
 }
 ```
@@ -100,7 +100,7 @@ Rules:
 3. Provide each worker with an explicit Task Envelope:
    - Specific Goal (1 sentence)
    - Bounded file paths (only the files the worker is allowed to read and edit)
-   - Verification command (e.g., `downshift compactor -- go test <package>`)
+   - Verification command (e.g., `downshift compact -- go test <package>`)
 4. Never delegate architectural decisions or cross-cutting refactoring to the small tier.
 5. Review the resulting git diff and verification evidence before accepting the work.
 ```
@@ -119,7 +119,7 @@ Your Assigned Task:
 Rules:
 1. Touch ONLY the files listed in Bounded Scope. Any edit outside this list will be rejected.
 2. Follow existing code patterns, clean code, and SRP. Do not add premature abstractions or comments.
-3. Wrap all allowlisted terminal commands with `downshift compactor -- <command>`.
+3. Wrap all allowlisted terminal commands with `downshift compact -- <command>`.
 4. Run the Verification Gate before finishing:
    `{{VERIFICATION_COMMAND}}`
 5. Report completion with the exact verification output and exit code. Do not provide conversational filler.
@@ -153,7 +153,7 @@ Downshift provides a comprehensive catalog of domain playbooks injected as conte
 1. **`research.md` (Strict Read-Only):** Prohibits all writes and git modifications. Instructs workers to map symbols, trace flows, read files surgically, and report findings with exact line references (`file#L10-L25`).
 2. **`implementation.md` (Clean Slice):** Single Responsibility Principle (SRP), KISS, YAGNI, strict file line caps (< 300 lines), no premature refactoring outside task boundaries.
 3. **`review.md` (AppSec & Quality Sensor):** Review diffs against OWASP ASVS standards, prompt injection risks, and architectural boundaries without modifying production source.
-4. **`tdd-verification.md` (Test Discipline):** Enforces test-first or test-alongside development, running verification gates exclusively via `downshift compactor -- <test-cmd>`.
+4. **`tdd-verification.md` (Test Discipline):** Enforces test-first or test-alongside development, running verification gates exclusively via `downshift compact -- <test-cmd>`.
 5. **`docs.md` (Technical Documentation):** Surgical updates to READMEs, architecture cards, and APIs, ensuring docstrings stay updated and author public identity is preserved.
 6. **`incident-rescue.md` (Emergency Debugging):** Root cause analysis, minimal reproduction test fixture, and surgical bugfix with zero collateral changes.
 
