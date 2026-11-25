@@ -323,3 +323,44 @@ func TestCompact_MCPJSONPruningAndFallback(t *testing.T) {
 		}
 	})
 }
+
+func TestCompact_VerboseShortLogBalanceBytesScaledFallback(t *testing.T) {
+	caps := core.HarnessCapabilities{ReplacesToolOutput: []core.ToolCategory{core.CategoryOther}}
+
+	// 60 lines (~6.3 KiB > 4 KiB, <= 140 lines): Balance(BalanceLog) returns
+	// (nil, false), so BalanceBytesScaled must handle it and store raw in CCR.
+	var b strings.Builder
+	for i := 0; i < 60; i++ {
+		fmt.Fprintf(&b, "section %02d: %s\n", i, strings.Repeat("content ", 12))
+	}
+	raw := b.String()
+	if len(raw) <= PostRunBalanceThreshold {
+		t.Fatalf("fixture %d <= %d", len(raw), PostRunBalanceThreshold)
+	}
+
+	for _, kind := range []string{VerboseKindFetch, VerboseKindMCP} {
+		t.Run(kind, func(t *testing.T) {
+			var stored []byte
+			keep := func(data []byte) (string, bool) {
+				stored = append([]byte(nil), data...)
+				return "ccrscaled001", true
+			}
+			res := Compact(caps, hookport.ToolOutput{
+				Category:    core.CategoryOther,
+				VerboseKind: kind,
+				Content:     raw,
+				HasContent:  true,
+				ExitCode:    -1,
+			}, Options{Keep: keep, Balanced: true})
+			if !res.Replaced || !res.Compacted || res.KeptID != "ccrscaled001" {
+				t.Fatalf("%s: expected BalanceBytesScaled compaction, got %+v", kind, res)
+			}
+			if string(stored) != raw {
+				t.Errorf("%s: CCR raw mismatch: stored=%d raw=%d", kind, len(stored), len(raw))
+			}
+			if res.EmittedBytes >= res.RawBytes || !execwrap.HasMarker(res.Output.Content) {
+				t.Errorf("%s: did not shrink or missing marker: raw=%d emitted=%d", kind, res.RawBytes, res.EmittedBytes)
+			}
+		})
+	}
+}

@@ -121,7 +121,7 @@ func Compact(caps core.HarnessCapabilities, in hookport.ToolOutput, o Options) (
 // compactShell compacts stdout as the wrapper would, and stderr only by the
 // balanced cut when it alone is over the threshold.
 func compactShell(in hookport.ToolOutput, o Options) Result {
-	if !in.HasStdout || in.Stdout == "" && in.Stderr == "" {
+	if (!in.HasStdout && !in.HasStderr) || (in.Stdout == "" && in.Stderr == "") {
 		return Result{}
 	}
 	if execwrap.IsWrapped(in.Command) || execwrap.HasMarker(in.Stdout) || (o.PreWrapped != nil && o.PreWrapped(in.Command)) {
@@ -185,7 +185,11 @@ func compactShell(in hookport.ToolOutput, o Options) Result {
 		out, cut = execwrap.CutSearch(in.Command, []byte(in.Stdout), exit, o.Keep, o.Session)
 	}
 	balanced := o.Balanced && exit == 0
-	if res.Family != execwrap.FamilyNone && execwrap.WithinRequestedLimit(in.Command, []byte(in.Stdout)) {
+	limitText := in.Stdout
+	if limitText == "" {
+		limitText = in.Stderr
+	}
+	if res.Family != execwrap.FamilyNone && execwrap.WithinRequestedLimit(in.Command, []byte(limitText)) {
 		balanced = false // the agent's head/tail already chose these rows
 	}
 	threshold := balanceThreshold(o)
@@ -194,29 +198,59 @@ func compactShell(in hookport.ToolOutput, o Options) Result {
 		if family == execwrap.FamilyNone {
 			shapes = execwrap.ShapesFor(in.Command, []byte(in.Stdout))
 		}
-		if exit != 0 && o.Balanced {
-			// A failed run gets the fallback cut only, which keeps its
-			// failure lines (execwrap.CompactCapturedFailed).
-			out = execwrap.CompactCapturedFailed(argv, family, []byte(in.Stdout), exit, o.Keep, threshold, o.Session, shapes)
-		} else {
-			out = execwrap.CompactCapturedShaped(argv, family, []byte(in.Stdout), exit, o.Keep, balanced, threshold, o.Session, shapes)
-		}
+		out = compactShellStream(argv, family, in.Stdout, exit, o, balanced, threshold, shapes)
 	}
 	res.Compacted, res.Folded, res.Passthrough, res.Detail, res.KeptID = out.Compacted, out.Folded, out.Passthrough, out.Detail, out.KeptID
 	if out.Compacted {
 		res.Output.Stdout = string(out.Output)
 	}
-	if in.HasStderr && len(in.Stderr) > threshold {
-		errOut := execwrap.CompactCapturedWithThreshold(nil, execwrap.FamilyNone, []byte(in.Stderr), exit, o.Keep, balanced, threshold, o.Session)
+	if in.HasStderr && in.Stderr != "" {
+		var errOut execwrap.Captured
+		if stderrCarriesFamilyReport(family) && (in.Stdout == "" || family == execwrap.FamilyGitFetch || family == execwrap.FamilyGitPull || family == execwrap.FamilyGitPush) {
+			errOut = compactShellStream(argv, family, in.Stderr, exit, o, balanced, threshold, execwrap.Shapes{})
+		} else if len(in.Stderr) > threshold {
+			errOut = execwrap.CompactCapturedWithThreshold(nil, execwrap.FamilyNone, []byte(in.Stderr), exit, o.Keep, balanced, threshold, o.Session)
+		}
 		if errOut.Compacted {
 			res.Output.Stderr = string(errOut.Output)
 			res.Compacted, res.Folded, res.Passthrough, res.Detail = true, res.Folded || errOut.Folded, "", ""
 			recordKeptID(&res, errOut.KeptID)
+		} else if in.Stdout == "" && errOut.Passthrough != "" {
+			res.Passthrough, res.Detail = errOut.Passthrough, errOut.Detail
 		}
 	}
 	res.EmittedBytes = int64(len(res.Output.Stdout) + len(res.Output.Stderr))
 	execwrap.RecordAntiLoop(o.Session, exit, res.KeptID)
 	return settle(res, in)
+}
+
+func compactShellStream(argv []string, family execwrap.Family, data string, exit int, o Options, balanced bool, threshold int, shapes execwrap.Shapes) execwrap.Captured {
+	if exit != 0 && o.Balanced {
+		// A failed run gets the fallback cut only, which keeps its
+		// failure lines (execwrap.CompactCapturedFailed).
+		return execwrap.CompactCapturedFailed(argv, family, []byte(data), exit, o.Keep, threshold, o.Session, shapes)
+	}
+	return execwrap.CompactCapturedShaped(argv, family, []byte(data), exit, o.Keep, balanced, threshold, o.Session, shapes)
+}
+
+func stderrCarriesFamilyReport(family execwrap.Family) bool {
+	switch family {
+	case execwrap.FamilyJest,
+		execwrap.FamilyVitest,
+		execwrap.FamilyNpmTest,
+		execwrap.FamilyPnpmTest,
+		execwrap.FamilyYarnTest,
+		execwrap.FamilyGitCommit,
+		execwrap.FamilyGitPush,
+		execwrap.FamilyGitPull,
+		execwrap.FamilyGitFetch,
+		execwrap.FamilyGoTest,
+		execwrap.FamilyCargoTest,
+		execwrap.FamilyBazel,
+		execwrap.FamilyTurboRun:
+		return true
+	}
+	return false
 }
 
 func recordKeptID(res *Result, id string) {

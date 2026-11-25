@@ -20,7 +20,7 @@ import (
 const (
 	readDedupSubdir   = "read-dedup"
 	readDedupTTL      = 10 * time.Minute
-	readDedupMinBytes = 1024
+	readDedupMinBytes = 512
 	readDedupMaxFiles = 512
 	readDedupTempAge  = time.Minute
 )

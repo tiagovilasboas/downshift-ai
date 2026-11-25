@@ -12,7 +12,7 @@ import (
 
 func TestSeenAny_Table(t *testing.T) {
 	body := strings.Repeat("abc1234 some commit subject line here\n", 100)
-	small := strings.Repeat("x\n", 500)
+	small := strings.Repeat("x\n", 200)
 	sessB := strings.Repeat("cd", 32)
 	cases := []struct {
 		name    string
@@ -28,7 +28,7 @@ func TestSeenAny_Table(t *testing.T) {
 		{"exit nonzero", "git log --oneline | cat", body, 1, "", sessA, false},
 		{"different session", "git log --oneline | cat", body, 0, "", sessB, false},
 		{"refused store", "curl -s https://example.test/x | cat", body, 0, "", sessA, false},
-		{"below 2 KiB", "git log --oneline | cat", small, 0, "", sessA, false},
+		{"below 512 B", "git log --oneline | cat", small, 0, "", sessA, false},
 		{"large stderr", "git log --oneline | cat", body, 0, strings.Repeat("e", 2000), sessA, false},
 	}
 	for _, c := range cases {
