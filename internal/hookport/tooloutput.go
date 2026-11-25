@@ -26,9 +26,6 @@ type ToolOutput struct {
 	// ("mcp" or "fetch") when Category is CategoryOther. Empty for tools
 	// whose output must not be compacted.
 	VerboseKind string
-	// ToolName is the raw tool name from the harness (for example
-	// "mcp__sentry__search_issues"), or "".
-	ToolName string
 	// Session is the harness's raw session id, or "". The runner hashes it
 	// before anything is logged.
 	Session string

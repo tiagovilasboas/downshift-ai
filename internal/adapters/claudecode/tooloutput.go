@@ -39,7 +39,6 @@ func ParseToolOutput(raw []byte) (hookport.ToolOutput, bool) {
 		Category:    core.ClaudeCodeCaps.CategoryOf(toolName),
 		ToolName:    toolName,
 		VerboseKind: verboseKindOf(toolName),
-		ToolName:    toolName,
 		Session:     stringFieldAny(payload, "session_id", "sessionId"),
 		ExitCode:    -1,
 	}
