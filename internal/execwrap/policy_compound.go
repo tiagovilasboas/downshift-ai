@@ -127,29 +127,30 @@ type pipeKindFlags struct {
 	quoted bool
 }
 
-// pipeSuffix splits `core [2>&1] | <lineFilter|pipeFilter>`. suffix is what
+// pipeSuffix splits `core [2>&1] | <stage1> [| <stage2>]`. suffix is what
 // follows the wrapped command in the rewrite; segs are the pipe's command
 // forms for the permission check. No pipe returns ok=true and empty parts; an
-// unsafe or unsupported pipe returns ok=false.
+// unsafe, unsupported, or 3+ stage pipe returns ok=false.
 func pipeSuffix(command string) (core, suffix string, segs []string, kind pipeKindFlags, ok bool) {
-	i := lastUnquotedPipe(command)
-	if i < 0 {
+	pipes := unquotedPipes(command)
+	if len(pipes) == 0 {
 		return command, "", nil, kind, true
 	}
-	tail := strings.TrimLeft(command[i+len(pipeSep):], " ")
-	core = strings.TrimRight(command[:i], " ")
-	var pipeOut string
-	words := strings.Fields(tail)
-	if allSafe(tail) && lineFilter(words) {
-		seg := strings.Join(words, " ")
-		pipeOut, segs = seg, []string{seg}
-	} else {
-		var filterOK bool
-		pipeOut, segs, kind.quoted, filterOK = parsePipeFilter(tail)
-		if !filterOK {
-			return command, "", nil, pipeKindFlags{}, false
+	if len(pipes) > 2 {
+		return command, "", nil, pipeKindFlags{}, false
+	}
+	core = strings.TrimRight(command[:pipes[0]], " ")
+	stages := make([]string, len(pipes))
+	for i, pos := range pipes {
+		end := len(command)
+		if i+1 < len(pipes) {
+			end = pipes[i+1]
 		}
-		kind.filter = true
+		stages[i] = command[pos+1 : end]
+	}
+	pipeOut, segs, kind, stageOK := parsePipeStages(stages)
+	if !stageOK {
+		return command, "", nil, pipeKindFlags{}, false
 	}
 	strippedCore, redirKind, redirOK := extractStderrRedirect(core)
 	if !redirOK {
@@ -161,29 +162,6 @@ func pipeSuffix(command string) (core, suffix string, segs []string, kind pipeKi
 		core = strippedCore
 	}
 	return core, redirect + pipeSep + pipeOut, segs, kind, true
-}
-
-func lastUnquotedPipe(command string) int {
-	last := -1
-	var quote byte
-	for i := 0; i < len(command); i++ {
-		c := command[i]
-		if quote != 0 {
-			if c == quote {
-				quote = 0
-			}
-			continue
-		}
-		if c == '\'' || c == '"' {
-			quote = c
-			continue
-		}
-		if strings.HasPrefix(command[i:], pipeSep) {
-			last = i
-			i += len(pipeSep) - 1
-		}
-	}
-	return last
 }
 
 // stderrSuffix splits a single `2>&1` off a command that has no pipe. Every

@@ -224,8 +224,7 @@ func SplitSingleWord(argv []string) []string {
 
 // FamilyOf names the allowlisted family of an argv, or FamilyNone. It is a
 // pure router: each action domain owns its detection in a sibling file. The
-// cross-cutting git family is handled here because git spans every domain and
-// has its own global-option rules.
+// cross-cutting git family is in policy_git.go.
 func FamilyOf(argv []string) Family {
 	norm, _ := normalizeBinaryPath(argv)
 	family := routeFamily(norm)
@@ -233,47 +232,6 @@ func FamilyOf(argv []string) Family {
 		return FamilyNone
 	}
 	return family
-}
-
-// gitSubcommands names the family of each git subcommand that has one. Every
-// other subcommand is FamilyGitOther.
-var gitSubcommands = map[string]Family{
-	"status": FamilyGitStatus,
-	"log":    FamilyGitLog,
-	"diff":   FamilyGitDiff,
-	"show":   FamilyGitShow,
-	"branch": FamilyGitBranch,
-	"fetch":  FamilyGitFetch,
-	"pull":   FamilyGitPull,
-	"push":   FamilyGitPush,
-	"commit": FamilyGitCommit,
-	"add":    FamilyGitAdd,
-	"stash":  FamilyGitStash,
-	"remote": FamilyGitRemote,
-	"tag":    FamilyGitTag,
-}
-
-// gitFamilyOf names the family of a git command, given its words after
-// "git". A first word that starts with "-" is a global option (-c, -C,
-// --git-dir, --work-tree, --exec-path, ...) and is never wrapped: a config
-// injection or a repository override must not hide behind the wrapper.
-func gitFamilyOf(args []string) Family {
-	if len(args) == 0 || strings.HasPrefix(args[0], "-") {
-		return FamilyNone
-	}
-	if args[0] == "grep" {
-		return gitGrepFamily(args[1:])
-	}
-	if args[0] == "config" {
-		return gitConfigFamily(args[1:])
-	}
-	if args[0] == "ls-files" {
-		return gitLsFilesFamily(args[1:])
-	}
-	if family, ok := gitSubcommands[args[0]]; ok {
-		return family
-	}
-	return FamilyGitOther
 }
 
 // safeByte reports whether a byte may appear in a command the policy will

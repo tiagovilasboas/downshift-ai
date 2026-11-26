@@ -241,7 +241,7 @@ func TestDecide_RefusesUnsafeTextFilterPipes(t *testing.T) {
 		{"wc left side sort", "wc -l a.go b.go | sort"},
 		{"agent-desktop left side wc", "agent-desktop snapshot | wc -l"},
 		{"non-allowlisted left side", "echo hi | sort"},
-		{"double pipe", "git log --oneline | sort | uniq -c"},
+		{"triple pipe", "git log --oneline | sort | uniq -c | head -5"},
 		{"redirect out", "git log --oneline | sort > out.txt"},
 		{"background", "git log --oneline | wc -l &"},
 		{"substitution in delimiter", `git log --oneline | cut -d "$(id)" -f1`},

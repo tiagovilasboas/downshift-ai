@@ -17,8 +17,9 @@ func TestFamilyOf_FileReads(t *testing.T) {
 		command string
 		want    Family
 	}{
-		// allowed: one regular file, a plain read
+		// allowed: one regular file, a plain read (or line-numbered cat -n / sed -n A,$p)
 		{"cat main.go", FamilyFileRead},
+		{"cat -n main.go", FamilyFileRead},
 		{"cat internal/core/route.go", FamilyFileRead},
 		{"head main.go", FamilyFileRead},
 		{"head -n 40 main.go", FamilyFileRead},
@@ -29,6 +30,7 @@ func TestFamilyOf_FileReads(t *testing.T) {
 		{"tail -n40 main.go", FamilyFileRead},
 		{"tail -40 main.go", FamilyFileRead},
 		{"sed -n 10,20p main.go", FamilyFileRead},
+		{"sed -n 10,$p main.go", FamilyFileRead},
 		{"sed -n 10p main.go", FamilyFileRead},
 		{"wc -l main.go", FamilyWc},
 		{"wc -l a.go b.go c.go", FamilyWc},
@@ -49,9 +51,10 @@ func TestFamilyOf_FileReads(t *testing.T) {
 		{"head a.go b.go", FamilyNone},
 		{"tail -n 5 a.go b.go", FamilyNone},
 
-		// refused: cat options, several files, no file, standard input
+		// refused: cat options other than -n, several files, no file, standard input
 		{"cat", FamilyNone},
-		{"cat -n main.go", FamilyNone},
+		{"cat -n", FamilyNone},
+		{"cat -n a.go b.go", FamilyNone},
 		{"cat -A main.go", FamilyNone},
 		{"cat a.go b.go", FamilyNone},
 		{"cat -", FamilyNone},
@@ -120,6 +123,17 @@ func TestDecide_FileReadMetacharactersRefused(t *testing.T) {
 	}
 	if d := Decide("sed -n '10,20p' main.go", exe); !d.Rewrite || d.Family != FamilyFileRead {
 		t.Errorf("quoted sed range not wrapped: %+v", d)
+	}
+	if d := Decide("sed -n '10,$p' main.go", exe); !d.Rewrite || d.Family != FamilyFileRead {
+		t.Errorf("quoted sed to-eof range not wrapped: %+v", d)
+	}
+	for _, cmd := range []string{"sed -n 10,$p main.go", `sed -n "10,$p" main.go`} {
+		if d := Decide(cmd, exe); d.Rewrite {
+			t.Errorf("Decide(%q) rewrote unquoted/double-quoted $: %+v", cmd, d)
+		}
+	}
+	if d := Decide("cat -n main.go", exe); !d.Rewrite || d.Family != FamilyFileRead {
+		t.Errorf("cat -n not wrapped: %+v", d)
 	}
 }
 

@@ -23,24 +23,24 @@ const (
 	FamilyWc       Family = "wc"
 )
 
-// reSedRange is the one sed script accepted: print lines A to B (or line A).
-var reSedRange = lazyre.New(`^([1-9][0-9]{0,8})(?:,([1-9][0-9]{0,8}))?p$`)
+// reSedRange is the one sed script accepted: print lines A to B (or A to $, or line A).
+var reSedRange = lazyre.New(`^([1-9][0-9]{0,8})(?:,([1-9][0-9]{0,8}|\$))?p$`)
 
 // maxLineCount bounds head and tail -n so a count cannot overflow.
 const maxLineCount = 1_000_000
 
 // readFamily names the file-read family of argv, or FamilyNone.
 //
-//	cat FILE
+//	cat [-n] FILE
 //	head|tail [-n N | -nN | -N] FILE        (no -f, -F, -c, -q, +N or negative N)
-//	sed -n 'A,Bp' FILE                      (no -i, -e, -f, -s, no other script)
+//	sed -n 'A,Bp' | 'A,$p' | 'Ap' FILE      (no -i, -e, -f, -s, no other script)
 //	wc -l FILE...
 //	jq . FILE                               (the identity filter only, see policy_json.go)
 func readFamily(argv []string) Family {
 	args := argv[1:]
 	switch argv[0] {
 	case "cat":
-		if len(args) == 1 && plainFileOperand(args[0]) {
+		if file, ok := catArgs(args); ok && plainFileOperand(file) {
 			return FamilyFileRead
 		}
 	case "head", "tail":
@@ -107,7 +107,18 @@ func lineCount(s string) (int, bool) {
 	return n, true
 }
 
-// sedRangeArgs reads `-n 'A,Bp' FILE` (or 'Ap') and returns A, B and the file.
+// catArgs reads `[-n] FILE` and returns the file.
+func catArgs(args []string) (file string, ok bool) {
+	switch len(args) {
+	case 1:
+		return args[0], true
+	case 2:
+		return args[1], args[0] == "-n"
+	}
+	return "", false
+}
+
+// sedRangeArgs reads `-n 'A,Bp'` (or `'A,$p'` or `'Ap'`) FILE and returns A, B and the file.
 func sedRangeArgs(args []string) (from, to int, file string, ok bool) {
 	if len(args) != 3 || args[0] != "-n" {
 		return 0, 0, "", false
@@ -118,6 +129,9 @@ func sedRangeArgs(args []string) (from, to int, file string, ok bool) {
 	}
 	from, _ = strconv.Atoi(m[1])
 	to = from
+	if m[2] == "$" {
+		return from, from, args[2], true
+	}
 	if m[2] != "" {
 		to, _ = strconv.Atoi(m[2])
 	}

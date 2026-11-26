@@ -267,7 +267,7 @@ func TestDecide_RefusesUnsafeRedirectsAndPipes(t *testing.T) {
 		{"grep redirect out", "go test ./... | grep FAIL > out.txt"},
 		{"grep redirect append", "go test ./... | grep FAIL >> out.txt"},
 		{"grep redirect stdin", "go test ./... | grep FAIL < in.txt"},
-		{"grep then second pipe", "go test ./... | grep FAIL | wc -l"},
+		{"grep then two more pipes", "go test ./... | grep FAIL | sort | wc -l"},
 		{"shell stage before grep", "go test ./... | sh | grep FAIL"},
 		{"grep background", "go test ./... | grep FAIL &"},
 		{"grep zsh rc_quotes", "go test ./... | grep 'it''s'"},

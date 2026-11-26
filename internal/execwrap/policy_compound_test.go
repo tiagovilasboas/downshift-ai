@@ -54,7 +54,8 @@ func TestDecide_CompoundShapes(t *testing.T) {
 		{"pipe to wc", "go test ./... | wc -l", true, w + "go test ./... | wc -l", []string{"wc -l"}, ReasonAllowlistedCompound},
 		{"pipe to wc with file refused", "go test ./... | wc -l /etc/passwd", false, "", nil, ReasonUnsafeChar},
 		{"pipe to awk refused", "go test ./... | awk '{print}'", false, "", nil, ReasonUnsafeChar},
-		{"two pipes", "go test | tail -5 | head -2", false, "", nil, ReasonUnsafeChar},
+		{"two pipes", "go test | tail -5 | head -2", true, w + "go test | tail -5 | head -2", []string{"tail -5", "head -2"}, ReasonAllowlistedCompound},
+		{"three pipes refused", "go test | grep FAIL | sort | head -2", false, "", nil, ReasonUnsafeChar},
 		{"tail follow", "go test | tail -f", false, "", nil, ReasonUnsafeChar},
 		{"tail plus", "go test | tail -n +5", false, "", nil, ReasonUnsafeChar},
 		{"tail with file", "go test | tail -5 out.txt", false, "", nil, ReasonUnsafeChar},
@@ -64,8 +65,9 @@ func TestDecide_CompoundShapes(t *testing.T) {
 		{"substitution in core", "cd x && go test $(pwd)", false, "", nil, ReasonUnsafeChar},
 		{"already wrapped", "cd x && downshift compact -- go test", false, "", nil, ReasonAlreadyWrapped},
 		{"background", "go test & | tail -5", false, "", nil, ReasonUnsafeChar},
-		{"no spaces around pipe", "go test|tail -5", false, "", nil, ReasonUnsafeChar},
-		{"git global option", "cd x && git -C y status", false, "", nil, ReasonNotAllowlisted},
+		{"no spaces around pipe", "go test|tail -5", true, w + "go test | tail -5", []string{"tail -5"}, ReasonAllowlistedCompound},
+		{"git -C in compound", "cd x && git -C y status", true, "cd x && " + w + "git -C y status", []string{"cd x"}, ReasonAllowlistedCompound},
+		{"git global option -c", "cd x && git -c core.pager=evil status", false, "", nil, ReasonNotAllowlisted},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

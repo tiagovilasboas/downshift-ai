@@ -51,13 +51,13 @@ func TestShellInit_PassthroughWhenNotAllowlisted(t *testing.T) {
 		wantDepth     string // stub log line for stubbed programs; "" for a real program
 	}
 	// `go version` and `go build` are allowlisted families today, so they reach
-	// the compactor (depth=1) and must still exit 0; `docker run`, `git -C` and
+	// the compactor (depth=1) and must still exit 0; `docker run`, `git -c` and
 	// `npm --version` are not and must run as typed (depth=none, exit 0).
 	steps := []step{
 		{"go version", "go version", "depth=1 args=version"},
 		{"go build", "go build ./...", "depth=1 args=build ./..."},
 		{"docker run passes through", "docker run alpine true", "depth=none args=run alpine true"},
-		{"git -C status", "git -C " + repo + " status", ""},
+		{"git -c status", "git -C " + repo + " -c core.autocrlf=false status", ""},
 		{"npm --version", "npm --version", ""},
 		{"go test is compacted", "go test ./...", "depth=1 args=test ./..."},
 	}
