@@ -52,6 +52,13 @@ downshift update
 
 [![O assistente interativo detecta harnesses, permite escolher componentes e revisar alterações, grava após a confirmação e depois o usuário verifica a configuração](../brand/readme-media/setup-flow.svg)](../brand/readme-media/setup-flow.png)
 
+## Novo na v0.24.1
+
+- **Refresh automático em background do cache de atualização (`#241`)**: `session --panel` atualiza `latest_release.json` via processo *detached* com cooldown (`DOWNSHIFT_NO_NETWORK=1` desativa), mantendo o aviso `↑ vX.Y.Z` na barra atualizado automaticamente.
+- **Pipes sem espaço após `2>&1`/`2>/dev/null`, `/dev/null` em cadeias e `|| :` (`#242`)**: suporta `2>&1|tail` / `2>/dev/null|grep`, segmentos não guardados com descarte `/dev/null` em cadeias e `|| :` junto com `|| true`.
+
+[Notas da v0.24.1](../releases/v0.24.1.md)
+
 ## Novo na v0.24.0
 
 - **Mais reescritas pré-execução e pipes seguros (`#235`, `#238`)**: divisão de cadeias respeitando aspas até 32 segmentos, `git -C <dir>` seguro, pipes sem espaço e de dois estágios (`cmd|grep|tail`), `cat -n` / `sed -n 'A,$p'`, famílias read-only com guardas (`wc`, `find`, `grep`, `rg`, `cat`, `git fetch`) e `quoted_rules` por binário.

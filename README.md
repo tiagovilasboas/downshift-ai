@@ -52,6 +52,13 @@ downshift update
 
 [![Interactive setup detects harnesses, lets you choose components and review changes, writes after confirmation, then the user verifies the setup](docs/brand/readme-media/setup-flow.svg)](docs/brand/readme-media/setup-flow.png)
 
+## New in v0.24.1
+
+- **Automatic detached update-cache refresh (`#241`)**: `session --panel` keeps `latest_release.json` fresh via a throttled detached background refresh (`DOWNSHIFT_NO_NETWORK=1` disables), so the `downshift-agents` `↑ vX.Y.Z` notice updates automatically.
+- **Tight stderr-redirect pipes, safe `/dev/null` chain segments & `|| :` (`#242`)**: supports `2>&1|tail` / `2>/dev/null|grep`, kept non-guarded segments with `/dev/null` discard in chains, and `|| :` alongside `|| true`.
+
+[v0.24.1 release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.24.1.md)
+
 ## New in v0.24.0
 
 - **Wider pre-run rewrites & safe pipes (`#235`, `#238`)**: quote-aware chain splitting up to 32 segments, safe `git -C <dir>`, tight and two-stage read-only pipes (`cmd|grep|tail`), `cat -n` / `sed -n 'A,$p'`, guarded read-only families (`wc`, `find`, `grep`, `rg`, `cat`, `git fetch`), and binary-scoped `quoted_rules`.
