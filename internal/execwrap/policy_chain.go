@@ -112,8 +112,9 @@ func chainReason(quoted bool) string {
 
 // decideSegment decides one chain segment. keep is true when a segment that
 // is not wrapped is still provably safe to leave as written: only safe bytes,
-// or a compound shape around a safe command. A segment with quoted words is
-// wrapped or refused, never kept (decideQuotedPart).
+// a compound shape around a safe command, or a safe command with a trailing
+// /dev/null discard redirect. A segment with quoted words is wrapped or
+// refused, never kept (decideQuotedPart).
 func decideSegment(seg, exe string) (d Decision, keep bool) {
 	d = decideSimple(seg, exe)
 	if d.Reason == ReasonUnsafeChar {
@@ -122,7 +123,20 @@ func decideSegment(seg, exe string) (d Decision, keep bool) {
 	if d.Reason == ReasonUnsafeChar {
 		d = decideQuotedPart(seg, exe, false)
 	}
-	return d, d.Rewrite || d.Reason == ReasonNotAllowlisted
+	return d, d.Rewrite || d.Reason == ReasonNotAllowlisted || safeKeptDiscardSegment(seg)
+}
+
+// safeKeptDiscardSegment reports whether seg is a plain safe-byte command with
+// only a trailing >/dev/null, 2>/dev/null, or &>/dev/null redirect.
+func safeKeptDiscardSegment(seg string) bool {
+	trimmed := strings.TrimRight(seg, " ")
+	for _, tail := range []string{" 2>/dev/null", " >/dev/null", " &>/dev/null"} {
+		if core, ok := strings.CutSuffix(trimmed, tail); ok {
+			core = strings.TrimSpace(core)
+			return core != "" && allSafe(core)
+		}
+	}
+	return false
 }
 
 // splitChain cuts a command at each unquoted `;` and `&&`. seps[i] is the exact

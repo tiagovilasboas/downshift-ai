@@ -97,9 +97,9 @@ func decideCompound(trimmed, exe string) Decision {
 // wraps. It answers unsafe_character for anything it does not wrap, so a
 // quoted command that is not allowlisted is never kept as written in a chain,
 // and it refuses the trailing forms whose meaning the surrounding shape
-// changes: `|| true` always, 2>/dev/null when a 2>&1 merge follows.
+// changes: `|| true` / `|| :` always, 2>/dev/null when a 2>&1 merge follows.
 func decideQuotedPart(part, exe string, mergesStderr bool) Decision {
-	if strings.HasSuffix(part, orTrueTail) || (mergesStderr && strings.HasSuffix(part, devNullTail)) {
+	if hasExitZeroTail(part) || (mergesStderr && strings.HasSuffix(part, devNullTail)) {
 		return Decision{Reason: ReasonUnsafeChar}
 	}
 	if d := decideQuoted(part, exe); d.Rewrite {

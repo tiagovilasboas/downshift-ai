@@ -34,7 +34,11 @@ func TestDecideQuotedAccepts(t *testing.T) {
 			quotedExe + ` compact --discard-stderr -- 'go' 'test' './...'`},
 		{"trailing || true", `git status || true`, FamilyGitStatus,
 			quotedExe + ` compact --exit-zero -- 'git' 'status'`},
+		{"trailing || :", `git status || :`, FamilyGitStatus,
+			quotedExe + ` compact --exit-zero -- 'git' 'status'`},
 		{"both trailing forms", `grep -rn "a" . 2>/dev/null || true`, FamilyGrep,
+			quotedExe + ` compact --discard-stderr --exit-zero -- 'grep' '-rn' 'a' '.'`},
+		{"both trailing forms with || :", `grep -rn "a" . 2>/dev/null || :`, FamilyGrep,
 			quotedExe + ` compact --discard-stderr --exit-zero -- 'grep' '-rn' 'a' '.'`},
 		{"plain assignment stays bare", `CI=1 go test -run 'X' ./...`, FamilyGoTest,
 			`CI=1 ` + quotedExe + ` compact -- 'go' 'test' '-run' 'X' './...'`},
@@ -58,8 +62,9 @@ func TestDecideQuotedRefuses(t *testing.T) {
 		`grep -rn "x" . > out`, `grep -rn "x" . 2> err`, `grep -rn "x" . 2>/dev/null2`,
 		`grep -rn "x" . 1>/dev/null`, `grep -rn "x" . &>/dev/null`, `grep -rn "x" * `,
 		`grep -rn "x" ~`, "grep -rn 'a\nb' .", "grep -rn \"a\x00b\" .", "grep -rn 'a\x01' .",
-		"grep -rn '\xff' .", `go test ./... || true 2>/dev/null`, `go test ./... || false`,
-		`go test ./...||true`, `go test ./... 2>&1 || true`, `grep -rn " || true`,
+		"grep -rn '\xff' .", `go test ./... || true 2>/dev/null`, `go test ./... || : 2>/dev/null`, `go test ./... || false`,
+		`go test ./...||true`, `go test ./...||:`, `go test ./... 2>&1 || true`, `go test ./... 2>&1 || :`,
+		`cd x && go test ./... || :`, `gofmt -l x; go test ./... || :`, `grep -rn " || true`, `grep -rn " || :`,
 		`grep -rn "a 2>/dev/null`, `'FOO=1' go test ./...`, `FOO="a b" go test ./...`,
 		`PATH=/x go test -run 'X'`, `MYSQL_PWD=x mysql -e "SELECT 1"`, `git -c "core.pager=x" log`,
 		`find . -name "x" "-delete"`, `downshift compact -- go test -run 'X'`,
@@ -137,6 +142,7 @@ func TestMetacharClassAfterQuotes(t *testing.T) {
 		{`go test -run 'X' > out`, MetaRedirect},
 		{`go test ./... 2>/dev/null`, ""},
 		{`go test -run "X" || true`, ""},
+		{`go test -run "X" || :`, ""},
 		{`go test ./... || false`, MetaOr},
 	} {
 		if got := MetacharClass(tc.command); got != tc.want {
@@ -184,7 +190,9 @@ func TestWithSessionTailFlagForms(t *testing.T) {
 	for command, flags := range map[string]string{
 		`go test -run "X" 2>/dev/null`:         " " + FlagDiscardStderr,
 		`go test -run "X" || true`:             " " + FlagExitZero,
+		`go test -run "X" || :`:                " " + FlagExitZero,
 		`go test -run "X" 2>/dev/null || true`: " " + FlagDiscardStderr + " " + FlagExitZero,
+		`go test -run "X" 2>/dev/null || :`:    " " + FlagDiscardStderr + " " + FlagExitZero,
 	} {
 		got := WithSession(Decide(command, "/opt/ds/downshift").Command, "abc123")
 		if want := quotedExe + " compact --session=abc123" + flags + " -- 'go' 'test' '-run' 'X'"; got != want {
