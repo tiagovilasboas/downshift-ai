@@ -32,10 +32,11 @@ import (
 // ReasonAllowlistedQuoted is the reason for a wrapped quoted command.
 const ReasonAllowlistedQuoted = "allowlisted_quoted"
 
-// The two trailing forms the quoted path accepts, each exactly as written.
+// The trailing forms the quoted path accepts, each exactly as written.
 const (
 	devNullTail = " 2>/dev/null"
 	orTrueTail  = " || true"
+	orColonTail = " || :"
 )
 
 // shellWord is one word of a quoted command.
@@ -116,20 +117,34 @@ type shellTail struct {
 	exitZero      bool // a trailing || true
 }
 
-// cutShellTail splits off a trailing ` || true`, then a trailing
+// cutShellTail splits off a trailing ` || true` or ` || :`, then a trailing
 // ` 2>/dev/null`, in that order only. Text cut from inside a quote leaves
 // that quote unclosed, so the lexer then refuses the command.
 func cutShellTail(command string) (string, shellTail) {
 	var t shellTail
-	if strings.HasSuffix(command, orTrueTail) {
+	if core, ok := cutExitZeroTail(command); ok {
 		t.exitZero = true
-		command = strings.TrimRight(strings.TrimSuffix(command, orTrueTail), " ")
+		command = core
 	}
 	if strings.HasSuffix(command, devNullTail) {
 		t.discardStderr = true
 		command = strings.TrimRight(strings.TrimSuffix(command, devNullTail), " ")
 	}
 	return command, t
+}
+
+func cutExitZeroTail(command string) (string, bool) {
+	for _, tail := range []string{orTrueTail, orColonTail} {
+		if core, ok := strings.CutSuffix(command, tail); ok {
+			return strings.TrimRight(core, " "), true
+		}
+	}
+	return command, false
+}
+
+func hasExitZeroTail(command string) bool {
+	_, ok := cutExitZeroTail(command)
+	return ok
 }
 
 // lexQuoted splits command into words the way a POSIX shell would for the

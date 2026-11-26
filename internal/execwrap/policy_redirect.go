@@ -88,5 +88,8 @@ func matchStderrRedirect(command string, i int) (end int, kind stderrRedirect) {
 }
 
 func wordEnds(s string, i int) bool {
-	return i == len(s) || s[i] == ' '
+	if i == len(s) || s[i] == ' ' {
+		return true
+	}
+	return s[i] == '|' && (i+1 >= len(s) || s[i+1] != '|')
 }
