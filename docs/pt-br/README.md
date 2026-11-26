@@ -52,6 +52,14 @@ downshift update
 
 [![O assistente interativo detecta harnesses, permite escolher componentes e revisar alterações, grava após a confirmação e depois o usuário verifica a configuração](../brand/readme-media/setup-flow.svg)](../brand/readme-media/setup-flow.png)
 
+## Novo na v0.24.0
+
+- **Mais reescritas pré-execução e pipes seguros (`#235`, `#238`)**: divisão de cadeias respeitando aspas até 32 segmentos, `git -C <dir>` seguro, pipes sem espaço e de dois estágios (`cmd|grep|tail`), `cat -n` / `sed -n 'A,$p'`, famílias read-only com guardas (`wc`, `find`, `grep`, `rg`, `cat`, `git fetch`) e `quoted_rules` por binário.
+- **Maior cobertura pós-execução e MCP (`#233`, `#234`, `#239`)**: podador genérico de payloads MCP, `search_cap` sem número de linha, compactação de stderr (`git fetch`/`pull`/`push`), fallback escalado para saídas verbosas, piso de `512` B no dedup de `Read` e `BalanceFailed` para falhas `FamilyNone`.
+- **Versão ao vivo e aviso de atualização no `downshift-agents` (`#236`, `#237`)**: a barra exibe `Downshift - vX.Y.Z` (com `↑ vY.Z.W` quando o cache `latest_release.json` tiver versão mais nova), além do aviso no pane e no `/ds-agents summary`; `discover` também corrige vazamento de timestamp zero e ignora `run_in_background` (`#232`).
+
+[Notas da v0.24.0](../releases/v0.24.0.md)
+
 ## Novo na v0.23.0
 
 - **Poda MCP, dedup e `providers` enxuto (`#222`, `#226`, `#230`)**: podadores semânticos para Sentry (`search_issues`, `search_events`) e Datadog (`execute_code`) reduzem fixtures de `4.682 -> 2.497` bytes (`-46,7%`), leituras repetidas de docs MCP na mesma sessão viram ponteiro curto do CCR e `providers` cai de `1.089 -> 176` bytes (`-83,8%`) por padrão.
