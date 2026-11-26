@@ -69,12 +69,20 @@ func writePanelWithVersion(events []telemetry.Event, hash string, opt panelOptio
 
 // cachedUpdateNotice checks ~/.downshift/latest_release.json (cache-only, zero
 // network) and returns (tag, true) when a newer release than current is cached.
+// When the cache is missing or expired, it triggers a throttled detached
+// background refresh without blocking.
 func cachedUpdateNotice(current string) (string, bool) {
 	cache, err := paths.Join("latest_release.json")
 	if err != nil {
 		return "", false
 	}
-	return cachedUpdateNoticeFrom(cache, current, time.Now)
+	if tag, ok := cachedUpdateNoticeFrom(cache, current, time.Now); ok {
+		return tag, true
+	}
+	if _, ok := (latestLookup{CacheFile: cache, Now: time.Now}).cachedLatest(); !ok {
+		maybeRefreshLatestCache(cache, time.Now)
+	}
+	return "", false
 }
 
 func cachedUpdateNoticeFrom(cacheFile, current string, now func() time.Time) (string, bool) {

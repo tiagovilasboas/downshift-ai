@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -123,5 +124,96 @@ func TestPanel_UpdateNoticeFromCache(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestPanel_CachedUpdateNoticeFromIsPureOffline(t *testing.T) {
+	var spawns atomic.Int32
+	old := latestRefreshSpawn
+	latestRefreshSpawn = func() error { spawns.Add(1); return nil }
+	t.Cleanup(func() { latestRefreshSpawn = old })
+
+	cache := filepath.Join(t.TempDir(), "latest_release.json")
+	if tag, ok := cachedUpdateNoticeFrom(cache, "v0.23.0", time.Now); ok || tag != "" {
+		t.Fatalf("missing cache got %q, %v", tag, ok)
+	}
+	if spawns.Load() != 0 {
+		t.Fatalf("cachedUpdateNoticeFrom must never spawn refresh, got %d", spawns.Load())
+	}
+	if _, err := os.Stat(filepath.Join(filepath.Dir(cache), latestAttemptFile)); !os.IsNotExist(err) {
+		t.Fatalf("cachedUpdateNoticeFrom must not touch attempt file, err=%v", err)
+	}
+}
+
+func TestPanel_DetachedRefreshTriggeredAndThrottledByCooldown(t *testing.T) {
+	panelFixtureEnv(t)
+	t.Setenv("DOWNSHIFT_NO_NETWORK", "")
+
+	var spawns atomic.Int32
+	old := latestRefreshSpawn
+	latestRefreshSpawn = func() error { spawns.Add(1); return nil }
+	t.Cleanup(func() { latestRefreshSpawn = old })
+
+	cache, err := paths.Join("latest_release.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Missing cache triggers one detached refresh, still returning ("", false).
+	if tag, ok := cachedUpdateNotice("v0.23.0"); ok || tag != "" {
+		t.Fatalf("missing cache got %q, %v", tag, ok)
+	}
+	if spawns.Load() != 1 {
+		t.Fatalf("first missing cache spawns=%d, want 1", spawns.Load())
+	}
+
+	// Second call within cooldown window must not respawn.
+	if tag, ok := cachedUpdateNotice("v0.23.0"); ok || tag != "" {
+		t.Fatalf("within cooldown got %q, %v", tag, ok)
+	}
+	if spawns.Load() != 1 {
+		t.Fatalf("within cooldown spawns=%d, want 1", spawns.Load())
+	}
+
+	// After cooldown expires, maybeRefreshLatestCache spawns again.
+	now := time.Now().UTC().Add(latestRefreshCooldown + time.Minute)
+	maybeRefreshLatestCache(cache, func() time.Time { return now })
+	if spawns.Load() != 2 {
+		t.Fatalf("after cooldown spawns=%d, want 2", spawns.Load())
+	}
+
+	// Fresh cache never triggers a refresh even without cooldown.
+	freshRaw, _ := json.Marshal(latestCache{Tag: "v0.24.0", CheckedAt: time.Now().UTC()})
+	writeLatestCacheFixture(t, freshRaw)
+	_ = os.Remove(filepath.Join(filepath.Dir(cache), latestAttemptFile))
+	if tag, ok := cachedUpdateNotice("v0.24.0"); ok || tag != "" {
+		t.Fatalf("up-to-date fresh cache got %q, %v", tag, ok)
+	}
+	if spawns.Load() != 2 {
+		t.Fatalf("fresh cache must not spawn, spawns=%d", spawns.Load())
+	}
+}
+
+func TestPanel_DetachedRefreshSuppressedByNoNetwork(t *testing.T) {
+	panelFixtureEnv(t)
+	t.Setenv("DOWNSHIFT_NO_NETWORK", "1")
+
+	var spawns atomic.Int32
+	old := latestRefreshSpawn
+	latestRefreshSpawn = func() error { spawns.Add(1); return nil }
+	t.Cleanup(func() { latestRefreshSpawn = old })
+
+	if tag, ok := cachedUpdateNotice("v0.23.0"); ok || tag != "" {
+		t.Fatalf("got %q, %v", tag, ok)
+	}
+	if spawns.Load() != 0 {
+		t.Fatalf("DOWNSHIFT_NO_NETWORK=1 must suppress refresh, got %d", spawns.Load())
+	}
+	cache, err := paths.Join("latest_release.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(filepath.Dir(cache), latestAttemptFile)); !os.IsNotExist(err) {
+		t.Fatalf("DOWNSHIFT_NO_NETWORK=1 must not create attempt file, err=%v", err)
 	}
 }

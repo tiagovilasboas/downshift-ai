@@ -66,6 +66,14 @@ func defaultDoctorEnv(cat *catalog.Catalog) doctorEnv {
 // runDoctor is `downshift doctor`: a checklist, one line per check, with the
 // exact fix under every failure or warning. Exit 0 when nothing failed.
 func runDoctor(args []string, w, errW io.Writer, cat *catalog.Catalog) int {
+	if len(args) == 1 && args[0] == "--refresh-latest-cache" {
+		if os.Getenv("DOWNSHIFT_NO_NETWORK") != "1" {
+			if cache, err := paths.Join("latest_release.json"); err == nil {
+				defaultLatestLookup(cache).Latest()
+			}
+		}
+		return 0
+	}
 	fs := flag.NewFlagSet("doctor", flag.ContinueOnError)
 	fs.SetOutput(errW)
 	asJSON := fs.Bool("json", false, "machine-readable checklist")
