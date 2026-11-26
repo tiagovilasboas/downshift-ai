@@ -209,7 +209,7 @@ func compactShell(in hookport.ToolOutput, o Options) Result {
 		if stderrCarriesFamilyReport(family) && (in.Stdout == "" || family == execwrap.FamilyGitFetch || family == execwrap.FamilyGitPull || family == execwrap.FamilyGitPush) {
 			errOut = compactShellStream(argv, family, in.Stderr, exit, o, balanced, threshold, execwrap.Shapes{})
 		} else if len(in.Stderr) > threshold {
-			errOut = execwrap.CompactCapturedWithThreshold(nil, execwrap.FamilyNone, []byte(in.Stderr), exit, o.Keep, balanced, threshold, o.Session)
+			errOut = compactShellStream(nil, execwrap.FamilyNone, in.Stderr, exit, o, balanced, threshold, execwrap.Shapes{})
 		}
 		if errOut.Compacted {
 			res.Output.Stderr = string(errOut.Output)
