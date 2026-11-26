@@ -72,7 +72,7 @@ func TestDecide_Chains(t *testing.T) {
 		{"leading and", "&& go test", false, "", "", nil, ReasonUnsafeChar},
 		{"already wrapped segment", "downshift compact -- go test; git status", false, "", "", nil, ReasonAlreadyWrapped},
 		{"already wrapped quoted", "'/x/downshift' compact -- go test; git status", false, "", "", nil, ReasonAlreadyWrapped},
-		{"git global option", "gofmt -l x; git -C y status", false, "", "", nil, ReasonNotAllowlisted},
+		{"git global option", "gofmt -l x; git -c core.pager=evil status", false, "", "", nil, ReasonNotAllowlisted},
 		{"too long", "git status; go test " + strings.Repeat("a", 4096), false, "", "", nil, ReasonTooLong},
 	}
 	for _, tc := range cases {

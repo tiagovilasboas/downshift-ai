@@ -124,7 +124,7 @@ func TestFamilyOf_RipgrepAndGitGrep(t *testing.T) {
 		{"git grep -en foo", FamilyGitOther},
 		{"git grep -n -e", FamilyGitOther},
 		{"git grep -n foo -", FamilyGitOther},
-		{"git -C x grep -n foo", FamilyNone},
+		{"git -C x grep -n foo", FamilyGitGrep},
 	}
 	for _, tc := range cases {
 		t.Run(tc.cmd, func(t *testing.T) {

@@ -156,7 +156,7 @@ func TestDecide_CompoundQuotedGlobsAndBinaryPaths_Refusals(t *testing.T) {
 		{"nested subdir under usr bin", "/usr/bin/subdir/git status", ReasonNotAllowlisted},
 		{"relative bin path", "./evil/git status", ReasonNotAllowlisted},
 		// Security guards on known binary paths.
-		{"git global option via abs path", "/usr/local/bin/git -C /tmp status", ReasonNotAllowlisted},
+		{"git dir override via abs path", "/usr/local/bin/git --git-dir=/tmp/x status", ReasonNotAllowlisted},
 		{"git config injection via abs path", "/usr/local/bin/git -c core.pager=evil log", ReasonNotAllowlisted},
 		{"db client with env via abs path", `MYSQL_PWD=x /usr/bin/mysql -e "SELECT 1"`, ReasonNotAllowlisted},
 		{"already wrapped via abs path", "/usr/local/bin/downshift compact -- git status", ReasonAlreadyWrapped},
