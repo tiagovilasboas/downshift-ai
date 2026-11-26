@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/tiagovilasboas/downshift-ai/internal/paths"
 )
 
 // noisyGoTest is verbose go test output no compressor recognizes whose lines
@@ -114,5 +116,69 @@ func TestFallbackCutKeepsExitCodeOnWrapper(t *testing.T) {
 	h := compactHeld([]string{"make"}, raw, FamilyMake, 2, false, keep, nil, true, balanceConfig{fallbackOnly: true})
 	if !h.compacted || h.detail != DetailFallbackCut || h.passthrough != "" {
 		t.Fatalf("held: %+v", h.detail)
+	}
+}
+
+func TestCompactCapturedFailed_FamilyNoneFallback(t *testing.T) {
+	bigFail := failingMake(400)
+	smallFail := []byte("=== RUN   TestCase0\n--- FAIL: TestCase0 (0.00s)\nFAIL\n")
+	sess := strings.Repeat("cd", 32)
+
+	cases := []struct {
+		name      string
+		argv      []string
+		data      []byte
+		exit      int
+		keep      bool
+		antiLoop  bool
+		threshold int
+		wantCut   bool
+		wantDet   string
+	}{
+		{"big failure with CCR", []string{"sh", "-c", "make"}, bigFail, 2, true, false, 0, true, DetailFallbackCut},
+		{"small failure stays raw", []string{"cd repo && go test ./..."}, smallFail, 1, true, false, 0, false, DetailNoCompressor},
+		{"big failure without CCR stays raw", []string{"sh", "-c", "make"}, bigFail, 2, false, false, 0, false, DetailNoCompressor},
+		{"big failure with active anti-loop bypasses", []string{"sh", "-c", "make"}, bigFail, 2, true, true, 0, false, DetailAntiLoopBypass},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv(paths.EnvStateDir, t.TempDir())
+			usedSess := ""
+			if tc.antiLoop {
+				usedSess = sess
+				RecordAntiLoop(sess, 2, "deadbeef0001")
+				RecordAntiLoop(sess, 2, "deadbeef0001")
+			}
+			var stored []byte
+			var keep func([]byte) (string, bool)
+			if tc.keep {
+				keep = func(b []byte) (string, bool) {
+					stored = append([]byte(nil), b...)
+					return "0123456789ab", true
+				}
+			}
+			r := CompactCapturedFailed(tc.argv, FamilyNone, tc.data, tc.exit, keep, tc.threshold, usedSess, Shapes{})
+			if r.Compacted != tc.wantCut {
+				t.Fatalf("Compacted = %v, want %v (detail=%q passthrough=%q)", r.Compacted, tc.wantCut, r.Detail, r.Passthrough)
+			}
+			if r.Detail != tc.wantDet {
+				t.Errorf("Detail = %q, want %q", r.Detail, tc.wantDet)
+			}
+			if tc.wantCut {
+				if r.KeptID != "0123456789ab" || !bytes.Equal(stored, tc.data) {
+					t.Errorf("CCR mismatch: KeptID=%q stored=%v", r.KeptID, bytes.Equal(stored, tc.data))
+				}
+				out := string(r.Output)
+				if !strings.Contains(out, "downshift retrieve 0123456789ab]") {
+					t.Errorf("missing retrieve marker in:\n%s", out)
+				}
+				if !strings.Contains(out, "make: *** [Makefile:10: all] Error 2") {
+					t.Errorf("missing failure tail in:\n%s", out)
+				}
+			} else if !bytes.Equal(r.Output, tc.data) {
+				t.Errorf("raw output altered: len=%d want=%d", len(r.Output), len(tc.data))
+			}
+		})
 	}
 }
