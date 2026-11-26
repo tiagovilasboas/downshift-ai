@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-11-26
+
+Release notes: [docs/releases/v0.24.0.md](docs/releases/v0.24.0.md).
+
+### Added
+
+- **Generic MCP payload pruner & unnumbered `search_cap` (`#233`).** Added `pruneGenericMCP` in `internal/compressor` for oversized generic JSON/object MCP responses and extended `search_cap.go` to handle unnumbered `path:text` match lines.
+- **Running version & cached update notice in `session --panel` and `downshift-agents` (`#236`, `#237`).** Added `version`, `latest`, and `update_available` (read strictly offline from `latest_release.json`) to `session --panel`; the agents band now displays `Downshift - vX.Y.Z` (plus `↑ vY.Z.W` when outdated), and the pane and `/ds-agents summary` surface a one-line `downshift update` notice.
+- **`git -C`, tight/2-stage pipes & `cat -n` / `sed -n 'A,$p'` (`#238`).** Extracted `gitFamilyOf` into `internal/execwrap/policy_git.go` with safe `git -C <dir>` support, added `unquotedPipes` and 2-stage read-only pipe tails (`policy_pipe_chain.go`), and allowed `cat -n` and `sed -n 'A,$p'` in `policy_read.go`.
+
+### Changed
+
+- **Quote-aware chains, safe read-only families & targeted quoted rules (`#235`).** Made `splitChain` quote/escape-aware and raised `maxChainSegments` from `8` to `32`; added guarded read-only support for `FamilyWc`, `FamilyFind`, `FamilyGrep`, `FamilyRg`, `FamilyFileRead`, and `FamilyGitFetch`; scoped `quoted_rules.go` to matching command binaries.
+- **Post-run stderr routing, scaled verbose fallback, widened pipes & 512 B read dedup (`#234`).** Compacted family stderr reports (`git fetch`/`pull`/`push`, test runners), added `BalanceBytesScaled` fallback for verbose `WebFetch`/MCP results, widened `grep`/`sort`/`uniq`/`cat` piped extractors, and lowered repeat-read dedup floor to `512` B.
+- **`FamilyNone` non-zero exit fallback (`#239`).** Allowed unclassified failing commands over the balanced threshold to use `BalanceFailed` when CCR stores raw output (keeping `CompoundRefusesRawStore` and `anti_loop_bypass` guards intact).
+
+### Fixed
+
+- **Discover zero-timestamp leak & background Bash classification (`#232`).** Fixed zero-timestamp leakage in `internal/missedsavings/scan.go` and classified `run_in_background` Bash tool calls as `KindSkipped` (`background`).
+
 ## [0.23.0] - 2026-11-25
 
 Release notes: [docs/releases/v0.23.0.md](docs/releases/v0.23.0.md).

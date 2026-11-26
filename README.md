@@ -52,6 +52,14 @@ downshift update
 
 [![Interactive setup detects harnesses, lets you choose components and review changes, writes after confirmation, then the user verifies the setup](docs/brand/readme-media/setup-flow.svg)](docs/brand/readme-media/setup-flow.png)
 
+## New in v0.24.0
+
+- **Wider pre-run rewrites & safe pipes (`#235`, `#238`)**: quote-aware chain splitting up to 32 segments, safe `git -C <dir>`, tight and two-stage read-only pipes (`cmd|grep|tail`), `cat -n` / `sed -n 'A,$p'`, guarded read-only families (`wc`, `find`, `grep`, `rg`, `cat`, `git fetch`), and binary-scoped `quoted_rules`.
+- **Higher post-run & MCP compaction coverage (`#233`, `#234`, `#239`)**: generic MCP JSON pruner, unnumbered `search_cap`, family stderr compaction (`git fetch`/`pull`/`push`), scaled verbose fallback, `512` B read dedup floor, and `BalanceFailed` fallback for failing `FamilyNone` runs.
+- **Live version & update notice in `downshift-agents` (`#236`, `#237`)**: the agents band shows `Downshift - vX.Y.Z` (with `↑ vY.Z.W` when `latest_release.json` cache is newer), plus a one-line update notice in the pane and `/ds-agents summary`; `discover` also skips `run_in_background` and zero-timestamp leaks (`#232`).
+
+[v0.24.0 release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.24.0.md)
+
 ## New in v0.23.0
 
 - **MCP pruning, dedup & slimmer `providers` (`#222`, `#226`, `#230`)**: semantic pruners for Sentry (`search_issues`, `search_events`) and Datadog (`execute_code`) cut fixture payloads `4,682 -> 2,497` bytes (`-46.7%`), repeated MCP doc reads in the same session emit short CCR pointers, and `providers` drops from `1,089 -> 176` bytes (`-83.8%`) by default.
