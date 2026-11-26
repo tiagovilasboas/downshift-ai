@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.24.1] - 2026-11-26
+
+Release notes: [docs/releases/v0.24.1.md](docs/releases/v0.24.1.md).
+
+### Added
+
+- **Detached `latest_release.json` cache refresh (`#241`).** `downshift session --panel` spawns a throttled detached background refresh (1 h cooldown via `latest_release.attempt`, disabled when `DOWNSHIFT_NO_NETWORK=1`) when the 24 h release cache is missing or expired, keeping `downshift-agents` update notices fresh automatically.
+- **Tight stderr-redirect pipes, safe `/dev/null` chain segments & `|| :` (`#242`).** Allowed tight `|` after `2>&1` and `2>/dev/null`, kept non-guarded chain segments ending in `>/dev/null`, `2>/dev/null`, or `&>/dev/null`, and supported `|| :` alongside `|| true`.
+
 ## [0.24.0] - 2026-11-26
 
 Release notes: [docs/releases/v0.24.0.md](docs/releases/v0.24.0.md).
