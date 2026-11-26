@@ -31,6 +31,9 @@ export function parsePanel(stdout: string, now: number): DownshiftSnapshot {
   const skills = skillsOf(raw.skills)
   const adoptionLine = str(raw, 'adoption_line')
   const version = str(raw, 'version')
+  const latestRaw = str(raw, 'latest')?.trim()
+  const latest = latestRaw ? latestRaw : undefined
+  const updateAvailable = raw.update_available === true
   return {
     status: 'ok',
     at: now,
@@ -42,6 +45,8 @@ export function parsePanel(stdout: string, now: number): DownshiftSnapshot {
     ...(skills !== undefined ? { skills } : {}),
     ...(adoptionLine !== undefined ? { adoptionLine } : {}),
     ...(version !== undefined ? { version } : {}),
+    ...(latest !== undefined ? { latest } : {}),
+    updateAvailable,
   }
 }
 
