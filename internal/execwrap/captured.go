@@ -46,7 +46,7 @@ func compactHeld(argv []string, data []byte, family Family, exitCode int, wroteS
 		}
 	}
 	if balanced && !h.compacted {
-		if exitCode != 0 && bal.bypassFail && keep != nil && family != FamilyNone && !balanceRefused[family] && !rawStoreRefused[family] && len(data) > bal.limit() {
+		if exitCode != 0 && bal.bypassFail && keep != nil && !balanceRefused[family] && !rawStoreRefused[family] && len(data) > bal.limit() {
 			h.detail = DetailAntiLoopBypass
 		} else if cut, ok := fallbackCut(keep, family, argv, exitCode, data, h.detail, bal); ok {
 			h = held{out: cut, compacted: true, folded: true, detail: DetailFallbackCut}
@@ -93,11 +93,12 @@ func CompactCapturedShaped(argv []string, family Family, data []byte, exitCode i
 }
 
 // CompactCapturedFailed is CompactCapturedShaped for the output of a run that
-// exited non-zero, where the balanced cut stays off: only the family's own
-// compressor and then the fallback cut (balance_fallback.go) may shorten it,
-// and unclassified output (no family) stays whole.
+// exited non-zero, where the normal balanced cut stays off: only the family's
+// own compressor and then the fallback cut (balance_fallback.go, which also
+// handles oversized unclassified output via BalanceFailed when CCR stores the
+// raw bytes) may shorten it.
 func CompactCapturedFailed(argv []string, family Family, data []byte, exitCode int, keep func([]byte) (string, bool), balanceThreshold int, session string, shapes Shapes) Captured {
-	return compactCaptured(argv, family, data, exitCode, keep, family != FamilyNone, balanceThreshold, session, shapes, true)
+	return compactCaptured(argv, family, data, exitCode, keep, true, balanceThreshold, session, shapes, true)
 }
 
 func compactCaptured(argv []string, family Family, data []byte, exitCode int, keep func([]byte) (string, bool), balanced bool, balanceThreshold int, session string, shapes Shapes, fallbackOnly bool) (res Captured) {

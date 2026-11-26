@@ -15,22 +15,23 @@ const DetailFallbackCut = "fallback_cut"
 // streak, delivering full raw output instead.
 const DetailAntiLoopBypass = "anti_loop_bypass"
 
-// fallbackCut is the last resort for a family that has a compressor which let
-// the output through whole: the same balanced cut unclassified output gets,
+// fallbackCut is the last resort for a family whose compressor let the output
+// through whole, or for unclassified output (FamilyNone) on a non-zero exit:
 // stored in CCR first so every dropped line can be retrieved. A failed run
 // keeps its failure lines and a long tail (compressor.BalanceFailed); a clean
 // one takes the shorter of the line cut and the byte cut. It reports false,
-// and the caller prints the output whole, when there is no store, the family
-// is never cut with loss or stored, the output is within the threshold, a
-// diff carries a danger word (its hunks are read verbatim), or the cut saves
-// less than a quarter. A panic counts as false.
+// and the caller prints the output whole, when there is no store, the session
+// hit the anti-loop bypass, FamilyNone exited zero (already handled by balance),
+// the family is never cut with loss or stored, the output is within the
+// threshold, a diff carries a danger word (its hunks are read verbatim), or the
+// cut saves less than a quarter. A panic counts as false.
 func fallbackCut(keep func([]byte) (string, bool), family Family, argv []string, exitCode int, raw []byte, detail string, cfg balanceConfig) (res []byte, ok bool) {
 	defer func() {
 		if recover() != nil {
 			res, ok = nil, false
 		}
 	}()
-	if keep == nil || (exitCode != 0 && cfg.bypassFail) || family == FamilyNone || balanceRefused[family] || rawStoreRefused[family] || len(raw) <= cfg.limit() {
+	if keep == nil || (exitCode != 0 && cfg.bypassFail) || (family == FamilyNone && exitCode == 0) || balanceRefused[family] || rawStoreRefused[family] || len(raw) <= cfg.limit() {
 		return nil, false
 	}
 	kind := balanceKindOf(family, argv)

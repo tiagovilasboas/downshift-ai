@@ -11,6 +11,7 @@ import (
 	"github.com/tiagovilasboas/downshift-ai/internal/core"
 	"github.com/tiagovilasboas/downshift-ai/internal/execwrap"
 	"github.com/tiagovilasboas/downshift-ai/internal/hookport"
+	"github.com/tiagovilasboas/downshift-ai/internal/paths"
 )
 
 var allCaps = core.HarnessCapabilities{ReplacesToolOutput: []core.ToolCategory{core.CategoryShell, core.CategorySearch, core.CategoryRead}}
@@ -250,11 +251,12 @@ func TestCompact_PostRun4KBBand(t *testing.T) {
 		t.Errorf("5 KB compaction did not achieve 25%% gain: raw=%d emitted=%d", res.RawBytes, res.EmittedBytes)
 	}
 
-	// Nonzero exit stays whole.
+	// Nonzero exit over 4 KiB with CCR uses BalanceFailed fallback cut.
 	failIn := in
 	failIn.ExitCode = 1
-	if failRes := Compact(allCaps, failIn, opts); failRes.Replaced || failRes.Output.Stdout != fiveKB {
-		t.Errorf("5 KB nonzero exit was cut: replaced=%v", failRes.Replaced)
+	failRes := Compact(allCaps, failIn, opts)
+	if !failRes.Replaced || failRes.Detail != execwrap.DetailFallbackCut || failRes.KeptID != "0123456789ab" {
+		t.Errorf("5 KB nonzero exit not compacted via fallback: replaced=%v detail=%q kept=%q", failRes.Replaced, failRes.Detail, failRes.KeptID)
 	}
 
 	// Just over the threshold (80 lines * ~55 bytes = ~4.4 KB) the proportional byte cut keeps ~60% and still gains 25%.
@@ -531,4 +533,94 @@ func TestCompact_GitRemoteStderrCompaction(t *testing.T) {
 			t.Fatalf("short fatal stderr altered: %+v", res)
 		}
 	})
+}
+
+func TestCompact_FamilyNoneFailedFallback(t *testing.T) {
+	var b strings.Builder
+	for i := 0; i < 120; i++ {
+		// Distinct non-numeric tokens so LosslessText does not fold them.
+		fmt.Fprintf(&b, "unit %c%c%c: %s\n", 'a'+i/676%26, 'a'+i/26%26, 'a'+i%26, strings.Repeat("a", 45))
+	}
+	b.WriteString("error: build failed at step 120\nfatal: exiting\n")
+	bigFail := b.String()
+	smallFail := "=== RUN   TestSmall\n--- FAIL: TestSmall (0.00s)\nFAIL\n"
+	sess := strings.Repeat("ef", 32)
+
+	cases := []struct {
+		name     string
+		cmd      string
+		stdout   string
+		stderr   string
+		exit     int
+		keep     bool
+		antiLoop bool
+		wantCut  bool
+		wantDet  string
+	}{
+		{"large stdout with CCR", "custom-tool --run", bigFail, "", 1, true, false, true, execwrap.DetailFallbackCut},
+		{"small failure stays raw", "cd repo && go test ./...", smallFail, "", 1, true, false, false, execwrap.DetailNoCompressor},
+		{"no CCR stays raw", "custom-tool --run", bigFail, "", 1, false, false, false, execwrap.DetailNoCompressor},
+		{"curl compound refuses CCR and stays raw", "curl -sS https://example.com | jq .", bigFail, "", 22, true, false, false, execwrap.DetailNoCompressor},
+		{"active anti-loop bypasses", "custom-tool --run", bigFail, "", 1, true, true, false, execwrap.DetailAntiLoopBypass},
+		{"large stderr (> 4 KiB) with CCR", "custom-tool --run", "", bigFail, 1, true, false, true, ""},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv(paths.EnvStateDir, t.TempDir())
+			usedSess := ""
+			if tc.antiLoop {
+				usedSess = sess
+				execwrap.RecordAntiLoop(sess, 1, "deadbeef0001")
+				execwrap.RecordAntiLoop(sess, 1, "deadbeef0001")
+			}
+			var stored []byte
+			opts := Options{Balanced: true, Session: usedSess}
+			if tc.keep {
+				opts.Keep = func(raw []byte) (string, bool) {
+					stored = append([]byte(nil), raw...)
+					return "0123456789ab", true
+				}
+			}
+			in := hookport.ToolOutput{
+				Category:  core.CategoryShell,
+				Command:   tc.cmd,
+				Stdout:    tc.stdout,
+				Stderr:    tc.stderr,
+				HasStdout: tc.stdout != "",
+				HasStderr: tc.stderr != "",
+				ExitCode:  tc.exit,
+				Session:   usedSess,
+			}
+			res := Compact(allCaps, in, opts)
+			if res.Replaced != tc.wantCut {
+				t.Fatalf("Replaced = %v, want %v (detail=%q passthrough=%q)", res.Replaced, tc.wantCut, res.Detail, res.Passthrough)
+			}
+			if res.Detail != tc.wantDet {
+				t.Errorf("Detail = %q, want %q", res.Detail, tc.wantDet)
+			}
+			if tc.wantCut {
+				if res.KeptID != "0123456789ab" {
+					t.Errorf("KeptID = %q, want 0123456789ab", res.KeptID)
+				}
+				wantRaw := tc.stdout
+				gotOut := res.Output.Stdout
+				if tc.stderr != "" {
+					wantRaw = tc.stderr
+					gotOut = res.Output.Stderr
+				}
+				if string(stored) != wantRaw {
+					t.Errorf("stored %d bytes, want %d", len(stored), len(wantRaw))
+				}
+				if !strings.Contains(gotOut, "downshift retrieve") || !strings.Contains(gotOut, "0123456789ab]") {
+					t.Errorf("missing retrieve marker in:\n%s", gotOut)
+				}
+				if !strings.Contains(gotOut, "error: build failed at step 120") {
+					t.Errorf("missing error line in:\n%s", gotOut)
+				}
+			} else if res.Output.Stdout != tc.stdout || res.Output.Stderr != tc.stderr {
+				t.Errorf("raw output altered")
+			}
+		})
+	}
 }
