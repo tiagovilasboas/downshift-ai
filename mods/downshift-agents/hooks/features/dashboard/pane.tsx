@@ -18,7 +18,7 @@ import { progressOf } from '../tasks/board'
 import { shownProgress } from '../tasks/shown'
 import type { ShownProgress } from '../tasks/shown'
 import { readAll, updateView } from '../../shared/state/atoms'
-import { ACCENT, MUTED } from '../../shared/ui/format'
+import { ACCENT, MUTED, WARN } from '../../shared/ui/format'
 import { groundOfSettings } from '../../shared/ui/ground'
 import type { Ground } from '../../shared/ui/svg/brand'
 import { agentsSection } from './agents-section'
@@ -97,6 +97,7 @@ function glyphBody(ui: Ui, s: Shown, columns: number) {
       </Text>
       <Text color={isLive ? ACCENT : MUTED}>{isLive ? '● Downshift connected' : '○ Downshift metrics unavailable'}</Text>
     </Box>,
+    updateNoticeGlyph(ui, s.snapshot),
     tasksSection(ui, s.board, s.tasks, columns, s.view.isExpanded),
     agentsSection(ui, { agents: s.agents, snapshot: s.snapshot, filter: s.view.filter, isExpanded: s.view.isExpanded, now: s.now }, columns),
     compactorSection(ui, s.snapshot, s.cut, columns),
@@ -110,6 +111,7 @@ function graphicBody(ui: GraphicUi, s: Shown, columns: number, ground: Ground) {
   const isExpanded = s.view.isExpanded
   return [
     header(ui, s.snapshot, ground),
+    updateNoticeGraphic(ui, s.snapshot),
     tasksPanel(ui, s.board, s.tasks, columns, isExpanded),
     tiles(ui, s.agents, s.snapshot, columns),
     agentsPanel(ui, { agents: s.agents, snapshot: s.snapshot, filter: s.view.filter, isExpanded, now: s.now }),
@@ -117,6 +119,43 @@ function graphicBody(ui: GraphicUi, s: Shown, columns: number, ground: Ground) {
     routingPanel(ui, s.snapshot, visibleAgents(s.agents).length, isExpanded),
     efficiencyPanel(ui, s.snapshot, isExpanded),
   ]
+}
+
+function updateNoticeText(snapshot: DownshiftSnapshot): string | undefined {
+  if (snapshot.status !== 'ok' || !snapshot.updateAvailable || !snapshot.latest) {
+    return undefined
+  }
+  return `Update available: ${snapshot.version ?? 'current'} → ${snapshot.latest}. Run: downshift update`
+}
+
+function updateNoticeGlyph(ui: Ui, snapshot: DownshiftSnapshot) {
+  const text = updateNoticeText(snapshot)
+  if (text === undefined) {
+    return null
+  }
+  const { Box, Text } = ui
+  return (
+    <Box paddingX={1}>
+      <Text color={WARN} wrap="wrap">
+        {text}
+      </Text>
+    </Box>
+  )
+}
+
+function updateNoticeGraphic(ui: GraphicUi, snapshot: DownshiftSnapshot) {
+  const text = updateNoticeText(snapshot)
+  if (text === undefined) {
+    return null
+  }
+  const { Box, Text } = ui
+  return (
+    <Box borderStyle="round" borderColor={WARN} paddingX="sm">
+      <Text size="caption" color={WARN} wrap="wrap">
+        {text}
+      </Text>
+    </Box>
+  )
 }
 
 /**

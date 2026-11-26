@@ -44,6 +44,16 @@ export function brandText(version?: string): string {
   return `Downshift - ${/^\d/.test(v) ? `v${v}` : v}`
 }
 
+/** Brand text plus an optional WARN-coloured ` ↑ vX.Y.Z` when an update is available. */
+export function brandParts(version?: string, latest?: string, updateAvailable?: boolean): Part[] {
+  const parts: Part[] = [{ text: brandText(version), bold: true }]
+  const next = latest?.trim()
+  if (updateAvailable === true && next) {
+    parts.push({ text: ` ↑ ${next}`, color: WARN })
+  }
+  return parts
+}
+
 export function bandSegments(
   input: {
     tasks: ReturnType<typeof progressOf>
@@ -54,13 +64,17 @@ export function bandSegments(
     isDownshiftOk: boolean
     /** The Downshift binary's version, when the panel reported one. */
     version?: string
+    /** The cached newest release tag, when newer than `version`. */
+    latest?: string
+    /** True when Downshift reports a newer release is available. */
+    updateAvailable?: boolean
     working?: ReturnType<typeof workingNow>
   },
   columns: number,
 ): Segment[] {
   const { tasks, agents } = input
   const segments: Segment[] = [
-    segment('brand', 0, [{ text: '◆ ', color: ACCENT }, { text: brandText(input.version), bold: true }]),
+    segment('brand', 0, [{ text: '◆ ', color: ACCENT }, ...brandParts(input.version, input.latest, input.updateAvailable)]),
     segment('tasks', 40, tasksParts(tasks, columns >= 90 ? 8 : 5)),
     segment('agents', 60, [
       { text: 'Agents ' },
@@ -135,6 +149,8 @@ export function drawBand(on: On): void {
         runs: snapshot.status === 'ok' && snapshot.compactor ? { commands: snapshot.compactor.commands, compacted: snapshot.compactor.compacted } : undefined,
         isDownshiftOk: snapshot.status === 'ok',
         version: snapshot.status === 'ok' ? snapshot.version : undefined,
+        latest: snapshot.status === 'ok' ? snapshot.latest : undefined,
+        updateAvailable: snapshot.status === 'ok' ? snapshot.updateAvailable : false,
         working: workingNow(agents),
       },
       e.props.bodyColumns,

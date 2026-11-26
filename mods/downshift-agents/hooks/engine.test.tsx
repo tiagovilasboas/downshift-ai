@@ -117,6 +117,22 @@ test('a non-zero Downshift exit is reported, never read as zeros', async ($, on)
   expect(out.text).not.toContain('Compactor')
 })
 
+test('the summary includes a one-line update notice only when updateAvailable is true', async ($, on) => {
+  on('clock.now', () => ({ value: 1000 }))
+  on('session.id', () => ({ value: 'sess-update' }))
+  const panelWithUpdate = JSON.stringify({ ...JSON.parse(PANEL_JSON), latest: 'v0.24.0', update_available: true })
+  let reply = PANEL_JSON
+  on('process.run', () => ({ value: { exitCode: 0, stdout: reply, stderr: '', ...UNCUT } }))
+  on('command.run', () => ({ text: '' }))
+
+  const withoutUpdate = await $.command.run(SUMMARY)
+  expect(withoutUpdate.text).not.toContain('Update available:')
+
+  reply = panelWithUpdate
+  const withUpdate = await $.command.run(SUMMARY)
+  expect(withUpdate.text).toContain('Update available: v0.23.0 -> v0.24.0. Run: downshift update')
+})
+
 test('the summary marks the Compactor token figure as an estimate and routing as workload', async ($, on) => {
   on('clock.now', () => ({ value: 1000 }))
   on('session.id', () => ({ value: 'sess-4' }))

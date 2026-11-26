@@ -41,10 +41,19 @@ func defaultLatestLookup(cacheFile string) latestLookup {
 		URL: latestReleaseURL, CacheFile: cacheFile, Now: time.Now}
 }
 
-// Latest returns the newest release tag and whether it is known.
-func (l latestLookup) Latest() (string, bool) {
+// cachedLatest returns the cached release tag if present and still fresh.
+// It never makes a network request.
+func (l latestLookup) cachedLatest() (string, bool) {
 	if c, ok := l.readCache(); ok && fresh(l.Now().Sub(c.CheckedAt)) {
 		return c.Tag, true
+	}
+	return "", false
+}
+
+// Latest returns the newest release tag and whether it is known.
+func (l latestLookup) Latest() (string, bool) {
+	if tag, ok := l.cachedLatest(); ok {
+		return tag, true
 	}
 	tag, ok := l.fetch()
 	if !ok {

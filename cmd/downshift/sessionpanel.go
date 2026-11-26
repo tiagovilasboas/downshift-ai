@@ -12,6 +12,7 @@ import (
 
 	"github.com/tiagovilasboas/downshift-ai/internal/accounting"
 	"github.com/tiagovilasboas/downshift-ai/internal/execwrap"
+	"github.com/tiagovilasboas/downshift-ai/internal/paths"
 	"github.com/tiagovilasboas/downshift-ai/internal/telemetry"
 )
 
@@ -27,16 +28,29 @@ type panelOptions struct {
 // writePanel prints the panel JSON for hash. events is the session tail; the
 // full logs are read only when the report is wanted.
 func writePanel(events []telemetry.Event, hash string, opt panelOptions, stdout, stderr io.Writer) int {
+	return writePanelWithVersion(events, hash, opt, telemetryVersion(), stdout, stderr)
+}
+
+func writePanelWithVersion(events []telemetry.Event, hash string, opt panelOptions, ver string, stdout, stderr io.Writer) int {
 	view := readout.BuildPanel(events, hash)
 	why := accounting.BuildSpawnWhy(events, hash)
-	var out any = panelNoReport{PanelView: view, Why: why, Version: telemetryVersion()}
+	latest, updateAvail := cachedUpdateNotice(ver)
+	var out any = panelNoReport{
+		PanelView:       view,
+		Why:             why,
+		Version:         ver,
+		Latest:          latest,
+		UpdateAvailable: updateAvail,
+	}
 	if !opt.NoReport {
 		// The report's window reads the whole logs; the per-session view is from the tail.
 		allEvents, _ := telemetry.ReadEvents()
 		execEvents, _ := accounting.ReadExecEvents()
 		full := panelWithReport(view, hash, allEvents, execEvents)
 		full.Why = why
-		full.Version = telemetryVersion()
+		full.Version = ver
+		full.Latest = latest
+		full.UpdateAvailable = updateAvail
 		out = full
 		if opt.Brief {
 			out = briefWithTokens(view, full.TokensSavedEstimate, full.WorkingMemoryLine)
@@ -53,6 +67,27 @@ func writePanel(events []telemetry.Event, hash string, opt panelOptions, stdout,
 	return 0
 }
 
+// cachedUpdateNotice checks ~/.downshift/latest_release.json (cache-only, zero
+// network) and returns (tag, true) when a newer release than current is cached.
+func cachedUpdateNotice(current string) (string, bool) {
+	cache, err := paths.Join("latest_release.json")
+	if err != nil {
+		return "", false
+	}
+	return cachedUpdateNoticeFrom(cache, current, time.Now)
+}
+
+func cachedUpdateNoticeFrom(cacheFile, current string, now func() time.Time) (string, bool) {
+	tag, ok := (latestLookup{CacheFile: cacheFile, Now: now}).cachedLatest()
+	if !ok {
+		return "", false
+	}
+	if cmp, comparable := compareVersions(current, tag); !comparable || cmp >= 0 {
+		return "", false
+	}
+	return tag, true
+}
+
 // panelNoReport is the panel without the report: the session view plus, per
 // spawn, why it changed or not (the routing note as one short cell).
 type panelNoReport struct {
@@ -60,6 +95,10 @@ type panelNoReport struct {
 	Why []accounting.SpawnWhy `json:"routing_why"`
 	// Version is the running binary's version, for the band's brand text.
 	Version string `json:"version,omitempty"`
+	// Latest is the cached newest release tag when newer than Version.
+	Latest string `json:"latest,omitempty"`
+	// UpdateAvailable is true when Latest is a newer semver than Version.
+	UpdateAvailable bool `json:"update_available,omitempty"`
 }
 
 // compactorTokenEstimate names how Compactor tokens are estimated; it is the
@@ -125,6 +164,10 @@ type panelOut struct {
 	AdoptionLine      string                `json:"adoption_line,omitempty"`
 	// Version is the running binary's version, for the band's brand text.
 	Version string `json:"version,omitempty"`
+	// Latest is the cached newest release tag when newer than Version.
+	Latest string `json:"latest,omitempty"`
+	// UpdateAvailable is true when Latest is a newer semver than Version.
+	UpdateAvailable bool `json:"update_available,omitempty"`
 }
 
 // panelWithReport builds the panel from the session view and the full logs.

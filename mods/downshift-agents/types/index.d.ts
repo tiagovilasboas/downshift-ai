@@ -215,6 +215,10 @@ export type DownshiftSnapshot =
       adoptionLine?: string
       /** The running Downshift binary's version, e.g. "v0.23.0"; the band's brand text shows it. */
       version?: string
+      /** The cached newest release tag when newer than `version`, e.g. "v0.24.0". */
+      latest?: string
+      /** True when Downshift reports a newer release is available. */
+      updateAvailable: boolean
     }
 
 /** Where a gliding figure started and when (ms): the views ease from `from` to the live value. */
