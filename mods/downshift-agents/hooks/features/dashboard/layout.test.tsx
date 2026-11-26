@@ -93,6 +93,21 @@ test('a narrow pane drops the frames and keeps every card', async ($, on) => {
   await ui.unmount()
 })
 
+test('both desktop and terminal panes show the update notice banner when updateAvailable is true', async ($, on) => {
+  const panelWithUpdate = JSON.stringify({ ...JSON.parse(PANEL_JSON), latest: 'v0.24.0', update_available: true })
+  mock.clock(on, { now: 1000 })
+  on('session.id', () => ({ value: 'layout-update' }))
+  on('process.run', () => ({ value: { exitCode: 0, stdout: panelWithUpdate, stderr: '', ...UNCUT } }))
+  on('command.run', () => ({ text: '' }))
+  await $.command.run(SUMMARY)
+
+  for (const surface of ['desktop', 'terminal'] as const) {
+    const ui = await $.ui.mount(pane(surface, 60))
+    expect(await ui.find({ type: 'Text', text: /Update available: v0\.23\.0 → v0\.24\.0\. Run: downshift update/ })).toBeDefined()
+    await ui.unmount()
+  }
+})
+
 test('the band never takes a frame, so every column goes to its figures', async ($, on) => {
   withDownshift(on)
   on('ui.render', ($, e) => {

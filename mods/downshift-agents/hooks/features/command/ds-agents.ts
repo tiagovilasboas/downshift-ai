@@ -72,6 +72,9 @@ export async function summary($: EngineInterface): Promise<string> {
     lines.push(snapshot.status === 'unavailable' ? `Downshift: unavailable (${snapshot.reason})` : 'Downshift: not read yet')
     return lines.join('\n')
   }
+  if (snapshot.updateAvailable && snapshot.latest) {
+    lines.push(`Update available: ${snapshot.version ?? 'current'} -> ${snapshot.latest}. Run: downshift update`)
+  }
   const c = snapshot.compactor
   if (c !== undefined) {
     const pct = reductionPercent(c)

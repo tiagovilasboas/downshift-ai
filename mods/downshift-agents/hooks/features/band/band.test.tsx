@@ -11,7 +11,9 @@ import type { Engine, MockClock } from 'claude-code/testing'
 
 import { PANEL_JSON } from '../downshift/panel.fixture'
 import { GLIDE_MS } from '../../shared/glide/glide'
+import { WARN } from '../../shared/ui/format'
 import { groundOf } from '../../shared/ui/ground'
+import { brandParts } from './band'
 
 const UNCUT = { isStdoutTruncated: false, isStderrTruncated: false }
 
@@ -130,4 +132,32 @@ test('the terminal band keeps its glyph meter and draws no Svg', async ($, on) =
   expect(await ui.find({ type: 'Text', text: /◆ Downshift - v0\.23\.0/ })).toBeDefined()
   expect(await ui.find({ type: 'Text', text: /Tasks 1\/2 ━+╸?━* 50%/ })).toBeDefined()
   await ui.unmount()
+})
+
+test('brandParts and the band show an update badge only when updateAvailable and latest are set', async ($, on) => {
+  expect(brandParts('v0.23.0')).toEqual([{ text: 'Downshift - v0.23.0', bold: true }])
+  expect(brandParts('v0.23.0', 'v0.24.0', false)).toEqual([{ text: 'Downshift - v0.23.0', bold: true }])
+  expect(brandParts('v0.23.0', undefined, true)).toEqual([{ text: 'Downshift - v0.23.0', bold: true }])
+  expect(brandParts('v0.23.0', 'v0.24.0', true)).toEqual([
+    { text: 'Downshift - v0.23.0', bold: true },
+    { text: ' ↑ v0.24.0', color: WARN },
+  ])
+
+  const panelWithUpdate = JSON.stringify({ ...JSON.parse(PANEL_JSON), latest: 'v0.24.0', update_available: true })
+  mock.clock(on, { now: 1000 })
+  on('session.id', () => ({ value: 'band-update' }))
+  on('process.run', () => ({ value: { exitCode: 0, stdout: panelWithUpdate, stderr: '', ...UNCUT } }))
+  on('command.run', () => ({ text: '' }))
+  on('ui.render', ($, e) => {
+    const { Text } = $.ui.resolve(e)
+    return <Text>engine</Text>
+  })
+  await $.command.run(SUMMARY)
+
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const ui = await $.ui.mount(band(surface, 120, 10))
+    expect(await ui.find({ type: 'Text', text: /Downshift - v0\.23\.0/ })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /↑ v0\.24\.0/ })).toBeDefined()
+    await ui.unmount()
+  }
 })
