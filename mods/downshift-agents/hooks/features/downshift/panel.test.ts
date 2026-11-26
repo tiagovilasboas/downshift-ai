@@ -211,3 +211,31 @@ test('quota and skills fields are backward-compatible when omitted and safely ig
   const arrSkills = parsePanel(JSON.stringify(raw), 5)
   expect(arrSkills.status === 'ok' && arrSkills.skills === undefined).toBe(true)
 })
+
+test('latest and updateAvailable parse cleanly and default off when missing or malformed', () => {
+  const base = parsePanel(PANEL_JSON, 5)
+  if (base.status !== 'ok') {
+    throw new Error(`expected ok, got ${base.status}`)
+  }
+  expect(base.latest).toBeUndefined()
+  expect(base.updateAvailable).toBe(false)
+
+  const raw = JSON.parse(PANEL_JSON) as Record<string, unknown>
+  raw.latest = 'v0.24.0'
+  raw.update_available = true
+  const withUpdate = parsePanel(JSON.stringify(raw), 5)
+  if (withUpdate.status !== 'ok') {
+    throw new Error(`expected ok, got ${withUpdate.status}`)
+  }
+  expect(withUpdate.latest).toBe('v0.24.0')
+  expect(withUpdate.updateAvailable).toBe(true)
+
+  raw.latest = '   '
+  raw.update_available = 'true'
+  const malformed = parsePanel(JSON.stringify(raw), 5)
+  if (malformed.status !== 'ok') {
+    throw new Error(`expected ok, got ${malformed.status}`)
+  }
+  expect(malformed.latest).toBeUndefined()
+  expect(malformed.updateAvailable).toBe(false)
+})
