@@ -818,6 +818,7 @@ Maintainer tool: `downshift probe <event>` records a hook payload's field names 
 | `DOWNSHIFT_BUDGET_TOKENS` | Tokens all workers of one MCP session may spend together; once reached, `delegate` refuses a new wave (code `budget`). Overrides `orchestration.budget_tokens`. Unset means no cap | unset |
 | `DOWNSHIFT_WORKER_TOKEN_BUDGET` | Tokens each worker CLI may spend in one MCP session; once spent, `delegate`, `send` and `steer` refuse for that CLI. `0` or unset means no budget | unset |
 | `DOWNSHIFT_COMPACTOR_ACTIVE` | Set by the shell helper while it runs `downshift compactor`, so a nested command is not wrapped twice. Not for you to set | unset |
+| `DOWNSHIFT_NO_NETWORK` | Set to `1` to disable background `latest_release.json` cache refreshes from `downshift session --panel` | unset |
 
 ---
 
