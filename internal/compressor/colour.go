@@ -16,8 +16,11 @@ import "bytes"
 // line erase, a hyperlink) means the bytes are a terminal rendering, not
 // text, and stay raw.
 //
-// Output that does not end in a newline may have been cut off mid-line, and
-// CRLF output would be rewritten with stray carriage returns; both stay raw.
+// Single-line output with no newline at all may be an interactive prompt or
+// cut-off fragment and stays raw. Multi-line output whose only missing newline
+// is at EOF is normalized with a trailing newline so line-oriented compressors
+// can read the final line cleanly. CRLF output would be rewritten with stray
+// carriage returns and stays raw.
 // The Flutter and Dart reporters rewrite one status line with carriage
 // returns even without a TTY; compressFlutterTest validates them exactly.
 func screenText(input []byte) (text []byte, reason string) {
@@ -29,8 +32,17 @@ func screenText(input []byte) (text []byte, reason string) {
 		}
 		text = plain
 	}
-	if len(text) == 0 || text[len(text)-1] != '\n' {
+	if len(text) == 0 {
 		return nil, "no_final_newline_preserved"
+	}
+	if text[len(text)-1] != '\n' {
+		if bytes.IndexByte(text, '\n') == -1 {
+			return nil, "no_final_newline_preserved"
+		}
+		norm := make([]byte, len(text)+1)
+		copy(norm, text)
+		norm[len(text)] = '\n'
+		text = norm
 	}
 	if bytes.IndexByte(text, '\r') != -1 && !isFlutterTest(text) {
 		return nil, "carriage_return_preserved"

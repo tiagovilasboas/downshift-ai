@@ -137,7 +137,7 @@ func TestCompressSwiftTest_FailsKeepEveryFailureLine(t *testing.T) {
 func TestCompressSwiftTest_PreservesAmbiguousOrCorrupt(t *testing.T) {
 	clean := readFixture(t, "swift_test_pass_clean.txt")
 	cases := map[string][]byte{
-		"no trailing newline": bytes.TrimSuffix(clean, []byte("\n")),
+		"single line no nl":   []byte("✔ Test run with 9 tests in 1 suite passed after 0.045 seconds."),
 		"crlf":                bytes.ReplaceAll(clean, []byte("\n"), []byte("\r\n")),
 		"unrecognised line":   []byte("print(\"debug\")\n" + string(clean)),
 		"danger in test name": []byte("Test Suite 'All tests' started at 2026-11-19 10:00:00.000.\nTest Case '-[Pkg.Tests testErrorCase]' passed (0.001 seconds).\nTest Suite 'All tests' passed at 2026-11-19 10:00:00.001.\n\t Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.001) seconds\n"),
