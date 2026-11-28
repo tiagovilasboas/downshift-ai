@@ -243,3 +243,39 @@ func TestDoctorReportPluginHooksOkForTheShippedFile(t *testing.T) {
 		t.Errorf("plugin hooks = %+v, want ok", row)
 	}
 }
+
+func TestPluginHooksCommitLagCheck(t *testing.T) {
+	const updateFix = "claude plugin update downshift@downshift, then open a new session"
+	cases := []struct {
+		name      string
+		installed string
+		binCommit string
+		wantSt    string
+		wantFix   string
+		wantParts []string
+	}{
+		{"matching prefix short binary", testPluginSha, testPluginSha[:8], doctorOK, "", []string{"carries the 10 hooks this binary ships"}},
+		{"matching prefix short installed", testPluginSha[:8], testPluginSha, doctorOK, "", []string{"carries the 10 hooks this binary ships"}},
+		{"lagging installed commit", "22cd65901234567890abcdef1234567890abcdef", "af35fbc4", doctorWarn, updateFix,
+			[]string{"installed plugin at 22cd65901234 carries the 10 hooks, but lags behind binary commit af35fbc4 (bundled mod/skills may be older)"}},
+		{"dev binary commit", testPluginSha, "dev", doctorOK, "", []string{"carries the 10 hooks this binary ships"}},
+		{"empty binary commit", testPluginSha, "", doctorOK, "", []string{"carries the 10 hooks this binary ships"}},
+		{"unknown binary commit", testPluginSha, "unknown", doctorOK, "", []string{"carries the 10 hooks this binary ships"}},
+		{"none binary commit", testPluginSha, "none", doctorOK, "", []string{"carries the 10 hooks this binary ships"}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			home := t.TempDir()
+			registerPluginInstall(t, home, map[string]any{"scope": "user", "gitCommitSha": tc.installed}, shippedPluginHooks(t))
+			var rows []mcpRow
+			checkInstalledPluginHooksAt(func(id, status, detail, fix string) {
+				rows = append(rows, mcpRow{status, detail, fix})
+			}, home, "claude-code", true, tc.binCommit)
+			row := wantOneRow(t, rows)
+			if row.status != tc.wantSt || row.fix != tc.wantFix {
+				t.Fatalf("row = %+v, want status=%q fix=%q", row, tc.wantSt, tc.wantFix)
+			}
+			wantAll(t, row.detail, tc.wantParts...)
+		})
+	}
+}
