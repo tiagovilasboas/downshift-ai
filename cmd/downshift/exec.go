@@ -71,6 +71,9 @@ func runExec(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	opts.Stdin, opts.Stdout, opts.Stderr = stdin, stdout, stderr
 	opts.Compact = os.Getenv(execEnvKillSwitch) != "0" && os.Getenv(execwrap.DepthEnv) == ""
 	opts.Session = session
+	if harness != "" && harness != "unknown" {
+		opts.Harness = harness
+	}
 	opts.Keep, opts.KeepFailed = ccrKeep()
 	loadBalanced().apply(&opts)
 	argv := execwrap.SplitSingleWord(args[1:])
