@@ -110,3 +110,42 @@ func TestDecideRefusesWhenOneChainSegmentIsBlocked(t *testing.T) {
 		t.Fatalf("a rule on segment %q must block the rewrite, got %+v", segment, got)
 	}
 }
+
+func TestHandleUnpromptedExpandedReadOnly(t *testing.T) {
+	plain := rewritingHarness(t, false, false) // claude-code
+	cases := []struct {
+		command string
+		rewrite bool
+		skip    string
+	}{
+		{"git -C repo status --short", true, ""},
+		{"git -C repo branch -a", true, ""},
+		{"git -C repo remote -v", true, ""},
+		{"git -C repo stash list", true, ""},
+		{"git tag -l --sort=-v:refname", true, ""},
+		{"git config --list --show-origin", true, ""},
+		{"git grep -n func internal", true, ""},
+		{"ls", true, ""},
+		{"docker ps -a", true, ""},
+		{"docker images", true, ""},
+		{"docker logs --tail 20 app", true, ""},
+		{"git -C repo branch -D main", false, ReasonNotReadOnly},
+		{"git tag v1.0", false, ReasonNotReadOnly},
+		{"git config --set user.name x", false, ReasonNotReadOnly},
+		{"git grep -O vim func", false, ReasonNotReadOnly},
+		{"docker build .", false, ReasonNotReadOnly},
+		{"docker exec app ls", false, ReasonNotReadOnly},
+		{"kubectl get pods", false, ReasonNotReadOnly},
+	}
+	for _, tc := range cases {
+		t.Run(tc.command, func(t *testing.T) {
+			withEnv(t, true, nil, true)
+			ev := shapedShell{fakeShell: fakeShell{command: tc.command}, unprompted: true}
+			r := Handle(plain, ev, "")
+			if (r.Rewrite != nil) != tc.rewrite || r.Skip != tc.skip {
+				t.Fatalf("Handle(%q) rewrite=%v skip=%q, want rewrite=%v skip=%q",
+					tc.command, r.Rewrite != nil, r.Skip, tc.rewrite, tc.skip)
+			}
+		})
+	}
+}
