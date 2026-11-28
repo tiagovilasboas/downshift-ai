@@ -52,7 +52,8 @@ func compactRead(in hookport.ToolOutput, o Options) Result {
 		res.Compacted, res.Folded, res.Passthrough = true, true, ""
 		return settle(res, in)
 	}
-	if raw >= readDedupMinBytes && len(in.ToolInput) > 0 && o.Balanced && o.Keep != nil {
+	threshold, headBudget, tailBudget := readCutLimits(in.ToolInput)
+	if raw >= readDedupMinBytes && raw <= threshold && len(in.ToolInput) > 0 && o.Balanced && o.Keep != nil {
 		if compacted, id, changed := tryDedupRead(in, o); changed {
 			res.Output.Content = compacted
 			res.EmittedBytes = int64(len(compacted))
@@ -63,11 +64,11 @@ func compactRead(in hookport.ToolOutput, o Options) Result {
 			return settle(res, in)
 		}
 	}
-	if raw <= ReadThreshold || !o.Balanced || o.Keep == nil {
+	if raw <= threshold || !o.Balanced || o.Keep == nil {
 		return settle(res, in)
 	}
 	spans := splitLineSpans(in.Content)
-	headCount, tailCount := pickHeadTail(spans, readHeadBudget, readTailBudget)
+	headCount, tailCount := pickHeadTail(spans, headBudget, tailBudget)
 	if headCount == 0 || tailCount == 0 || headCount+tailCount >= len(spans) {
 		return settle(res, in)
 	}
