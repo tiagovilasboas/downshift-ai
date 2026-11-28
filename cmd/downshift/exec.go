@@ -55,7 +55,10 @@ func runExec(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		args = args[1:]
 	}
 	if harness == "" {
-		harness = envHarness()
+		harness = inferExecHarness(os.Getenv)
+	}
+	if harness == "" {
+		harness = "unknown"
 	}
 	if len(args) > 0 && args[0] == allowlistedFlag {
 		return runAllowlistedQuery(args[1:], stderr)
@@ -104,4 +107,27 @@ func runAllowlistedQuery(args []string, stderr io.Writer) int {
 		return 1
 	}
 	return 0
+}
+
+// inferExecHarness infers the harness from environment variables declared in
+// core.AllHarnessCaps (SessionEnv or ShellEnv) when --harness is omitted.
+// Returns the harness name only when exactly one harness matches unambiguously;
+// returns "" when zero or multiple harnesses match so nested shells are never
+// misattributed.
+func inferExecHarness(getenv func(string) string) string {
+	matched := ""
+	for _, n := range core.AllHarnessCaps() {
+		if harnessEnvActive(n.Caps, getenv) {
+			if matched != "" {
+				return ""
+			}
+			matched = n.Harness
+		}
+	}
+	return matched
+}
+
+func harnessEnvActive(c core.HarnessCapabilities, getenv func(string) string) bool {
+	return (c.SessionEnv != "" && getenv(c.SessionEnv) != "") ||
+		(c.ShellEnv != "" && getenv(c.ShellEnv) != "")
 }
