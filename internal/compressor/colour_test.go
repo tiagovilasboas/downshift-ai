@@ -43,14 +43,32 @@ func TestScreenText(t *testing.T) {
 		{"\x1b[32mok\x1b[0m\n", "ok\n", ""},
 		{"ok\n\x1b[0m", "ok\n", ""}, // a reset after the last newline ends nothing
 		{"\x1b[2Kok\n", "", "terminal_escape_preserved"},
+		{"ok", "", "no_final_newline_preserved"},
+		{"Password: ", "", "no_final_newline_preserved"},
 		{"\x1b[32mok\x1b[0m", "", "no_final_newline_preserved"},
 		{"\x1b[0m", "", "no_final_newline_preserved"},
+		{"line1\nline2", "line1\nline2\n", ""},
+		{"\x1b[32mline1\x1b[0m\n\x1b[32mline2\x1b[0m", "line1\nline2\n", ""},
 		{"a\r\nb\n", "", "carriage_return_preserved"},
+		{"a\r\nb", "", "carriage_return_preserved"},
 		{"\x1b[32ma\x1b[0m\r\nb\n", "", "carriage_return_preserved"},
+		{"\x1b[2Ka\nb", "", "terminal_escape_preserved"},
 	} {
 		text, reason := screenText([]byte(tc.in))
 		if string(text) != tc.text || reason != tc.reason {
 			t.Errorf("screenText(%q) = %q, %q; want %q, %q", tc.in, text, reason, tc.text, tc.reason)
 		}
+	}
+}
+
+func TestScreenTextDoesNotMutateInput(t *testing.T) {
+	backing := []byte("line1\nline2X")
+	in := backing[:len(backing)-1]
+	text, reason := screenText(in)
+	if reason != "" || string(text) != "line1\nline2\n" {
+		t.Fatalf("screenText(%q) = %q, %q", in, text, reason)
+	}
+	if backing[len(backing)-1] != 'X' {
+		t.Fatalf("screenText mutated caller backing slice: %q", backing)
 	}
 }

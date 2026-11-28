@@ -55,7 +55,7 @@ func TestFoldGoTestRunsLeavesRawWhatItCannotFold(t *testing.T) {
 		"no package lines":     "To github.com:acme/widget.git\n   1a2b3c4..5d6e7f8  main -> main\n",
 		"carriage return":      "Writing objects:  50%\rdone\n" + run,
 		"terminal escape":      "\x1b[2K" + run,
-		"no final newline":     strings.TrimSuffix(run, "\n"),
+		"single line no nl":    "ok  \texample.com/acme/a\t0.10s",
 		"tap lines are not go": "ok 1 adds\nok 2 subtracts\nok 3 divides\nok 4 multiplies\n",
 	} {
 		r := compressor.FoldGoTestRuns([]byte(in))

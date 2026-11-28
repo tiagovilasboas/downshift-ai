@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	reGoTestPass   = lazyre.New(`(?m)^ok\s+([^\s]+)\s+([^\s]+)(?:\s+coverage:\s+(.+))?$`)
+	reGoTestPass   = lazyre.New(`(?m)^ok\s+([^\s]+)\s+(\d+(?:\.\d+)?s|\(cached\))(?:\s+coverage:\s+(.+))?$`)
 	reGoTestNoTest = lazyre.New(`(?m)^\?\s+([^\s]+)\s+\[no test files\]\s*$`)
 	// reGoTestCoverNoFiles is the line `go test -cover` prints for a package
 	// with no test files under the tab-indented form (no "ok" or "?" prefix).
