@@ -352,3 +352,153 @@ func TestDedupRead_MidBand512To1024(t *testing.T) {
 		t.Fatalf("repeat mid-band read not deduped to shorter pointer: changed=%v got=%q", changed2, got2)
 	}
 }
+
+func sliceLines(content string, startLine, count int) string {
+	lines := strings.SplitAfter(content, "\n")
+	if len(lines) > 0 && lines[len(lines)-1] == "" {
+		lines = lines[:len(lines)-1]
+	}
+	return strings.Join(lines[startLine-1:startLine-1+count], "")
+}
+
+func TestDedupRead_SubRangeTable(t *testing.T) {
+	full := makeFileContent(80)
+	t0 := time.Date(2026, 11, 28, 12, 0, 0, 0, time.UTC)
+
+	tests := []struct {
+		name       string
+		firstOff   int
+		firstLim   int
+		firstRaw   string
+		secondOff  int
+		secondLim  int
+		secondRaw  string
+		mutateDisk func(t *testing.T, path string)
+		wantDedup  bool
+		wantSubstr string
+	}{
+		{
+			name:       "sub-range after full read dedups",
+			firstOff:   0,
+			firstLim:   0,
+			firstRaw:   full,
+			secondOff:  15,
+			secondLim:  20,
+			secondRaw:  sliceLines(full, 15, 20),
+			wantDedup:  true,
+			wantSubstr: "lines 15-34",
+		},
+		{
+			name:       "narrower slice inside wider slice dedups",
+			firstOff:   10,
+			firstLim:   45,
+			firstRaw:   sliceLines(full, 10, 45),
+			secondOff:  20,
+			secondLim:  20,
+			secondRaw:  sliceLines(full, 20, 20),
+			wantDedup:  true,
+			wantSubstr: "already read in lines 10-54",
+		},
+		{
+			name:      "partial overlap outside wider span stays raw",
+			firstOff:  10,
+			firstLim:  30,
+			firstRaw:  sliceLines(full, 10, 30),
+			secondOff: 30,
+			secondLim: 25,
+			secondRaw: sliceLines(full, 30, 25),
+			wantDedup: false,
+		},
+		{
+			name:      "sub-range under readDedupMinBytes stays raw",
+			firstOff:  0,
+			firstLim:  0,
+			firstRaw:  full,
+			secondOff: 10,
+			secondLim: 3,
+			secondRaw: sliceLines(full, 10, 3), // ~180 B < 512 B
+			wantDedup: false,
+		},
+		{
+			name:      "sub-range after disk edit (mtime changed) stays raw",
+			firstOff:  0,
+			firstLim:  0,
+			firstRaw:  full,
+			secondOff: 15,
+			secondLim: 20,
+			secondRaw: strings.Replace(sliceLines(full, 15, 20), "line 0020", "line 9999", 1),
+			mutateDisk: func(t *testing.T, path string) {
+				edited := strings.Replace(full, "line 0020", "line 9999", 1)
+				if err := os.WriteFile(path, []byte(edited), 0o600); err != nil {
+					t.Fatal(err)
+				}
+				t1 := t0.Add(time.Minute)
+				if err := os.Chtimes(path, t1, t1); err != nil {
+					t.Fatal(err)
+				}
+			},
+			wantDedup: false,
+		},
+		{
+			name:      "sub-range after edit with identical mtime and size stays raw",
+			firstOff:  0,
+			firstLim:  0,
+			firstRaw:  full,
+			secondOff: 15,
+			secondLim: 20,
+			secondRaw: strings.Replace(sliceLines(full, 15, 20), "line 0020", "line 8888", 1),
+			mutateDisk: func(t *testing.T, path string) {
+				edited := strings.Replace(full, "line 0020", "line 8888", 1)
+				if len(edited) != len(full) {
+					t.Fatalf("size mismatch: %d vs %d", len(edited), len(full))
+				}
+				if err := os.WriteFile(path, []byte(edited), 0o600); err != nil {
+					t.Fatal(err)
+				}
+				// Preserve exact mtime to verify line-hash protection!
+				if err := os.Chtimes(path, t0, t0); err != nil {
+					t.Fatal(err)
+				}
+			},
+			wantDedup: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			filePath := filepath.Join(t.TempDir(), "subrange.go")
+			if err := os.WriteFile(filePath, []byte(full), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Chtimes(filePath, t0, t0); err != nil {
+				t.Fatal(err)
+			}
+
+			in1 := readInputJSON(t, map[string]any{"file_path": filePath, "offset": tc.firstOff, "limit": tc.firstLim})
+			if got1, ch1 := dedupReadAt("sess-sub", in1, tc.firstRaw, "ccr111111111", dir, t0); ch1 || got1 != tc.firstRaw {
+				t.Fatalf("first read must pass through: changed=%v", ch1)
+			}
+
+			if tc.mutateDisk != nil {
+				tc.mutateDisk(t, filePath)
+			}
+
+			in2 := readInputJSON(t, map[string]any{"file_path": filePath, "offset": tc.secondOff, "limit": tc.secondLim})
+			got2, ch2 := dedupReadAt("sess-sub", in2, tc.secondRaw, "ccr222222222", dir, t0.Add(2*time.Second))
+			if ch2 != tc.wantDedup {
+				t.Fatalf("second read changed=%v, want %v (got=%q)", ch2, tc.wantDedup, got2)
+			}
+			if tc.wantDedup {
+				if !strings.Contains(got2, tc.wantSubstr) || !strings.Contains(got2, "downshift retrieve") {
+					t.Errorf("pointer missing %q or retrieve hint: %q", tc.wantSubstr, got2)
+				}
+				if len(got2) >= len(tc.secondRaw) {
+					t.Errorf("pointer len %d >= raw len %d", len(got2), len(tc.secondRaw))
+				}
+			} else if got2 != tc.secondRaw {
+				t.Errorf("non-deduped output altered")
+			}
+		})
+	}
+}
