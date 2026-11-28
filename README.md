@@ -52,6 +52,13 @@ downshift update
 
 [![Interactive setup detects harnesses, lets you choose components and review changes, writes after confirmation, then the user verifies the setup](docs/brand/readme-media/setup-flow.svg)](docs/brand/readme-media/setup-flow.png)
 
+## New in v0.25.0
+
+- **Higher bash & `Read` compaction (`#245`, `#246`, `#247`)**: compacts multi-line outputs without trailing EOF `\n`, runs `--harness=<name>` invocations non-interactively even under agent PTYs, lowers `Read` threshold to `8 KiB` for read-only lock/log/minified files with line-hash-verified sub-range dedup, and expands safe read-only pre-run rules (`git -C`, `git tag -l`, `git config --list`, `git grep`, `docker ps`/`images`/`logs`).
+- **Stale plugin detection & cleaner attribution (`#244`)**: `doctor` warns when an installed plugin's commit lags behind the binary, and `downshift compact` infers the harness via `core.AllHarnessCaps()` when unambiguous.
+
+[v0.25.0 release notes](https://github.com/tiagovilasboas/downshift-ai/blob/main/docs/releases/v0.25.0.md)
+
 ## New in v0.24.1
 
 - **Automatic detached update-cache refresh (`#241`)**: `session --panel` keeps `latest_release.json` fresh via a throttled detached background refresh (`DOWNSHIFT_NO_NETWORK=1` disables), so the `downshift-agents` `↑ vX.Y.Z` notice updates automatically.

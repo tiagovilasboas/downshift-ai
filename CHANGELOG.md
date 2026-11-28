@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-11-28
+
+Release notes: [docs/releases/v0.25.0.md](docs/releases/v0.25.0.md).
+
+### Added
+
+- **`Read` 8 KiB threshold for lock/log files & verified sub-range dedup (`#245`).** Added `ReadOnlyFileThreshold = 8 KiB` (`read_readonly.go`) for lockfiles, `go.sum`, `*.jsonl`, `*.log`, `*.min.*`, and `*.map` (leaving source code untouched at `64 KiB`) plus line-hash-verified sub-range read deduplication in `read_dedup.go`.
+- **Doctor plugin commit lag check & unambiguous harness inference (`#244`).** `doctor_plugin_hooks.go` warns when the installed plugin's commit lags behind the running binary commit; `exec.go` (`inferExecHarness`) infers the harness via `core.AllHarnessCaps()` only when a single harness matches unambiguously.
+- **Expanded read-only pre-run policy (`#247`).** Stripped validated `git -C <dir>` prefixes consistently in `policy_readonly.go` and added guarded read-only forms for `FamilyGitTag`, `FamilyGitConfig`, `FamilyGitGrep`, read-only git inspection commands, bare `ls`/`find`, `FamilyDockerPS`/`Images`/`Logs`, and `FamilyGlab` while explicitly blocking `docker exec`.
+
+### Fixed
+
+- **Multi-line EOF newline compaction & PTY non-interactive harness runs (`#246`).** Allowed multi-line outputs lacking only a trailing `\n` to compact cleanly in `colour.go` (preserving single-line `no_final_newline_preserved` and truncated-duration safety) and treated explicit `--harness=<name>` invocations as non-interactive in `execwrap.Run` / `cmd/downshift/exec.go`.
+
 ## [0.24.1] - 2026-11-26
 
 Release notes: [docs/releases/v0.24.1.md](docs/releases/v0.24.1.md).

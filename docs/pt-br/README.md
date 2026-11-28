@@ -52,6 +52,13 @@ downshift update
 
 [![O assistente interativo detecta harnesses, permite escolher componentes e revisar alterações, grava após a confirmação e depois o usuário verifica a configuração](../brand/readme-media/setup-flow.svg)](../brand/readme-media/setup-flow.png)
 
+## Novo na v0.25.0
+
+- **Mais compactação em bash e `Read` (`#245`, `#246`, `#247`)**: compacta saídas multilinha sem `\n` final, trata `--harness=<nome>` como não-interativo mesmo sob PTY de agentes, reduz o piso do `Read` para `8 KiB` em arquivos somente-leitura (`*.lock`, `go.sum`, `*.jsonl`, `*.log`, `*.min.*`) com dedup de sub-faixas verificado por hash de linha, e expande regras `read-only` seguras (`git -C`, `git tag -l`, `git config --list`, `git grep`, `docker ps`/`images`/`logs`).
+- **Aviso de plugin defasado e atribuição fiel (`#244`)**: `doctor` alerta quando o commit do plugin instalado está atrás do binário e `downshift compact` infere o harness via `core.AllHarnessCaps()` apenas quando há correspondência única.
+
+[Notas da v0.25.0](../releases/v0.25.0.md)
+
 ## Novo na v0.24.1
 
 - **Refresh automático em background do cache de atualização (`#241`)**: `session --panel` atualiza `latest_release.json` via processo *detached* com cooldown (`DOWNSHIFT_NO_NETWORK=1` desativa), mantendo o aviso `↑ vX.Y.Z` na barra atualizado automaticamente.
