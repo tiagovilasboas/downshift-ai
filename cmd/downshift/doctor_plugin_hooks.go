@@ -37,6 +37,11 @@ type installedPlugin struct {
 // installed is reported. Without the plugin nothing is reported, the hooks live
 // in the settings file and the "hooks wired" row covers them.
 func checkInstalledPluginHooks(add func(id, status, detail, fix string), home, harness string, enabled bool) {
+	_, binCommit := currentBuild()
+	checkInstalledPluginHooksAt(add, home, harness, enabled, binCommit)
+}
+
+func checkInstalledPluginHooksAt(add func(id, status, detail, fix string), home, harness string, enabled bool, binCommit string) {
 	t, ok := pluginTarget(harness)
 	if !ok {
 		return
@@ -62,6 +67,12 @@ func checkInstalledPluginHooks(add func(id, status, detail, fix string), home, h
 		case err != nil:
 			add("plugin hooks", doctorWarn, fmt.Sprintf("installed plugin at %s: %v", commit, err), updateFix)
 		case diff.empty():
+			if shortBin, lags := pluginCommitLags(in.GitCommitSha, binCommit); lags {
+				add("plugin hooks", doctorWarn,
+					fmt.Sprintf("installed plugin at %s carries the %d hooks, but lags behind binary commit %s (bundled mod/skills may be older)",
+						shortCommit(in.GitCommitSha), len(t.Hooks), shortBin), updateFix)
+				continue
+			}
 			add("plugin hooks", doctorOK,
 				fmt.Sprintf("installed plugin at %s carries the %d hooks this binary ships", commit, len(t.Hooks)), "")
 		default:
@@ -107,12 +118,47 @@ func readPluginInstalls(reg, plugin string) ([]installedPlugin, error) {
 // commit names the installed commit for a message.
 func (in installedPlugin) commit() string {
 	switch {
-	case len(in.GitCommitSha) > 12:
-		return "commit " + in.GitCommitSha[:12]
 	case in.GitCommitSha != "":
-		return "commit " + in.GitCommitSha
+		return "commit " + shortCommit(in.GitCommitSha)
 	case in.Version != "":
 		return "version " + in.Version + " (no commit recorded)"
 	}
 	return "an unknown commit"
+}
+
+// pluginCommitLags reports whether installedSha and binCommit are both real
+// hex commits and neither is a prefix of the other, returning the shortened
+// binary commit for the warning detail.
+func pluginCommitLags(installedSha, binCommit string) (string, bool) {
+	inst, ok1 := normHexCommit(installedSha)
+	bin, ok2 := normHexCommit(binCommit)
+	if !ok1 || !ok2 {
+		return "", false
+	}
+	if strings.HasPrefix(inst, bin) || strings.HasPrefix(bin, inst) {
+		return "", false
+	}
+	return shortCommit(bin), true
+}
+
+func normHexCommit(s string) (string, bool) {
+	s = strings.ToLower(strings.TrimSpace(s))
+	if len(s) < 7 {
+		return "", false
+	}
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
+			return "", false
+		}
+	}
+	return s, true
+}
+
+func shortCommit(s string) string {
+	s = strings.TrimSpace(s)
+	if len(s) > 12 {
+		return s[:12]
+	}
+	return s
 }
