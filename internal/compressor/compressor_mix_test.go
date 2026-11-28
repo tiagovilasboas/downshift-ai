@@ -5,7 +5,6 @@ package compressor
 
 import (
 	"bytes"
-	"strings"
 	"testing"
 )
 
@@ -118,7 +117,7 @@ func TestMixTest_PreservesFailuresAndUnrecognised(t *testing.T) {
 			"Finished in 0.00 seconds (0.00s async, 0.00s sync)\n" +
 			"0 tests, 0 failures\n",
 		"duplicate summary": green + "42 tests, 0 failures\n",
-		"missing newline":   strings.TrimSuffix(green, "\n"),
+		"single line no nl": "42 tests, 0 failures",
 		"truncated tail":    "Running ExUnit with seed: 482913, max_cases: 16\n\n....................\n",
 	}
 

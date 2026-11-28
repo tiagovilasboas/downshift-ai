@@ -54,13 +54,13 @@ func TestCompressNpmAuditCriticalOnlyKeepsEverything(t *testing.T) {
 func TestCompressNpmAuditFailsOpen(t *testing.T) {
 	clean := readCorpus(t, "npm_audit_clean.txt")
 	cases := map[string]string{
-		"warn line":     readCorpus(t, "npm_audit_warn.txt"),
-		"error line":    strings.Replace(clean, "\n5 vulnerabilities", "\nnpm ERR! audit endpoint returned an error\n5 vulnerabilities", 1),
-		"unknown field": strings.Replace(clean, "Severity: low", "Severity: low\nRisk: unknown", 1),
-		"bad severity":  strings.Replace(clean, "Severity: low", "Severity: bogus", 1),
-		"unknown tail":  clean + "Run something else\n",
-		"no final nl":   strings.TrimSuffix(clean, "\n"),
-		"crlf":          strings.ReplaceAll(clean, "\n", "\r\n"),
+		"warn line":         readCorpus(t, "npm_audit_warn.txt"),
+		"error line":        strings.Replace(clean, "\n5 vulnerabilities", "\nnpm ERR! audit endpoint returned an error\n5 vulnerabilities", 1),
+		"unknown field":     strings.Replace(clean, "Severity: low", "Severity: low\nRisk: unknown", 1),
+		"bad severity":      strings.Replace(clean, "Severity: low", "Severity: bogus", 1),
+		"unknown tail":      clean + "Run something else\n",
+		"single line no nl": "5 vulnerabilities (2 low, 2 moderate, 1 high)",
+		"crlf":              strings.ReplaceAll(clean, "\n", "\r\n"),
 	}
 	for name, in := range cases {
 		t.Run(name, func(t *testing.T) {

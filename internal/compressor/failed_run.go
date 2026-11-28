@@ -92,7 +92,17 @@ func plainFailedGoTestText(input []byte) ([]byte, bool) {
 // not a terminal. Any other escape sequence, CRLF or a missing final newline
 // keeps the run raw.
 func colourFreeFailedText(input []byte) ([]byte, bool) {
-	text, reason := screenText(input)
+	plain := input
+	if bytes.IndexByte(input, 0x1b) != -1 {
+		var ok bool
+		if plain, ok = stripColour(input); !ok {
+			return nil, false
+		}
+	}
+	if len(plain) == 0 || plain[len(plain)-1] != '\n' {
+		return nil, false
+	}
+	text, reason := screenText(plain)
 	return text, reason == ""
 }
 

@@ -63,6 +63,9 @@ type Options struct {
 	// (SessionRef), so a later read is charged to this session; without it
 	// the hint is unchanged.
 	Session string
+	// Harness names the calling agent harness (--harness=<name>); non-empty
+	// treats the run as non-interactive even when stdin is a PTY.
+	Harness string
 	// KeepFailed is Keep for a run that exited non-zero only, used when Keep
 	// is nil: CCR on failure, successes are not stored.
 	KeepFailed func(raw []byte) (id string, ok bool)
@@ -115,6 +118,9 @@ type Result struct {
 	// when stderr or search paths compacted alongside the primary output).
 	KeptIDs []string
 }
+
+// isInteractiveStdin is overridden in tests to simulate a PTY stdin portably.
+var isInteractiveStdin = interactiveStdin
 
 // ObserveUncompactedHook is called when a command's output was not compacted.
 // It receives the argv, raw output (truncated), and family. Callers register
@@ -170,16 +176,17 @@ func Run(argv []string, o Options) (res Result) {
 	g.desktop = o.Desktop
 	g.balanced = o.Balanced
 	g.bal = balanceConfig{threshold: o.BalanceThreshold, limits: o.BalanceLimits, bypassFail: AntiLoopActive(o.Session)}
-	// With a terminal on stdin a program may prompt on stderr: holding that
-	// prompt would hide it, so the first stderr byte releases the output.
-	g.stderrReleases = !g.merge && interactiveStdin(o.Stdin)
+	// With a terminal on stdin a human may answer a prompt on stderr, so the
+	// first stderr byte releases output. An explicit --harness is non-interactive.
+	interactive := o.Harness == "" && isInteractiveStdin(o.Stdin)
+	g.stderrReleases = !g.merge && interactive
 	// The ports run once, inside finish, on this goroutine; the id of the one
 	// that stored the output goes on the Result and the event.
 	var keptID string
 	g.keep, g.keepFailed = captureKept(o.Keep, &keptID, o.Session), captureKept(o.KeepFailed, &keptID, o.Session)
 	cmd := exec.Command(path, argv[1:]...)
 	cmd.Args[0] = argv[0]
-	cmd.Env = nonTTYEnv(os.Environ(), interactiveStdin(o.Stdin))
+	cmd.Env = nonTTYEnv(os.Environ(), interactive)
 	ownProcessGroup(cmd)
 	cmd.Stdin = o.Stdin
 	cmd.Stdout = stdoutWriter{g}
